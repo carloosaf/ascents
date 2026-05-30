@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Climb Tasks 1 and 2 Implementation Plan</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #18212f;
+        --muted: #617084;
+        --line: #d9e0e8;
+        --panel: #f7f9fb;
+        --accent: #167267;
+        --accent-strong: #0d4f48;
+        --warn: #9a5a00;
+        --risk: #a43737;
+        --ok: #34714d;
+        --paper: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 32px;
+        padding-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 4rem);
+        max-width: 860px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 1.55rem;
+        margin-top: 36px;
+        padding-top: 28px;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      code {
+        background: #eef3f5;
+        border-radius: 4px;
+        font-size: 0.94em;
+        padding: 2px 5px;
+      }
+
+      .status {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        white-space: nowrap;
+      }
+
+      .status.planned {
+        background: #eef3f5;
+        color: #4d5d70;
+      }
+
+      .status.ready {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .status.blocked {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 1.12rem;
+        max-width: 840px;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 16px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 18px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .tag {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 10px;
+        padding: 3px 9px;
+        text-transform: uppercase;
+      }
+
+      .tag.ok {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .tag.warn {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .tag.risk {
+        background: #fae8e8;
+        color: var(--risk);
+      }
+
+      .data-table {
+        border-collapse: collapse;
+        margin-top: 14px;
+        width: 100%;
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .data-table th {
+        background: #eef3f5;
+      }
+
+      .flow {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-top: 14px;
+      }
+
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      .step strong {
+        color: var(--accent-strong);
+        display: block;
+      }
+
+      .note-list {
+        margin-top: 14px;
+        padding-left: 0;
+      }
+
+      .note-list li {
+        border-bottom: 1px solid var(--line);
+        list-style: none;
+        margin: 0;
+        padding: 14px 0;
+      }
+
+      .note-list li:first-child {
+        border-top: 1px solid var(--line);
+      }
+
+      .note-list strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      @media (max-width: 680px) {
+        main {
+          padding: 32px 18px 56px;
+        }
+
+        .data-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Tasks 1 and 2 Implementation Plan</h1>
+        <p class="lede">
+          A focused execution plan for the first implementation pass: define
+          local infrastructure for PostgreSQL and MinIO, then establish a clean
+          Phoenix project health baseline before domain work starts.
+        </p>
+        <p class="meta">
+          Source plan: <code>.plans/climb-social-plan.html</code>. Target stack:
+          Elixir, Phoenix 1.8, LiveView, PostgreSQL, MinIO-compatible object
+          storage.
+        </p>
+      </header>
+
+      <section>
+        <h2>Scope</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Status</th>
+              <th>Goal</th>
+              <th>Not Included</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1. Local services definition</td>
+              <td><span class="status ready">Implemented</span></td>
+              <td>
+                Add a reproducible local service definition for PostgreSQL and
+                MinIO, plus clear environment variable documentation for the
+                Phoenix app.
+              </td>
+              <td>
+                Production infrastructure, object lifecycle policies, CDN
+                configuration, or starting long-running services during the
+                plan update.
+              </td>
+            </tr>
+            <tr>
+              <td>2. Project health baseline</td>
+              <td><span class="status ready">Implemented</span></td>
+              <td>
+                Prove the generated Phoenix app compiles, formats cleanly, and
+                uses a predictable local PostgreSQL configuration for tests.
+              </td>
+              <td>
+                Feature contexts, LiveViews, design system work, media upload
+                implementation, or schema changes beyond configuration fixes.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Target Files</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>docker-compose.yml</code></h3>
+            <p>
+              Define local PostgreSQL and MinIO services, named volumes, stable
+              ports, health checks, and credentials intended only for
+              development and test environments.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>README.md</code></h3>
+            <p>
+              Document how to validate the compose file, start local services,
+              run setup, and execute the health baseline commands.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag warn">Review</span>
+            <h3><code>config/*.exs</code></h3>
+            <p>
+              Check database connection settings and environment variable names.
+              Keep Phoenix-generated conventions unless they conflict with the
+              local service names or test database requirements.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag warn">Review</span>
+            <h3><code>mix.exs</code></h3>
+            <p>
+              Confirm the existing <code>mix precommit</code> alias is the final
+              verification command and do not add dependencies for this step.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Service Design</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Local Defaults</th>
+              <th>Purpose</th>
+              <th>Health Check</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>postgres</code></td>
+              <td>
+                Port <code>5432</code>, user <code>postgres</code>, password
+                <code>postgres</code>, database <code>climb_dev</code>.
+              </td>
+              <td>
+                Back Phoenix development and test workflows through Ecto.
+              </td>
+              <td>
+                Use <code>pg_isready</code> against the configured local
+                database user.
+              </td>
+            </tr>
+            <tr>
+              <td><code>minio</code></td>
+              <td>
+                API port <code>9000</code>, console port <code>9001</code>,
+                access key <code>minioadmin</code>, secret
+                <code>minioadmin</code>.
+              </td>
+              <td>
+                Provide S3-compatible private object storage for future image
+                upload work.
+              </td>
+              <td>
+                Use MinIO's live health endpoint on
+                <code>/minio/health/live</code>.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Environment Variables</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Default for Local Development</th>
+              <th>Consumer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>DATABASE_URL</code></td>
+              <td><code>ecto://postgres:postgres@localhost/climb_dev</code></td>
+              <td>
+                Optional Phoenix/Ecto override for development. Existing
+                Phoenix config may continue to use discrete repo settings.
+              </td>
+            </tr>
+            <tr>
+              <td><code>TEST_DATABASE_URL</code></td>
+              <td><code>ecto://postgres:postgres@localhost/climb_test</code></td>
+              <td>
+                Optional test database override if the test config is changed to
+                read a URL.
+              </td>
+            </tr>
+            <tr>
+              <td><code>S3_ENDPOINT</code></td>
+              <td><code>http://localhost:9000</code></td>
+              <td>Future media boundary backed by Req or ExAws-compatible APIs.</td>
+            </tr>
+            <tr>
+              <td><code>S3_BUCKET</code></td>
+              <td><code>climb-dev</code></td>
+              <td>Future object key storage and signed URL generation.</td>
+            </tr>
+            <tr>
+              <td><code>S3_ACCESS_KEY_ID</code></td>
+              <td><code>minioadmin</code></td>
+              <td>Future MinIO authentication.</td>
+            </tr>
+            <tr>
+              <td><code>S3_SECRET_ACCESS_KEY</code></td>
+              <td><code>minioadmin</code></td>
+              <td>Future MinIO authentication.</td>
+            </tr>
+            <tr>
+              <td><code>S3_REGION</code></td>
+              <td><code>us-east-1</code></td>
+              <td>
+                S3-compatible clients often require a region even for local
+                MinIO.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Execution Steps</h2>
+        <div class="flow">
+          <div class="step">
+            <strong>1. Inspect config</strong>
+            Read <code>config/dev.exs</code>, <code>config/test.exs</code>, and
+            <code>mix.exs</code> before changing files.
+          </div>
+          <div class="step">
+            <strong>2. Add compose file</strong>
+            Create <code>docker-compose.yml</code> with PostgreSQL, MinIO,
+            volumes, ports, credentials, and health checks.
+          </div>
+          <div class="step">
+            <strong>3. Document setup</strong>
+            Update <code>README.md</code> with local services and baseline
+            verification commands.
+          </div>
+          <div class="step">
+            <strong>4. Validate compose</strong>
+            Run <code>docker compose config</code> to catch YAML or service
+            definition errors.
+          </div>
+          <div class="step">
+            <strong>5. Run baseline</strong>
+            With PostgreSQL available, run format, compile, tests, and
+            <code>mix precommit</code>.
+          </div>
+          <div class="step">
+            <strong>6. Record blockers</strong>
+            If Docker or PostgreSQL is unavailable, report exact commands run
+            and the blocking error.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Verification Matrix</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>Command</th>
+              <th>Expected Result</th>
+              <th>Required For</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Compose syntax</td>
+              <td><code>docker compose config</code></td>
+              <td>
+                Prints normalized configuration and exits successfully.
+              </td>
+              <td>Task 1 acceptance</td>
+            </tr>
+            <tr>
+              <td>Format baseline</td>
+              <td><code>mix format --check-formatted</code></td>
+              <td>
+                No formatting changes are required.
+              </td>
+              <td>Task 2 acceptance</td>
+            </tr>
+            <tr>
+              <td>Compile baseline</td>
+              <td><code>mix compile --warnings-as-errors</code></td>
+              <td>
+                Application compiles without warnings.
+              </td>
+              <td>Task 2 acceptance</td>
+            </tr>
+            <tr>
+              <td>Test baseline</td>
+              <td><code>mix test</code></td>
+              <td>
+                Generated auth, controller, and account tests pass with
+                PostgreSQL running.
+              </td>
+              <td>Task 2 acceptance</td>
+            </tr>
+            <tr>
+              <td>Final gate</td>
+              <td><code>mix precommit</code></td>
+              <td>
+                Compile, dependency hygiene, format, and tests all pass.
+              </td>
+              <td>Done criteria</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Risks</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Risk</th>
+              <th>Impact</th>
+              <th>Mitigation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Port conflicts</td>
+              <td>
+                Local PostgreSQL or MinIO may already be running on the default
+                ports.
+              </td>
+              <td>
+                Keep defaults simple in <code>docker-compose.yml</code>, and
+                document changing host ports as the local escape hatch.
+              </td>
+            </tr>
+            <tr>
+              <td>Database mismatch</td>
+              <td>
+                Phoenix test config may target credentials that do not match
+                the compose service.
+              </td>
+              <td>
+                Align compose defaults with Phoenix-generated repo settings
+                where possible, and only edit config when the baseline commands
+                prove it is necessary.
+              </td>
+            </tr>
+            <tr>
+              <td>Docker unavailable</td>
+              <td>
+                Compose validation or service startup cannot complete in the
+                current environment.
+              </td>
+              <td>
+                Still commit a syntactically simple compose file, run every
+                non-Docker check possible, and report Docker as the remaining
+                blocker.
+              </td>
+            </tr>
+            <tr>
+              <td>MinIO bucket setup</td>
+              <td>
+                Future upload work needs a bucket before images can be stored.
+              </td>
+              <td>
+                Keep bucket creation documented for the media task instead of
+                adding custom startup scripting in Task 1.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Acceptance Criteria</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Task 1 is accepted when</strong>
+            <code>docker-compose.yml</code> defines PostgreSQL and MinIO with
+            named volumes, documented credentials, stable local ports, and
+            health checks; <code>docker compose config</code> succeeds.
+          </li>
+          <li>
+            <strong>Task 2 is accepted when</strong>
+            The generated Phoenix app passes formatting, compile, and test
+            checks against the local PostgreSQL service, and the final
+            <code>mix precommit</code> alias passes.
+          </li>
+          <li>
+            <strong>Documentation is accepted when</strong>
+            <code>README.md</code> explains local service startup, setup,
+            health checks, and the commands needed before moving to Task 3.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Implementation Notes</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Use generated conventions first</strong>
+            Keep Phoenix and Ecto configuration close to the generated defaults.
+            The compose file should adapt to the app unless tests show the app
+            config needs correction.
+          </li>
+          <li>
+            <strong>No extra HTTP dependencies</strong>
+            Future object storage calls should use the already included
+            <code>Req</code> library or a later deliberately chosen storage
+            boundary. Do not add HTTPoison, Tesla, or Erlang
+            <code>:httpc</code> usage.
+          </li>
+          <li>
+            <strong>No feature routes yet</strong>
+            Tasks 1 and 2 do not add controller routes or LiveViews, so no
+            authentication routing changes are needed in this pass.
+          </li>
+          <li>
+            <strong>Move to Task 3 only after baseline</strong>
+            The component gallery and visual system should start from a clean
+            compile and test baseline so later UI failures are attributable to
+            new work.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

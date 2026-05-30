@@ -1,0 +1,298 @@
+/* See the Tailwind configuration guide for advanced usage
+   https://tailwindcss.com/docs/configuration */
+
+@import "tailwindcss" source(none);
+@source "../css";
+@source "../js";
+@source "../../lib/climb_web";
+
+/* A Tailwind plugin that makes "hero-#{ICON}" classes available.
+   The heroicons installation itself is managed by your mix.exs */
+@plugin "../vendor/heroicons";
+
+/* Add variants based on LiveView classes */
+@custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
+@custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
+@custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
+
+/* Use the data attribute for dark mode  */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Make LiveView wrapper divs transparent for layout */
+[data-phx-session], [data-phx-teleported-src] { display: contents }
+
+:root {
+  color-scheme: dark;
+  --climb-ink: #0e1117;
+  --climb-panel: #171c24;
+  --climb-panel-strong: #202733;
+  --climb-panel-deep: #11151d;
+  --climb-panel-hover: #26303b;
+  --climb-line: #2a323d;
+  --climb-chalk: #f4f7f2;
+  --climb-chalk-soft: #c6ccd5;
+  --climb-muted: #9aa4b2;
+  --climb-muted-strong: #667085;
+  --climb-action: #14b8a6;
+  --climb-action-hover: #2dd4bf;
+  --climb-action-content: #071311;
+  --climb-tape: #d9ff3f;
+  --climb-tape-content: #111827;
+  --climb-clay: #e07a5f;
+  --climb-wall: #0f131a;
+  --climb-wall-bolt: rgba(244, 247, 242, 0.13);
+  --climb-wall-bolt-shadow: rgba(0, 0, 0, 0.24);
+  --climb-wall-seam: rgba(224, 122, 95, 0.045);
+  --climb-wall-shade: rgba(0, 0, 0, 0.16);
+  --climb-wall-glaze: rgba(255, 255, 255, 0.035);
+  --climb-route-field: #202733;
+  --climb-route-bolt: rgba(244, 247, 242, 0.16);
+  --climb-route-bolt-shadow: rgba(0, 0, 0, 0.28);
+  --climb-route-seam: rgba(224, 122, 95, 0.05);
+  --climb-route-veil: rgba(6, 10, 15, 0.4);
+  --climb-route-veil-strong: rgba(6, 10, 15, 0.66);
+  --climb-route-title: #f4f7f2;
+  --climb-route-subtitle: #a9c7d8;
+  --climb-status-bg: rgba(6, 10, 15, 0.9);
+  --climb-status-text: #f4f7f2;
+  --climb-status-border: rgba(244, 247, 242, 0.18);
+  --climb-panel-sheen: rgba(255, 255, 255, 0.03);
+  --climb-panel-edge: rgba(244, 247, 242, 0.055);
+  --climb-panel-edge-soft: rgba(244, 247, 242, 0.035);
+  --climb-info-soft: #12312f;
+  --climb-info-text: #d9fffa;
+  --climb-danger: #f04438;
+  --climb-danger-hover: #fb7185;
+  --climb-danger-soft: #3a1719;
+  --climb-danger-text: #ffe7e4;
+  --grade-blue: #60a5fa;
+  --grade-blue-content: #07111f;
+  --grade-purple: #a78bfa;
+  --grade-purple-content: #130c27;
+  --grade-pink: #f472b6;
+  --grade-pink-content: #2b071b;
+  --grade-yellow: #facc15;
+  --grade-yellow-content: #231a03;
+  --grade-red: #fb7185;
+  --grade-red-content: #2b050b;
+  --font-display: "Arial Black", "Avenir Next Condensed", Impact, sans-serif;
+  --font-body: "Avenir Next", "Trebuchet MS", Verdana, sans-serif;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --climb-ink: #f4f0e8;
+  --climb-panel: #fffaf0;
+  --climb-panel-strong: #efe5d4;
+  --climb-panel-deep: #f8ecd8;
+  --climb-panel-hover: #eadcc9;
+  --climb-line: #d7c7b5;
+  --climb-chalk: #17130f;
+  --climb-chalk-soft: #4f453b;
+  --climb-muted: #75685c;
+  --climb-muted-strong: #8a7a69;
+  --climb-action: #0f766e;
+  --climb-action-hover: #115e59;
+  --climb-action-content: #f4fffc;
+  --climb-tape: #8aab00;
+  --climb-tape-content: #11130a;
+  --climb-wall: #dfd1bd;
+  --climb-wall-bolt: rgba(63, 49, 36, 0.2);
+  --climb-wall-bolt-shadow: rgba(255, 255, 255, 0.32);
+  --climb-wall-seam: rgba(98, 71, 43, 0.12);
+  --climb-wall-shade: rgba(70, 48, 30, 0.05);
+  --climb-wall-glaze: rgba(255, 255, 255, 0.18);
+  --climb-route-field: #d4c2a9;
+  --climb-route-bolt: rgba(64, 48, 35, 0.22);
+  --climb-route-bolt-shadow: rgba(255, 255, 255, 0.38);
+  --climb-route-seam: rgba(98, 71, 43, 0.14);
+  --climb-route-veil: rgba(255, 250, 240, 0.46);
+  --climb-route-veil-strong: rgba(60, 38, 18, 0.18);
+  --climb-route-title: #17130f;
+  --climb-route-subtitle: #5e5145;
+  --climb-status-bg: #2f241b;
+  --climb-status-text: #fffaf0;
+  --climb-status-border: rgba(47, 36, 27, 0.22);
+  --climb-panel-sheen: rgba(255, 255, 255, 0.24);
+  --climb-panel-edge: rgba(88, 61, 39, 0.045);
+  --climb-panel-edge-soft: rgba(88, 61, 39, 0.025);
+  --climb-info-soft: #d9f1ea;
+  --climb-info-text: #113d38;
+  --climb-danger-soft: #ffe7e4;
+  --climb-danger-text: #7a1b13;
+}
+
+@theme inline {
+  --color-climb-ink: var(--climb-ink);
+  --color-climb-panel: var(--climb-panel);
+  --color-climb-panel-strong: var(--climb-panel-strong);
+  --color-climb-panel-deep: var(--climb-panel-deep);
+  --color-climb-panel-hover: var(--climb-panel-hover);
+  --color-climb-line: var(--climb-line);
+  --color-climb-chalk: var(--climb-chalk);
+  --color-climb-chalk-soft: var(--climb-chalk-soft);
+  --color-climb-muted: var(--climb-muted);
+  --color-climb-muted-strong: var(--climb-muted-strong);
+  --color-climb-action: var(--climb-action);
+  --color-climb-action-hover: var(--climb-action-hover);
+  --color-climb-action-content: var(--climb-action-content);
+  --color-climb-tape: var(--climb-tape);
+  --color-climb-tape-content: var(--climb-tape-content);
+  --color-climb-clay: var(--climb-clay);
+  --color-climb-info-soft: var(--climb-info-soft);
+  --color-climb-info-text: var(--climb-info-text);
+  --color-climb-danger: var(--climb-danger);
+  --color-climb-danger-hover: var(--climb-danger-hover);
+  --color-climb-danger-soft: var(--climb-danger-soft);
+  --color-climb-danger-text: var(--climb-danger-text);
+  --color-climb-route-title: var(--climb-route-title);
+  --color-climb-route-subtitle: var(--climb-route-subtitle);
+  --color-grade-blue: var(--grade-blue);
+  --color-grade-blue-content: var(--grade-blue-content);
+  --color-grade-purple: var(--grade-purple);
+  --color-grade-purple-content: var(--grade-purple-content);
+  --color-grade-pink: var(--grade-pink);
+  --color-grade-pink-content: var(--grade-pink-content);
+  --color-grade-yellow: var(--grade-yellow);
+  --color-grade-yellow-content: var(--grade-yellow-content);
+  --color-grade-red: var(--grade-red);
+  --color-grade-red-content: var(--grade-red-content);
+}
+
+html {
+  background: var(--climb-ink);
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+.climb-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.climb-wall {
+  position: relative;
+  isolation: isolate;
+}
+
+.climb-wall::before {
+  background:
+    radial-gradient(circle at 1.4rem 1.4rem, var(--climb-wall-bolt) 0 0.12rem, var(--climb-wall-bolt-shadow) 0.14rem 0.2rem, transparent 0.22rem),
+    linear-gradient(90deg, var(--climb-wall-seam) 0 1px, transparent 1px),
+    linear-gradient(180deg, var(--climb-wall-glaze), transparent 18rem),
+    var(--climb-wall);
+  background-size: 5.25rem 5.25rem, 17.5rem 100%, auto, auto;
+  content: "";
+  inset: 0;
+  opacity: 0.62;
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+}
+
+.climb-wall::after {
+  background: linear-gradient(180deg, var(--climb-wall-shade), transparent 12rem);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+}
+
+.chalk-panel {
+  background:
+    linear-gradient(180deg, var(--climb-panel-sheen), transparent 34%),
+    var(--climb-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 60px rgba(0, 0, 0, 0.22);
+}
+
+.chalk-panel::after {
+  background: linear-gradient(90deg, var(--climb-panel-edge), transparent 16%, transparent 84%, var(--climb-panel-edge-soft));
+  content: "";
+  inset: 0;
+  opacity: 0.55;
+  pointer-events: none;
+  position: absolute;
+}
+
+.tape-label {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  clip-path: polygon(0 9%, 100% 0, 96% 100%, 4% 92%);
+  transform: rotate(-1deg);
+}
+
+.route-hold-field {
+  background:
+    radial-gradient(circle at 1.15rem 1.15rem, var(--climb-route-bolt) 0 0.1rem, var(--climb-route-bolt-shadow) 0.12rem 0.18rem, transparent 0.2rem),
+    linear-gradient(90deg, var(--climb-route-seam) 0 1px, transparent 1px),
+    var(--climb-route-field);
+  background-size: 4.2rem 4.2rem, 8.4rem 100%, auto;
+}
+
+.route-hold-field::before {
+  background:
+    linear-gradient(90deg, var(--climb-route-veil), transparent 58%),
+    linear-gradient(180deg, var(--climb-route-veil-strong), transparent 64%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.route-title-plate {
+  background: color-mix(in srgb, var(--climb-panel) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--climb-line) 72%, transparent);
+  box-shadow: 0 0.85rem 2rem rgba(0, 0, 0, 0.16);
+}
+
+.route-status-badge {
+  align-items: center;
+  background: var(--climb-status-bg);
+  border: 1px solid var(--climb-status-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0.65rem 1.6rem rgba(0, 0, 0, 0.22);
+  color: var(--climb-status-text);
+  display: inline-flex;
+  gap: 0.35rem;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.route-status-badge::before {
+  background: var(--climb-action);
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+  content: "";
+  height: 0.38rem;
+  width: 0.38rem;
+}
+
+.route-status-badge[data-status="project"]::before {
+  background: var(--grade-yellow);
+}
+
+.hold {
+  border-radius: 43% 57% 61% 39% / 48% 36% 64% 52%;
+  box-shadow:
+    inset -0.55rem -0.45rem 0 rgba(0, 0, 0, 0.18),
+    inset 0.35rem 0.3rem 0 rgba(255, 255, 255, 0.26),
+    0 0.55rem 1.6rem rgba(0, 0, 0, 0.28);
+  position: absolute;
+}
+
+.hold::after {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  content: "";
+  height: 18%;
+  left: 24%;
+  position: absolute;
+  top: 20%;
+  transform: rotate(-18deg);
+  width: 32%;
+}

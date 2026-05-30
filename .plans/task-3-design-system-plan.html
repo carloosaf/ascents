@@ -1,0 +1,1066 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Climb Task 3 Design System Plan</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #18212f;
+        --muted: #617084;
+        --line: #d9e0e8;
+        --panel: #f7f9fb;
+        --accent: #167267;
+        --accent-strong: #0d4f48;
+        --warn: #9a5a00;
+        --risk: #a43737;
+        --ok: #34714d;
+        --paper: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 32px;
+        padding-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 4rem);
+        max-width: 900px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 1.55rem;
+        margin-top: 36px;
+        padding-top: 28px;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      code {
+        background: #eef3f5;
+        border-radius: 4px;
+        font-size: 0.94em;
+        padding: 2px 5px;
+      }
+
+      .status {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        white-space: nowrap;
+      }
+
+      .status.planned {
+        background: #eef3f5;
+        color: #4d5d70;
+      }
+
+      .status.ready {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .status.blocked {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 1.12rem;
+        max-width: 860px;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 16px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 18px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .tag {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 10px;
+        padding: 3px 9px;
+        text-transform: uppercase;
+      }
+
+      .tag.ok {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .tag.warn {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .tag.risk {
+        background: #fae8e8;
+        color: var(--risk);
+      }
+
+      .data-table {
+        border-collapse: collapse;
+        margin-top: 14px;
+        width: 100%;
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .data-table th {
+        background: #eef3f5;
+      }
+
+      .flow {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-top: 14px;
+      }
+
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      .step strong {
+        color: var(--accent-strong);
+        display: block;
+      }
+
+      .note-list {
+        margin-top: 14px;
+        padding-left: 0;
+      }
+
+      .note-list li {
+        border-bottom: 1px solid var(--line);
+        list-style: none;
+        margin: 0;
+        padding: 14px 0;
+      }
+
+      .note-list li:first-child {
+        border-top: 1px solid var(--line);
+      }
+
+      .note-list strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      @media (max-width: 680px) {
+        main {
+          padding: 32px 18px 56px;
+        }
+
+        .data-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Task 3 Design System and Component Gallery Plan</h1>
+        <p class="lede">
+          Build the product UI foundation before gym, route, feed, ascent, and
+          stats pages are implemented. The goal is a small, controlled Phoenix
+          component system with a development-only gallery that makes visual
+          review cheap and keeps feature work from turning into one-off markup.
+        </p>
+        <p class="meta">
+          Source plan: <code>.plans/climb-social-plan.html</code>. Previous
+          implementation plan: <code>.plans/tasks-1-2-implementation-plan.html</code>.
+          Target stack: Phoenix 1.8, LiveView, HEEx, Tailwind CSS v4.
+        </p>
+      </header>
+
+      <section>
+        <h2>Decision</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Recommendation</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Use DaisyUI as the application design system?</td>
+              <td>
+                <span class="status blocked">No for new product UI</span>
+              </td>
+              <td>
+                The project instructions explicitly say to manually write
+                Tailwind-based components instead of using DaisyUI. More
+                importantly, Climb needs domain-specific feed, route, grade,
+                ascent, and gym-management surfaces; those will feel generic if
+                the app is assembled mostly from preset Daisy classes.
+              </td>
+            </tr>
+            <tr>
+              <td>Can the generated DaisyUI setup remain temporarily?</td>
+              <td>
+                <span class="status planned">Yes, as migration scaffolding</span>
+              </td>
+              <td>
+                Phoenix generated this app with Daisy-flavored defaults in
+                <code>CoreComponents</code> and <code>app.css</code>. Task 3 can
+                replace app-facing component markup first, then remove or
+                neutralize unused Daisy dependencies after the gallery proves no
+                product component depends on them.
+              </td>
+            </tr>
+            <tr>
+              <td>Is a full custom system too much?</td>
+              <td>
+                <span class="status ready">Build a small one</span>
+              </td>
+              <td>
+                This is not a large design-system project. The first pass should
+                define only the primitives and product components needed for the
+                MVP, keep them in Phoenix components, and document them by
+                rendering real examples in the gallery.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Scope</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Status</th>
+              <th>Goal</th>
+              <th>Not Included</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Visual language</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Define the first Climb look: calm social app layout,
+                route-grade color treatment, strong readable cards, compact
+                action controls, and responsive spacing.
+              </td>
+              <td>
+                Brand identity work, logo redesign, illustration sets, or
+                marketing landing pages.
+              </td>
+            </tr>
+            <tr>
+              <td>Core components</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Replace generated Daisy-heavy app-facing components with
+                Tailwind-only Phoenix components for buttons, links, forms,
+                inputs, alerts, badges, tabs, empty states, modals, and tables.
+              </td>
+              <td>
+                A complete enterprise component library or every possible form
+                control variation.
+              </td>
+            </tr>
+            <tr>
+              <td>Product components</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Add reusable components for feed items, route cards, grade
+                pills, gym headers, stat blocks, and shell layouts.
+              </td>
+              <td>
+                Real gym, route, feed, ascent, media, or stats persistence.
+              </td>
+            </tr>
+            <tr>
+              <td>Gallery route</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Add a development-only component gallery that renders normal,
+                disabled, loading, empty, validation, and responsive states.
+              </td>
+              <td>
+                Public documentation, Storybook, external JavaScript
+                frameworks, or production-visible style guide routes.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Route Placement</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Scope and Pipeline</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/dev/components</code></td>
+              <td>
+                Inside the existing
+                <code>if Application.compile_env(:climb, :dev_routes)</code>
+                block, in the <code>scope "/dev"</code> that uses
+                <code>pipe_through :browser</code>.
+              </td>
+              <td>
+                The gallery is a development tool, not a product surface. The
+                <code>:browser</code> pipeline still fetches
+                <code>current_scope</code>, session, flash, CSRF protection, and
+                the root layout. It should not require authentication because
+                unauthenticated, authenticated, empty, and error states all need
+                to be visible during design review.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Target Files</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>lib/climb_web/components/core_components.ex</code></h3>
+            <p>
+              Restyle existing generated components with Tailwind classes under
+              our control. Keep Phoenix component APIs stable where possible so
+              generated auth pages and future LiveViews can use the same helpers.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>lib/climb_web/components/layouts.ex</code></h3>
+            <p>
+              Replace the generated Phoenix demo shell with the first Climb app
+              shell. Every LiveView template must be able to begin with
+              <code>&lt;Layouts.app flash={@flash} current_scope={@current_scope}&gt;</code>.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/climb_web/components/product_components.ex</code></h3>
+            <p>
+              Add Climb-specific UI pieces: grade badge, route card, feed item,
+              gym summary, stat block, member avatar, and empty-state panel.
+              Import this module through <code>climb_web.ex</code> if it becomes
+              broadly used.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/climb_web/live/dev/component_gallery_live.ex</code></h3>
+            <p>
+              Render the design system with static example data. Use
+              <code>Layouts.app</code>, pass <code>current_scope</code>, and
+              avoid database dependencies.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>lib/climb_web/router.ex</code></h3>
+            <p>
+              Add the gallery route under development-only routes in the
+              <code>:browser</code> pipeline.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag warn">Update carefully</span>
+            <h3><code>assets/css/app.css</code></h3>
+            <p>
+              Keep Tailwind v4 import syntax intact. Add only small global
+              tokens or base rules that cannot be expressed cleanly in component
+              classes. Do not use <code>@apply</code>.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Component Inventory</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Components</th>
+              <th>States to Render in Gallery</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Primitives</td>
+              <td>
+                Button, icon button, text link, badge, alert, loading indicator,
+                divider, table, modal shell.
+              </td>
+              <td>
+                Default, primary, secondary, destructive, ghost, disabled,
+                loading, focus-visible, narrow mobile.
+              </td>
+            </tr>
+            <tr>
+              <td>Forms</td>
+              <td>
+                Text input, email input, password input, textarea, select,
+                checkbox, field error, form actions.
+              </td>
+              <td>
+                Empty, populated, required, disabled, validation error,
+                explanatory hint, submit loading.
+              </td>
+            </tr>
+            <tr>
+              <td>Navigation</td>
+              <td>
+                App shell, top navigation, mobile navigation, tab bar,
+                breadcrumb-like back link.
+              </td>
+              <td>
+                Anonymous, authenticated, active tab, compact viewport, long gym
+                names.
+              </td>
+            </tr>
+            <tr>
+              <td>Climbing domain</td>
+              <td>
+                Gym header, route card, grade badge, color swatch, ascent
+                summary, stat block.
+              </td>
+              <td>
+                Active route, archived route, hard grade, missing image,
+                high-volume stats, empty stats.
+              </td>
+            </tr>
+            <tr>
+              <td>Social domain</td>
+              <td>
+                Feed item, post composer shell, comment row, empty feed, member
+                avatar stack.
+              </td>
+              <td>
+                Normal post, ascent post, image placeholder, deleted comment,
+                empty feed, moderation action visibility.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Visual Direction</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag ok">Tone</span>
+            <h3>Playful climbing community</h3>
+            <p>
+              The app should feel social-first, playful, and community-driven:
+              more like a climbing club feed than a gym operations dashboard.
+              Admin tools still need to be clear and efficient, but the default
+              product feeling should be people, routes, sends, comments, and
+              shared gym activity.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Palette</span>
+            <h3>Dark social base, bold route accents</h3>
+            <p>
+              Treat dark mode as the primary design target. Use deep neutral
+              surfaces, readable off-white text, and restrained borders, then
+              reserve strong color for grade pills, route tape, active actions,
+              and social feedback. Light mode can exist, but it should be
+              derived after the dark experience feels right.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Shape</span>
+            <h3>Compact and readable</h3>
+            <p>
+              Cards should stay at 8px radius or less. Feed and admin surfaces
+              should be dense enough to scan repeatedly, with clear section
+              rhythm and no card-inside-card layouts.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Motion</span>
+            <h3>Small feedback only</h3>
+            <p>
+              Use subtle transitions for hover, focus, loading, and pressed
+              states. Avoid decorative motion until there is a clear product
+              purpose.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Product Experience Defaults</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Decision</th>
+              <th>Default</th>
+              <th>Design Consequence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Primary product mode</td>
+              <td>Social tool</td>
+              <td>
+                Lead with home feed, gym activity, route posts, comments,
+                member identity, and ascent celebrations. Management surfaces
+                should support the community loop without becoming the visual
+                center of the app.
+              </td>
+            </tr>
+            <tr>
+              <td>Mood</td>
+              <td>Playful and community-driven</td>
+              <td>
+                Use friendly copy, visible member avatars, lively grade chips,
+                small celebratory states, and softer interaction details. Keep
+                the layout polished enough to avoid feeling childish.
+              </td>
+            </tr>
+            <tr>
+              <td>Media balance</td>
+              <td>50% images, 50% text/data</td>
+              <td>
+                Feed items and route cards should pair meaningful photos with
+                readable captions, comments, grade metadata, and gym context.
+                Avoid both photo-only masonry and text-heavy forum layouts.
+              </td>
+            </tr>
+            <tr>
+              <td>Primary theme</td>
+              <td>Dark mode first</td>
+              <td>
+                Design and review the gallery in dark mode first. Use light mode
+                as a supported alternate theme after dark surfaces, contrast,
+                hover states, media treatment, and validation states are proven.
+              </td>
+            </tr>
+            <tr>
+              <td>Grade treatment</td>
+              <td>Bold grade markers</td>
+              <td>
+                Grades should be immediate visual anchors: strong pills,
+                swatches, or tape-like tags on route cards and ascent posts.
+                They can carry more color and contrast than normal metadata.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Reference-Inspired Design Principles</h2>
+        <p>
+          The reference images point toward a polished editorial-product
+          language: generous white space, strong image-led modules, soft panels,
+          crisp typography, and a few high-energy accents. Climb should borrow
+          that layout confidence without copying the fashion, fitness, or AI
+          startup color palettes directly.
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Principle</th>
+              <th>How to Apply It to Climb</th>
+              <th>What to Avoid</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Editorial grid</td>
+              <td>
+                Use asymmetric but orderly layouts: a wide feed column, compact
+                side panels for gym stats or active problems, and image-forward
+                route cards. Let modules vary in span and emphasis while staying
+                aligned to a clear grid.
+              </td>
+              <td>
+                A uniform wall of identical cards, nested cards, or dashboard
+                panels that all have the same visual weight.
+              </td>
+            </tr>
+            <tr>
+              <td>Soft product surfaces</td>
+              <td>
+                Prefer off-white page backgrounds, white panels, subtle borders,
+                quiet shadows, and 8px-or-less radii. Panels should feel tactile
+                but still practical for repeated feed and admin use.
+              </td>
+              <td>
+                Heavy drop shadows, glossy gradients, large rounded blobs, or
+                decorative backgrounds that compete with climbing content.
+              </td>
+            </tr>
+            <tr>
+              <td>Image-led hierarchy</td>
+              <td>
+                Give route photos, gym cover images, and ascent media meaningful
+                space, but pair each image with enough text and metadata to make
+                the community context obvious. Use consistent aspect ratios so
+                the feed remains stable while still feeling visual and social.
+              </td>
+              <td>
+                Tiny thumbnails for content that should be inspected, dark
+                overlays that make climbing holds hard to see, or image crops
+                that hide the route.
+              </td>
+            </tr>
+            <tr>
+              <td>Confident type scale</td>
+              <td>
+                Use large, clean headings for page identity and compact labels
+                for metadata such as grade, wall, setter, gym, and climb date.
+                Keep letter spacing at zero and avoid viewport-scaled text.
+              </td>
+              <td>
+                Marketing-sized headings inside small cards, negative letter
+                spacing, or dense metadata that wraps unpredictably on mobile.
+              </td>
+            </tr>
+            <tr>
+              <td>Accent discipline</td>
+              <td>
+                Use one vivid action accent, one playful community accent, and
+                bold route grade treatments as domain-specific anchors. Most
+                large surfaces should remain neutral so grades, holds, people,
+                and user media stand out.
+              </td>
+              <td>
+                Coloring every panel, relying on a single hue family, or letting
+                neon accents dominate reading-heavy screens.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Recommended Palette</h2>
+        <p>
+          Best initial direction: dark volcanic rock surfaces with chalk text,
+          alpine teal primary actions, electric lime for playful community
+          highlights, and warm clay as a secondary climbing accent. This gives
+          the app a night-session climbing feel while keeping grades and user
+          media vivid.
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Color</th>
+              <th>Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Page background</td>
+              <td><code>#0E1117</code> volcanic ink</td>
+              <td>Primary dark app background.</td>
+            </tr>
+            <tr>
+              <td>Panel surface</td>
+              <td><code>#171C24</code> basalt panel</td>
+              <td>Cards, forms, feed items, modals, and admin surfaces.</td>
+            </tr>
+            <tr>
+              <td>Primary text</td>
+              <td><code>#F4F7F2</code> chalk white</td>
+              <td>Headings, body text, and primary navigation on dark surfaces.</td>
+            </tr>
+            <tr>
+              <td>Muted text and borders</td>
+              <td><code>#9AA4B2</code> slate / <code>#2A323D</code> soft line</td>
+              <td>Metadata, dividers, disabled states, and panel borders.</td>
+            </tr>
+            <tr>
+              <td>Primary action</td>
+              <td><code>#14B8A6</code> alpine teal</td>
+              <td>Main buttons, active navigation, links, and selected states.</td>
+            </tr>
+            <tr>
+              <td>High-energy accent</td>
+              <td><code>#D9FF3F</code> lime flash</td>
+              <td>
+                Rare highlights: new route markers, active filter chips, small
+                progress indicators, playful reactions, and celebratory ascent
+                moments.
+              </td>
+            </tr>
+            <tr>
+              <td>Secondary accent</td>
+              <td><code>#E07A5F</code> warm clay</td>
+              <td>Warnings, route-setting notes, and warm climbing context.</td>
+            </tr>
+            <tr>
+              <td>Grade anchors</td>
+              <td>
+                <code>#60A5FA</code> blue, <code>#A78BFA</code> purple,
+                <code>#F472B6</code> pink, <code>#FACC15</code> yellow,
+                <code>#FB7185</code> red
+              </td>
+              <td>
+                Bold grade pills, route tape indicators, and boulder problem
+                difficulty markers. These should be visually stronger than
+                normal metadata.
+              </td>
+            </tr>
+            <tr>
+              <td>Success and danger</td>
+              <td><code>#22C55E</code> green / <code>#F04438</code> red</td>
+              <td>System feedback, validation, moderation, and destructive actions.</td>
+            </tr>
+            <tr>
+              <td>Light mode fallback</td>
+              <td>
+                <code>#F4F5EF</code> limestone, <code>#FFFFFF</code> chalk,
+                <code>#111827</code> ink
+              </td>
+              <td>
+                Secondary theme derived from the dark system after the dark
+                gallery is approved.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>DaisyUI Transition Plan</h2>
+        <div class="flow">
+          <div class="step">
+            <strong>1. Inventory usage</strong>
+            Search for Daisy classes such as <code>btn</code>,
+            <code>input</code>, <code>alert</code>, <code>card</code>,
+            <code>navbar</code>, and <code>table</code>.
+          </div>
+          <div class="step">
+            <strong>2. Replace app shell</strong>
+            Remove Daisy classes from <code>Layouts.app</code> and the theme
+            toggle while preserving behavior.
+          </div>
+          <div class="step">
+            <strong>3. Replace core components</strong>
+            Restyle <code>.button</code>, <code>.input</code>,
+            <code>.flash</code>, <code>.table</code>, and <code>.list</code>
+            with explicit Tailwind classes.
+          </div>
+          <div class="step">
+            <strong>4. Build product components</strong>
+            Add route, feed, grade, gym, and stat components using realistic
+            sample data.
+          </div>
+          <div class="step">
+            <strong>5. Render gallery</strong>
+            Add <code>/dev/components</code> and check desktop and mobile
+            widths.
+          </div>
+          <div class="step">
+            <strong>6. Remove dependency later</strong>
+            Once no templates depend on Daisy classes, remove Daisy plugin
+            imports from <code>app.css</code> in a separate cleanup pass.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Execution Steps</h2>
+        <ol>
+          <li>
+            Inspect all current Daisy class usage and decide which generated
+            components need compatibility-preserving restyles.
+          </li>
+          <li>
+            Create or update component functions before changing feature
+            templates, so the gallery can be the source of truth.
+          </li>
+          <li>
+            Add the development-only LiveView route under the existing
+            <code>/dev</code> browser scope and explain that placement in the
+            implementation summary.
+          </li>
+          <li>
+            Convert the generated home/auth surfaces only enough to avoid visual
+            clashes with the new shell. Do not build real product workflows in
+            Task 3.
+          </li>
+          <li>
+            Add focused tests that prove the gallery route is available in
+            development routes and that key component IDs/selectors render.
+          </li>
+          <li>
+            Run <code>mix precommit</code> after all Task 3 changes and fix any
+            compile, formatting, or test failures.
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Verification Matrix</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>Command or Method</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Format</td>
+              <td><code>mix format --check-formatted</code></td>
+              <td>No formatting changes are required.</td>
+            </tr>
+            <tr>
+              <td>Compile</td>
+              <td><code>mix compile --warnings-as-errors</code></td>
+              <td>
+                Components, LiveView, routes, and HEEx templates compile without
+                warnings.
+              </td>
+            </tr>
+            <tr>
+              <td>Tests</td>
+              <td><code>mix test</code></td>
+              <td>
+                Existing auth/controller tests still pass; new gallery/component
+                smoke tests pass.
+              </td>
+            </tr>
+            <tr>
+              <td>Manual gallery review</td>
+              <td>
+                Visit <code>http://localhost:4000/dev/components</code> with the
+                Phoenix server running in development.
+              </td>
+              <td>
+                Component states render without overlap, clipped text, broken
+                icons, or unreadable contrast at desktop and mobile widths.
+              </td>
+            </tr>
+            <tr>
+              <td>Final gate</td>
+              <td><code>mix precommit</code></td>
+              <td>Project precommit alias passes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Risks</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Risk</th>
+              <th>Impact</th>
+              <th>Mitigation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Overbuilding the design system</td>
+              <td>
+                Task 3 could become a design project instead of an implementation
+                foundation.
+              </td>
+              <td>
+                Build only the components needed by the MVP plan and add more
+                only when a later feature task proves the need.
+              </td>
+            </tr>
+            <tr>
+              <td>Daisy classes lingering in generated auth pages</td>
+              <td>
+                The app may look inconsistent even after new product components
+                are styled.
+              </td>
+              <td>
+                Restyle shared components first so generated auth templates
+                improve without broad page rewrites.
+              </td>
+            </tr>
+            <tr>
+              <td>Dev route accidentally exposed</td>
+              <td>
+                Internal component examples could be reachable in production.
+              </td>
+              <td>
+                Place the route only inside the existing
+                <code>:dev_routes</code> compile-time block and include a route
+                test or compile-time check.
+              </td>
+            </tr>
+            <tr>
+              <td>Current scope assign errors</td>
+              <td>
+                LiveView templates may fail if <code>current_scope</code> is not
+                available or not passed to <code>Layouts.app</code>.
+              </td>
+              <td>
+                Keep the gallery in the <code>:browser</code> pipeline and begin
+                LiveView templates with
+                <code>&lt;Layouts.app flash={@flash} current_scope={@current_scope}&gt;</code>.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Acceptance Criteria</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Design decision is accepted when</strong>
+            New app-facing UI does not depend on Daisy component classes, and
+            any remaining Daisy usage is documented as generated legacy styling
+            to be removed after replacement.
+          </li>
+          <li>
+            <strong>Gallery is accepted when</strong>
+            <code>/dev/components</code> renders core and product components
+            with realistic sample data, normal states, empty states, loading
+            states, disabled states, and validation states.
+          </li>
+          <li>
+            <strong>Components are accepted when</strong>
+            Buttons, forms, inputs, alerts, badges, tabs, empty states, modal
+            shell, route cards, feed items, stat blocks, and app shell are
+            reusable Phoenix components or clearly reusable HEEx patterns.
+          </li>
+          <li>
+            <strong>Routing is accepted when</strong>
+            The component gallery is inside the development-only
+            <code>/dev</code> browser scope, with no authentication requirement
+            and no production route exposure.
+          </li>
+          <li>
+            <strong>Task 3 is complete when</strong>
+            <code>mix precommit</code> passes after implementation and the
+            gallery has been manually reviewed at desktop and mobile widths.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Implementation Notes</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Use Phoenix components as the boundary</strong>
+            The user of the codebase should call <code>&lt;.button&gt;</code>,
+            <code>&lt;.input&gt;</code>, and Climb-specific helpers rather than
+            remembering long repeated class strings in every feature template.
+          </li>
+          <li>
+            <strong>Keep Tailwind explicit</strong>
+            Use Tailwind utility classes directly in HEEx components and small
+            custom CSS only where utilities are not the right tool. Do not use
+            <code>@apply</code>.
+          </li>
+          <li>
+            <strong>Use icons through <code>&lt;.icon&gt;</code></strong>
+            Use the generated hero icon component from
+            <code>CoreComponents</code>. Do not import Heroicons modules or add
+            separate icon dependencies.
+          </li>
+          <li>
+            <strong>Prefer boring structure and specific details</strong>
+            The unique feel should come from climbing-specific components,
+            spacing, typography, route colors, and interaction states, not from
+            decorative backgrounds or generic UI kits.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
