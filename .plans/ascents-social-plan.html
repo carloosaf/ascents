@@ -280,7 +280,7 @@
             <tr>
               <td>Social feed</td>
               <td>
-                Members can publish text and media posts inside subscribed gyms;
+                Members can publish text and media posts inside joined gyms;
                 posts may optionally create an ascent record.
               </td>
               <td>Voting, awards, private messages, algorithmic feed ranking.</td>
@@ -382,11 +382,13 @@
             </tr>
             <tr>
               <td>PROF-01</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Users have a public climbing profile.</td>
               <td>
                 Profile stores username, display name, optional bio, and avatar
-                object key or URL; username is unique and used in URLs.
+                object key or URL; username is unique and used in URLs. Task 4
+                added profile fields, username registration support,
+                authenticated profile editing, and username-based member pages.
               </td>
             </tr>
             <tr>
@@ -417,10 +419,12 @@
             <tr>
               <td>GYM-02</td>
               <td><span class="status planned">Planned</span></td>
-              <td>Users can subscribe to and leave gyms.</td>
+              <td>Users can join/follow and leave gym communities.</td>
               <td>
-                Membership is unique per user and gym; subscribed gyms appear in
-                the user's home feed scope.
+                Community membership is unique per user and gym. It behaves like
+                joining or following a subreddit, does not represent real-world
+                gym membership or payment, and joined gyms appear in the user's
+                home feed scope.
               </td>
             </tr>
             <tr>
@@ -615,7 +619,7 @@
           <article class="panel">
             <h3>LiveView surfaces</h3>
             <ul>
-              <li>Home feed for subscribed gyms.</li>
+              <li>Home feed for joined gyms.</li>
               <li>Gym page with posts, route list, and admin tools.</li>
               <li>Boulder problem detail page with ascents and comments.</li>
               <li>Create post modal with ascent mode toggle.</li>
@@ -626,7 +630,7 @@
             <h3>Policies</h3>
             <ul>
               <li>Only gym admins create or archive boulder problems.</li>
-              <li>Members can post in subscribed gyms.</li>
+              <li>Members can post in joined gyms.</li>
               <li>Users can edit their own posts for a short window.</li>
               <li>Admins can moderate posts in their gyms.</li>
             </ul>
@@ -819,7 +823,7 @@
             </tr>
             <tr>
               <td>4</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Profile extension</td>
               <td>
                 Extend generated users with username, display name, bio, and
@@ -837,11 +841,14 @@
             </tr>
             <tr>
               <td>5</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Gym context</td>
               <td>
                 Implement <code>Ascents.Gyms</code> with gyms and memberships.
                 Creating a gym creates the owner membership transactionally.
+                Implemented as subreddit-style community membership: users can
+                join/follow gyms in-app without implying payment or real-world
+                gym membership.
               </td>
               <td>
                 Context tests cover create, update, join, leave, duplicate
@@ -866,7 +873,7 @@
               <td><span class="status planned">Planned</span></td>
               <td>Gym LiveViews</td>
               <td>
-                Add pages for gym creation, gym detail, subscription controls,
+                Add pages for gym creation, gym detail, join/follow controls,
                 and admin settings.
               </td>
               <td>
@@ -934,7 +941,7 @@
               <td><span class="status planned">Planned</span></td>
               <td>Feed LiveViews</td>
               <td>
-                Add gym feed, home feed for subscribed gyms, post creation, and
+                Add gym feed, home feed for joined gyms, post creation, and
                 comment interaction.
               </td>
               <td>
@@ -1026,7 +1033,7 @@
           <tbody>
             <tr>
               <td>Gym visibility</td>
-              <td>Publicly readable gyms; posting requires membership.</td>
+              <td>Publicly readable gyms; posting requires joining the gym community.</td>
               <td>Private gyms or invite-only communities require extra access rules.</td>
             </tr>
             <tr>

@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ascents Task 5 Gym Context Plan</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #18212f;
+        --muted: #617084;
+        --line: #d9e0e8;
+        --panel: #f7f9fb;
+        --accent: #167267;
+        --accent-strong: #0d4f48;
+        --warn: #9a5a00;
+        --risk: #a43737;
+        --ok: #34714d;
+        --paper: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 32px;
+        padding-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 4rem);
+        max-width: 900px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 1.55rem;
+        margin-top: 36px;
+        padding-top: 28px;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      code {
+        background: #eef3f5;
+        border-radius: 4px;
+        font-size: 0.94em;
+        padding: 2px 5px;
+      }
+
+      .status {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        white-space: nowrap;
+      }
+
+      .status.planned {
+        background: #eef3f5;
+        color: #4d5d70;
+      }
+
+      .status.ready {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .status.blocked {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 1.12rem;
+        max-width: 860px;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 16px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 18px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .tag {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 10px;
+        padding: 3px 9px;
+        text-transform: uppercase;
+      }
+
+      .tag.ok {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .tag.warn {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .tag.risk {
+        background: #fae8e8;
+        color: var(--risk);
+      }
+
+      .data-table {
+        border-collapse: collapse;
+        margin-top: 14px;
+        width: 100%;
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .data-table th {
+        background: #eef3f5;
+      }
+
+      .flow {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-top: 14px;
+      }
+
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      .step strong {
+        color: var(--accent-strong);
+        display: block;
+      }
+
+      .note-list {
+        margin-top: 14px;
+        padding-left: 0;
+      }
+
+      .note-list li {
+        border-bottom: 1px solid var(--line);
+        list-style: none;
+        margin: 0;
+        padding: 14px 0;
+      }
+
+      .note-list li:first-child {
+        border-top: 1px solid var(--line);
+      }
+
+      .note-list strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      @media (max-width: 680px) {
+        main {
+          padding: 32px 18px 56px;
+        }
+
+        .data-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Task 5 Gym Context Plan</h1>
+        <p class="lede">
+          Add the first gym domain boundary: gyms as communities, memberships as
+          subreddit-style join records, and transactional owner assignment when
+          a logged-in user creates a gym. A membership means "I follow or
+          participate in this gym community"; it does not represent payment,
+          commercial subscription, or a real-world gym membership. This task
+          should produce reliable schemas, migrations, context APIs, fixtures,
+          and tests before any gym LiveView pages are built.
+        </p>
+        <p class="meta">
+          Source plan: <code>.plans/ascents-social-plan.html</code>. Previous
+          implementation plan: <code>.plans/task-4-profile-extension-plan.html</code>.
+          Target stack: Phoenix 1.8, Ecto, PostgreSQL, generated auth scopes.
+        </p>
+      </header>
+
+      <section>
+        <h2>Decision</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Recommendation</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Should Task 5 add gym LiveViews?</td>
+              <td><span class="status blocked">No</span></td>
+              <td>
+                The general plan separates Task 5 Gym context from Task 7 Gym
+                LiveViews. Keep this pass focused on migrations, schemas,
+                context functions, and tests so the data model is stable before
+                UI workflows depend on it.
+              </td>
+            </tr>
+            <tr>
+              <td>What does a gym membership mean?</td>
+              <td><span class="status ready">Community join</span></td>
+              <td>
+                Treat it like joining or following a subreddit. It controls
+                feed scope, posting eligibility, and community roles inside the
+                app only. It must not imply the user pays the gym, has a real
+                membership at the physical facility, or receives any offline
+                access rights.
+              </td>
+            </tr>
+            <tr>
+              <td>Should gym creation require an authenticated scope?</td>
+              <td><span class="status ready">Yes</span></td>
+              <td>
+                Every gym community needs a creator and owner join record.
+                Public context functions that mutate gyms or memberships should
+                accept <code>%Ascents.Accounts.Scope{}</code> first and derive
+                the acting user from <code>current_scope.user</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>Should the MVP allow unverified gyms?</td>
+              <td><span class="status planned">Yes, with warning</span></td>
+              <td>
+                The general plan calls out gym impersonation as a risk but
+                still allows creator-owned gyms in the MVP. Add
+                <code>verified_at</code> now as a nullable future hook, but do
+                not build claim review or ownership transfer flows in this task.
+              </td>
+            </tr>
+            <tr>
+              <td>Should slugs be entered manually or generated from names?</td>
+              <td><span class="status ready">Generate by default</span></td>
+              <td>
+                A generated slug keeps create flows simple and gives Task 7 a
+                readable URL target. Accept an explicit slug only from trusted
+                server-side code or admin paths later; do not let arbitrary
+                browser params override a normalized slug in the initial create
+                path.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Scope</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Status</th>
+              <th>Goal</th>
+              <th>Not Included</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Gym schema</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Add <code>gyms</code> with name, slug, description, location,
+                grade scale, creator, and verification placeholder fields.
+              </td>
+              <td>
+                Gym claim review, paid plans, public search ranking, route
+                counts, or media upload fields beyond future-proof references.
+              </td>
+            </tr>
+            <tr>
+              <td>Membership schema</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Add <code>gym_memberships</code> with unique user/gym pairs,
+                community roles, join timestamps, and foreign-key constraints.
+              </td>
+              <td>
+                Payment subscriptions, physical gym membership status,
+                invitations, bans, pending requests, notification preferences,
+                or member profile customization per gym.
+              </td>
+            </tr>
+            <tr>
+              <td>Context API</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Implement <code>Ascents.Gyms</code> create, update, lookup,
+                join, leave, and membership queries with scoped mutating
+                functions.
+              </td>
+              <td>
+                Full authorization helper module, moderation policies, or
+                route/problem management. Task 6 owns explicit capability
+                helpers.
+              </td>
+            </tr>
+            <tr>
+              <td>Tests and fixtures</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Cover transactional owner creation, slug uniqueness, membership
+                uniqueness, joining, leaving, and protected mutation behavior.
+              </td>
+              <td>
+                LiveView tests for forms and navigation. Those belong with Task
+                7 when routes and templates exist.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Route Placement</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Scope and Pipeline</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="status blocked">None in Task 5</span></td>
+              <td>No router change should be made for this task.</td>
+              <td>
+                Task 5 is context-only. Gym creation, detail, join/follow, and
+                admin settings routes are explicitly Task 7 work. When Task 7
+                adds them, they should live in the authenticated
+                <code>scope "/", AscentsWeb</code> using
+                <code>pipe_through [:browser, :require_authenticated_user]</code>
+                because creating, joining, leaving, and editing gyms all require
+                <code>@current_scope</code>.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Target Files</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag ok">Generate</span>
+            <h3><code>priv/repo/migrations/*_create_gyms_and_memberships.exs</code></h3>
+            <p>
+              Use <code>mix ecto.gen.migration create_gyms_and_memberships</code>
+              to create gyms, memberships, indexes, foreign keys, role checks,
+              slug uniqueness, and membership uniqueness.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents/gyms/gym.ex</code></h3>
+            <p>
+              Define the gym schema and changeset. Keep creator assignment
+              programmatic; do not cast <code>creator_id</code> from browser
+              params.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents/gyms/gym_membership.ex</code></h3>
+            <p>
+              Define membership fields, allowed role values, associations, and
+              constraints for unique membership and valid roles.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents/gyms.ex</code></h3>
+            <p>
+              Add the public context API. Mutations should accept
+              <code>current_scope</code> first and use transactions where a gym
+              and owner membership must be created together.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>test/ascents/gyms_test.exs</code></h3>
+            <p>
+              Add focused context tests for creation, update, lookup, joins,
+              leaves, duplicate memberships, constraints, and unauthenticated
+              scope handling.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>test/support/fixtures/accounts_fixtures.ex</code></h3>
+            <p>
+              Reuse profile-ready users and scopes when building gym fixtures.
+              Add gym fixture helpers here only if the project is still keeping
+              fixture helpers centralized.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create or update</span>
+            <h3><code>test/support/fixtures/gyms_fixtures.ex</code></h3>
+            <p>
+              Prefer a dedicated fixture module once gym data grows beyond a
+              small helper. Keep fixture names explicit, such as
+              <code>gym_fixture/1</code> and <code>membership_fixture/2</code>.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Data Model</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Table</th>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Validation and Constraints</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>gyms</code></td>
+              <td><code>name</code></td>
+              <td><code>:string</code></td>
+              <td>Required; 2-120 characters; trimmed before slug generation.</td>
+            </tr>
+            <tr>
+              <td><code>gyms</code></td>
+              <td><code>slug</code></td>
+              <td><code>:string</code></td>
+              <td>
+                Required; lowercase letters, numbers, and hyphens; unique index.
+                Generate from name and add a collision suffix when needed.
+              </td>
+            </tr>
+            <tr>
+              <td><code>gyms</code></td>
+              <td><code>description</code></td>
+              <td><code>:string</code></td>
+              <td>Optional; max 500 characters for MVP gym headers.</td>
+            </tr>
+            <tr>
+              <td><code>gyms</code></td>
+              <td><code>location</code></td>
+              <td><code>:string</code></td>
+              <td>
+                Optional; max 160 characters. Do not model full postal addresses
+                until search, maps, or verification require it.
+              </td>
+            </tr>
+            <tr>
+              <td><code>gyms</code></td>
+              <td><code>grade_scale</code></td>
+              <td><code>:string</code></td>
+              <td>
+                Required; default <code>v_scale</code>; allow only
+                <code>v_scale</code> and <code>french</code> for now.
+              </td>
+            </tr>
+            <tr>
+              <td><code>gyms</code></td>
+              <td><code>creator_id</code></td>
+              <td><code>references(:users)</code></td>
+              <td>
+                Required foreign key. Set from <code>current_scope.user</code>,
+                never from cast params.
+              </td>
+            </tr>
+            <tr>
+              <td><code>gyms</code></td>
+              <td><code>verified_at</code></td>
+              <td><code>:utc_datetime</code></td>
+              <td>
+                Nullable future hook for official gym verification. No MVP logic
+                should depend on it yet.
+              </td>
+            </tr>
+            <tr>
+              <td><code>gym_memberships</code></td>
+              <td><code>user_id</code>, <code>gym_id</code></td>
+              <td><code>references</code></td>
+              <td>
+                Required foreign keys with a unique composite index on
+                <code>[:user_id, :gym_id]</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>gym_memberships</code></td>
+              <td><code>role</code></td>
+              <td><code>:string</code></td>
+              <td>
+                Required; default <code>member</code>; allow
+                <code>owner</code>, <code>admin</code>, <code>mod</code>, and
+                <code>member</code>. Add a database check constraint if the
+                migration style stays simple.
+              </td>
+            </tr>
+            <tr>
+              <td><code>gym_memberships</code></td>
+              <td><code>joined_at</code></td>
+              <td><code>:utc_datetime</code></td>
+              <td>
+                Required; set server-side during create. Useful for future
+                sorting and community join history without adding an audit table.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Context API</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Function</th>
+              <th>Purpose</th>
+              <th>Critical Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>change_gym/2</code></td>
+              <td>Build changesets for future create and edit forms.</td>
+              <td>
+                Return an <code>Ecto.Changeset</code>. Do not require a scope
+                for non-mutating form preview work.
+              </td>
+            </tr>
+            <tr>
+              <td><code>create_gym/2</code></td>
+              <td>Create a gym and owner community membership.</td>
+              <td>
+                Accept <code>current_scope</code> first, require a signed-in
+                user, generate a slug, insert the gym and owner community join
+                record in one <code>Ecto.Multi</code> transaction, and return
+                errors as changesets where possible.
+              </td>
+            </tr>
+            <tr>
+              <td><code>update_gym/3</code></td>
+              <td>Update gym metadata.</td>
+              <td>
+                Accept <code>current_scope</code>, the gym, and attrs. For Task
+                5, allow the creator or owner membership to update; Task 6 can
+                replace the private check with explicit capability helpers.
+              </td>
+            </tr>
+            <tr>
+              <td><code>get_gym!/1</code></td>
+              <td>Load a gym by ID for internal operations and tests.</td>
+              <td>
+                Preload creator or memberships only when the caller needs them.
+                Avoid broad default preloads that hide N+1 problems later.
+              </td>
+            </tr>
+            <tr>
+              <td><code>get_gym_by_slug/1</code></td>
+              <td>Load a gym for future slug-based pages.</td>
+              <td>
+                Return <code>nil</code> for blank or unknown slugs. Normalize
+                slug input before querying.
+              </td>
+            </tr>
+            <tr>
+              <td><code>list_gyms/1</code></td>
+              <td>Support future browse and admin surfaces.</td>
+              <td>
+                Keep the first version deterministic, such as alphabetical or
+                newest-first ordering. Do not add full text search yet.
+              </td>
+            </tr>
+            <tr>
+              <td><code>join_gym/2</code></td>
+              <td>Join or follow a gym community for the signed-in user.</td>
+              <td>
+                Accept <code>current_scope</code> first. Create a
+                <code>member</code> role join record, enforce uniqueness in the
+                database, and surface duplicate joins as a predictable error
+                instead of crashing.
+              </td>
+            </tr>
+            <tr>
+              <td><code>leave_gym/2</code></td>
+              <td>Leave or unfollow a gym community.</td>
+              <td>
+                Do not allow the only owner to leave without a transfer path.
+                Return a domain error that Task 7 can render cleanly.
+              </td>
+            </tr>
+            <tr>
+              <td><code>get_membership/2</code></td>
+              <td>Check whether a user belongs to a gym.</td>
+              <td>
+                Return the membership or <code>nil</code>. This is enough for
+                Task 5 tests and gives Task 6 a small base for capability checks.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Execution Steps</h2>
+        <div class="flow">
+          <div class="step">
+            <strong>1. Generate migration</strong>
+            Run <code>mix ecto.gen.migration create_gyms_and_memberships</code>
+            and define both tables, indexes, foreign keys, and role checks.
+          </div>
+          <div class="step">
+            <strong>2. Add schemas</strong>
+            Create <code>Gym</code> and <code>GymMembership</code> schemas with
+            changesets, associations, and database-backed constraints.
+          </div>
+          <div class="step">
+            <strong>3. Implement context</strong>
+            Add <code>Ascents.Gyms</code> functions for create, update, lookup,
+            join, leave, and membership checks.
+          </div>
+          <div class="step">
+            <strong>4. Add slug helper</strong>
+            Normalize gym names into unique slugs without adding a dependency.
+            Handle duplicate names deterministically.
+          </div>
+          <div class="step">
+            <strong>5. Add fixtures</strong>
+            Provide profile-ready users, scopes, gyms, and memberships for
+            context tests and future LiveView tests.
+          </div>
+          <div class="step">
+            <strong>6. Add tests</strong>
+            Cover success paths, invalid changesets, uniqueness constraints,
+            transactional owner creation, join/leave behavior, and scope errors.
+          </div>
+          <div class="step">
+            <strong>7. Verify</strong>
+            Run focused tests first, then <code>mix precommit</code> as the
+            final gate.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Verification Matrix</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>Command or Method</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Migration and constraints</td>
+              <td><code>mix test test/ascents/gyms_test.exs</code></td>
+              <td>
+                Invalid gym attributes fail, duplicate slugs fail cleanly,
+                duplicate memberships fail cleanly, and role constraints are
+                enforced.
+              </td>
+            </tr>
+            <tr>
+              <td>Transactional create</td>
+              <td><code>mix test test/ascents/gyms_test.exs</code></td>
+              <td>
+                Creating a gym inserts exactly one owner membership for
+                <code>current_scope.user</code>; failed gym inserts do not leave
+                orphan memberships.
+              </td>
+            </tr>
+            <tr>
+              <td>Membership flows</td>
+              <td><code>mix test test/ascents/gyms_test.exs</code></td>
+              <td>
+                Users can join and leave gyms, cannot create duplicate
+                memberships, and cannot leave a gym as its only owner.
+              </td>
+            </tr>
+            <tr>
+              <td>Scope handling</td>
+              <td><code>mix test test/ascents/gyms_test.exs</code></td>
+              <td>
+                Mutating functions reject missing or anonymous scopes and never
+                accept user IDs from params to choose the actor.
+              </td>
+            </tr>
+            <tr>
+              <td>Format</td>
+              <td><code>mix format --check-formatted</code></td>
+              <td>No formatting changes are required.</td>
+            </tr>
+            <tr>
+              <td>Compile</td>
+              <td><code>mix compile --warnings-as-errors</code></td>
+              <td>
+                Migrations, schemas, context modules, fixtures, and tests compile
+                without warnings.
+              </td>
+            </tr>
+            <tr>
+              <td>Final gate</td>
+              <td><code>mix precommit</code></td>
+              <td>Project precommit alias passes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Risks</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Risk</th>
+              <th>Impact</th>
+              <th>Mitigation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Gym impersonation</td>
+              <td>
+                Users can create official-looking gym communities before the
+                real gym owner claims them.
+              </td>
+              <td>
+                Keep gyms creator-owned and visibly unverified for now. Store
+                <code>verified_at</code> as a future hook, but avoid UI claims
+                that imply official ownership until a verification flow exists.
+              </td>
+            </tr>
+            <tr>
+              <td>Weak ownership invariant</td>
+              <td>
+                If the only owner can leave, a gym can become impossible to
+                administer.
+              </td>
+              <td>
+                Block leaving when the user is the only owner. Ownership
+                transfer can be added when admin settings are implemented.
+              </td>
+            </tr>
+            <tr>
+              <td>Slug race conditions</td>
+              <td>
+                Two users creating gyms with the same name at the same time can
+                collide even if the application checked first.
+              </td>
+              <td>
+                Rely on a unique database index and retry slug generation once
+                or return a clean changeset error. Do not trust application-only
+                uniqueness checks.
+              </td>
+            </tr>
+            <tr>
+              <td>Role model churn</td>
+              <td>
+                Owner, admin, mod, and member roles may be too much before the
+                UI can expose them.
+              </td>
+              <td>
+                Store the small role vocabulary now because later tasks need
+                admin and moderation boundaries. Keep behavior minimal until
+                Task 6 and Task 7.
+              </td>
+            </tr>
+            <tr>
+              <td>Authorization spread</td>
+              <td>
+                Adding ad hoc role checks in Task 5 can make Task 6 harder to
+                centralize.
+              </td>
+              <td>
+                Use small private checks only where needed for context safety,
+                then promote them into explicit authorization helpers in Task 6.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Acceptance Criteria</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Data model is accepted when</strong>
+            Gyms and memberships exist with foreign keys, unique slugs, unique
+            user/gym memberships, role validation, and a nullable verification
+            hook.
+          </li>
+          <li>
+            <strong>Gym creation is accepted when</strong>
+            A signed-in user's scope creates a gym and exactly one owner
+            community membership transactionally, with no browser-controlled
+            <code>creator_id</code> or <code>user_id</code> assignment.
+          </li>
+          <li>
+            <strong>Community memberships are accepted when</strong>
+            A signed-in user can join/follow and leave/unfollow gym communities,
+            duplicate joins are rejected, and the only owner cannot leave.
+          </li>
+          <li>
+            <strong>Tests are accepted when</strong>
+            Context tests cover create, update, join, leave, duplicate
+            membership prevention, slug uniqueness, invalid roles, and scoped
+            mutation behavior.
+          </li>
+          <li>
+            <strong>Task 5 is complete when</strong>
+            <code>mix precommit</code> passes after implementation.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Open Questions</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Membership terminology</strong>
+            The code can use <code>gym_memberships</code>, but user-facing copy
+            should prefer join, joined, follow, or community member. Avoid
+            "subscription" unless it is clearly Reddit-style and never paid.
+          </li>
+          <li>
+            <strong>Unverified gym creation</strong>
+            The plan allows any signed-in user to create a gym. This is fast for
+            MVP learning, but it carries real impersonation risk if the app is
+            shared outside a trusted test group.
+          </li>
+          <li>
+            <strong>Location shape</strong>
+            The plan keeps <code>location</code> as free text. If map search,
+            distance filtering, or real-world gym verification is near-term,
+            this should become structured address fields or a separate location
+            model before public data accumulates.
+          </li>
+          <li>
+            <strong>Slug mutability</strong>
+            The plan recommends generated slugs and leaves slug editing out of
+            Task 5. Changing slugs after launch requires redirects or stable IDs
+            in URLs, so the product should decide before public gym pages are
+            indexed or shared.
+          </li>
+          <li>
+            <strong>Owner leave behavior</strong>
+            The plan blocks the only owner from leaving. If you prefer abandoned
+            gyms to be deleted instead, that is a product decision with data
+            loss implications and should be explicit.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Implementation Notes</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Use generated auth scopes</strong>
+            Mutating context functions should accept
+            <code>current_scope</code> first and use
+            <code>current_scope.user</code>; do not introduce
+            <code>@current_user</code> assumptions.
+          </li>
+          <li>
+            <strong>Keep user IDs out of casts</strong>
+            Fields such as <code>creator_id</code>, membership
+            <code>user_id</code>, and owner role assignment are programmatic
+            security decisions, not browser form params.
+          </li>
+          <li>
+            <strong>Use database constraints</strong>
+            Slug uniqueness, membership uniqueness, foreign keys, and role
+            validity should be enforced by the database and surfaced through
+            changeset constraints where practical.
+          </li>
+          <li>
+            <strong>Preload intentionally</strong>
+            Preload creator or membership associations only for functions whose
+            callers need them. Future templates must not depend on lazy
+            association access.
+          </li>
+          <li>
+            <strong>Do not add HTTP clients</strong>
+            This task has no external HTTP work. If future gym verification
+            calls an external API, use the existing <code>Req</code> dependency.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
