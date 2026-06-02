@@ -1,0 +1,79 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-md space-y-5 rounded-lg border border-ascents-line bg-ascents-panel p-6 shadow-2xl shadow-black/20">
+    <div class="text-center">
+      <.header>
+        <p>Log in</p>
+        <:subtitle>
+          <%= if @current_scope do %>
+            You need to reauthenticate to perform sensitive actions on your account.
+          <% else %>
+            Don't have an account? <.link
+              navigate={~p"/users/register"}
+              class="font-semibold text-ascents-tape hover:underline"
+              phx-no-format
+            >Sign up</.link> for an account now.
+          <% end %>
+        </:subtitle>
+      </.header>
+    </div>
+
+    <div
+      :if={local_mail_adapter?()}
+      class="flex gap-3 rounded-lg border border-ascents-action/40 bg-ascents-info-soft p-4 text-sm text-ascents-info-text"
+    >
+      <.icon name="hero-information-circle" class="size-5 shrink-0" />
+      <div>
+        <p class="font-semibold">You are running the local mail adapter.</p>
+        <p>
+          To see sent emails, visit <.link href="/dev/mailbox" class="font-semibold underline">the mailbox page</.link>.
+        </p>
+      </div>
+    </div>
+
+    <.form for={@form} as={:user} id="login_form_magic" action={~p"/users/log-in"}>
+      <.input
+        readonly={!!@current_scope}
+        field={@form[:email]}
+        type="email"
+        label="Email"
+        autocomplete="username"
+        spellcheck="false"
+        required
+        phx-mounted={JS.focus()}
+      />
+      <.button class="w-full">
+        Log in with email <span aria-hidden="true">→</span>
+      </.button>
+    </.form>
+
+    <div class="flex items-center gap-3 text-xs font-bold uppercase text-ascents-muted-strong">
+      <span class="h-px flex-1 bg-ascents-line"></span>
+      or <span class="h-px flex-1 bg-ascents-line"></span>
+    </div>
+
+    <.form for={@form} as={:user} id="login_form_password" action={~p"/users/log-in"}>
+      <.input
+        readonly={!!@current_scope}
+        field={@form[:email]}
+        type="email"
+        label="Email"
+        autocomplete="username"
+        spellcheck="false"
+        required
+      />
+      <.input
+        field={@form[:password]}
+        type="password"
+        label="Password"
+        autocomplete="current-password"
+        spellcheck="false"
+      />
+      <.button class="w-full" name={@form[:remember_me].name} value="true">
+        Log in and stay logged in <span aria-hidden="true">→</span>
+      </.button>
+      <.button variant="secondary" class="mt-2 w-full">
+        Log in only this time
+      </.button>
+    </.form>
+  </div>
+</Layouts.app>

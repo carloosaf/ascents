@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ascents Task 4 Profile Extension Plan</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #18212f;
+        --muted: #617084;
+        --line: #d9e0e8;
+        --panel: #f7f9fb;
+        --accent: #167267;
+        --accent-strong: #0d4f48;
+        --warn: #9a5a00;
+        --risk: #a43737;
+        --ok: #34714d;
+        --paper: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 32px;
+        padding-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 4rem);
+        max-width: 900px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 1.55rem;
+        margin-top: 36px;
+        padding-top: 28px;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      code {
+        background: #eef3f5;
+        border-radius: 4px;
+        font-size: 0.94em;
+        padding: 2px 5px;
+      }
+
+      .status {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        white-space: nowrap;
+      }
+
+      .status.planned {
+        background: #eef3f5;
+        color: #4d5d70;
+      }
+
+      .status.ready {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .status.blocked {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 1.12rem;
+        max-width: 860px;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 16px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 18px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .tag {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 10px;
+        padding: 3px 9px;
+        text-transform: uppercase;
+      }
+
+      .tag.ok {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .tag.warn {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .tag.risk {
+        background: #fae8e8;
+        color: var(--risk);
+      }
+
+      .data-table {
+        border-collapse: collapse;
+        margin-top: 14px;
+        width: 100%;
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .data-table th {
+        background: #eef3f5;
+      }
+
+      .flow {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-top: 14px;
+      }
+
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      .step strong {
+        color: var(--accent-strong);
+        display: block;
+      }
+
+      .note-list {
+        margin-top: 14px;
+        padding-left: 0;
+      }
+
+      .note-list li {
+        border-bottom: 1px solid var(--line);
+        list-style: none;
+        margin: 0;
+        padding: 14px 0;
+      }
+
+      .note-list li:first-child {
+        border-top: 1px solid var(--line);
+      }
+
+      .note-list strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      @media (max-width: 680px) {
+        main {
+          padding: 32px 18px 56px;
+        }
+
+        .data-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Task 4 Profile Extension Plan</h1>
+        <p class="lede">
+          Extend the generated Phoenix auth user into a logged-in member
+          profile without breaking the existing magic-link and settings flows.
+          The first pass should require username during registration, create the
+          data foundation, username lookup, profile edit path, and authenticated
+          profile page; avatar uploads remain a reference field until the media
+          boundary is implemented.
+        </p>
+        <p class="meta">
+          Source plan: <code>.plans/ascents-social-plan.html</code>. Previous
+          implementation plan: <code>.plans/task-3-design-system-plan.html</code>.
+          Target stack: Phoenix 1.8, LiveView, HEEx, Ecto, PostgreSQL.
+        </p>
+      </header>
+
+      <section>
+        <h2>Decision</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Recommendation</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Should username be required during registration?</td>
+              <td><span class="status ready">Yes</span></td>
+              <td>
+                Every account should have a stable member URL from the start.
+                The registration form should collect username together with
+                email, and the Accounts context should enforce username format
+                and uniqueness before sending the magic-link email.
+              </td>
+            </tr>
+            <tr>
+              <td>Should avatar upload be implemented now?</td>
+              <td><span class="status blocked">No upload yet</span></td>
+              <td>
+                Task 10 owns the media boundary and MinIO-backed private object
+                storage. Task 4 should store an <code>avatar_object_key</code>
+                or temporary <code>avatar_url</code> reference, render fallback
+                initials, and avoid filesystem or object-storage code.
+              </td>
+            </tr>
+            <tr>
+              <td>Should profile lookup use user IDs or usernames?</td>
+              <td><span class="status ready">Use usernames</span></td>
+              <td>
+                The general plan says username is unique and used in URLs. The
+                member route should therefore be readable, for example
+                <code>/u/mara</code>, while internal code continues to use user
+                IDs and scopes for authorization.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Scope</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Status</th>
+              <th>Goal</th>
+              <th>Not Included</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>User schema</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Add <code>username</code>, <code>display_name</code>,
+                <code>bio</code>, and avatar reference fields to users.
+              </td>
+              <td>
+                Separate profile table, social graph fields, notification
+                preferences, or account privacy settings.
+              </td>
+            </tr>
+            <tr>
+              <td>Profile changeset and context API</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Add explicit profile validation and scoped update functions in
+                <code>Ascents.Accounts</code>.
+              </td>
+              <td>
+                Rewriting generated email/password settings APIs or changing the
+                login flow.
+              </td>
+            </tr>
+            <tr>
+              <td>Authenticated profile editing</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Provide an authenticated settings form so a signed-in user can
+                update their member profile fields.
+              </td>
+              <td>
+                Admin editing of other users, moderation tooling, or onboarding
+                tours.
+              </td>
+            </tr>
+            <tr>
+              <td>Authenticated member profile route</td>
+              <td><span class="status planned">Planned</span></td>
+              <td>
+                Render a basic logged-in member profile page by username with
+                profile header, bio, avatar fallback, and placeholder stats/feed
+                areas.
+              </td>
+              <td>
+                Real ascent stats, gym memberships, posts, comments, or media
+                authorization logic.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Route Placement</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Scope and Pipeline</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>GET /u/:username</code></td>
+              <td>
+                Add inside the authenticated <code>scope "/", AscentsWeb</code>
+                that uses
+                <code>pipe_through [:browser, :require_authenticated_user]</code>.
+              </td>
+              <td>
+                Profiles are visible only to logged-in users. This scope
+                guarantees <code>@current_scope</code> exists, redirects
+                anonymous visitors to the login page, and lets the LiveView
+                safely begin with
+                <code>&lt;Layouts.app flash={@flash} current_scope={@current_scope}&gt;</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>GET /users/settings/profile</code></td>
+              <td>
+                Add inside the authenticated <code>scope "/", AscentsWeb</code>
+                that uses
+                <code>pipe_through [:browser, :require_authenticated_user]</code>.
+              </td>
+              <td>
+                Only the signed-in user should update their own profile. This
+                scope guarantees <code>@current_scope</code> exists and redirects
+                anonymous visitors to the login page.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Target Files</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag ok">Generate</span>
+            <h3><code>priv/repo/migrations/*_add_profile_fields_to_users.exs</code></h3>
+            <p>
+              Use <code>mix ecto.gen.migration add_profile_fields_to_users</code>
+              to add profile columns and a database-backed unique username
+              constraint.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>lib/ascents/accounts/user.ex</code></h3>
+            <p>
+              Add fields and a dedicated <code>profile_changeset/3</code> with
+              username, display name, bio, and avatar reference validation.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>lib/ascents/accounts.ex</code></h3>
+            <p>
+              Add profile lookup and update functions. New mutating profile
+              functions should accept <code>current_scope</code> as the first
+              argument and derive the user from <code>current_scope.user</code>.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents_web/live/profile_live/show.ex</code></h3>
+            <p>
+              Render the logged-in profile page by username. Use
+              <code>Layouts.app</code>, pass <code>current_scope</code>, and
+              handle missing usernames with a normal 404 flow.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create or update</span>
+            <h3><code>lib/ascents_web/live/profile_live/edit.ex</code></h3>
+            <p>
+              Add a LiveView profile settings form with live validation and
+              submit handling. The generated settings controller should remain
+              focused on email and password flows.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>lib/ascents_web/router.ex</code></h3>
+            <p>
+              Add the member profile route and profile settings route in the
+              authenticated browser scope.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>test/support/fixtures/accounts_fixtures.ex</code></h3>
+            <p>
+              Include unique username helpers and profile-ready fixture data so
+              tests can create users with member profiles consistently.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Data Model</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Validation</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>username</code></td>
+              <td><code>:citext</code> or <code>:string</code></td>
+              <td>
+                Required at registration; 3-32 characters;
+                lowercase letters, numbers, and underscores; unique.
+              </td>
+              <td>
+                <code>:citext</code> is already enabled for email and simplifies
+                case-insensitive uniqueness. If using <code>:string</code>, add
+                a functional unique index on <code>lower(username)</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>display_name</code></td>
+              <td><code>:string</code></td>
+              <td>Optional; max 80 characters.</td>
+              <td>
+                Use username as the display fallback when this field is blank.
+              </td>
+            </tr>
+            <tr>
+              <td><code>bio</code></td>
+              <td><code>:string</code></td>
+              <td>Optional; max 280 characters.</td>
+              <td>
+                Keep short for MVP profile headers and feed cards. The product
+                decision is 280 characters for this task.
+              </td>
+            </tr>
+            <tr>
+              <td><code>avatar_object_key</code></td>
+              <td><code>:string</code></td>
+              <td>Optional; max 512 characters.</td>
+              <td>
+                Store an object key or later media reference, not raw binary
+                data. Render initials until media access exists.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Context API</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Function</th>
+              <th>Purpose</th>
+              <th>Critical Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>get_user_by_username/1</code></td>
+              <td>Load an authenticated member profile by username for show pages.</td>
+              <td>
+                Return <code>nil</code> for unknown or blank usernames. Do not
+                expose email in templates.
+              </td>
+            </tr>
+            <tr>
+              <td><code>change_user_profile/2</code></td>
+              <td>Build the profile form changeset.</td>
+              <td>
+                Return an <code>Ecto.Changeset</code> and let the caller convert
+                it with <code>to_form/2</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>update_user_profile/2</code></td>
+              <td>Update the signed-in user's profile.</td>
+              <td>
+                Accept <code>%Ascents.Accounts.Scope{}</code> as the first
+                argument, update only <code>current_scope.user</code>, and never
+                accept <code>user_id</code> params from the browser.
+              </td>
+            </tr>
+            <tr>
+              <td><code>profile_complete?/1</code></td>
+              <td>Centralize whether a user has the required profile fields.</td>
+              <td>
+                Return true when username is present. Later tasks can use this
+                to nudge users before posting or joining gyms if needed.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Execution Steps</h2>
+        <div class="flow">
+          <div class="step">
+            <strong>1. Generate migration</strong>
+            Use <code>mix ecto.gen.migration add_profile_fields_to_users</code>
+            and add profile columns plus username uniqueness.
+          </div>
+          <div class="step">
+            <strong>2. Extend schema</strong>
+            Add fields and a profile changeset in
+            <code>Ascents.Accounts.User</code>.
+          </div>
+          <div class="step">
+            <strong>3. Add Accounts API</strong>
+            Implement username lookup, profile form changes, scoped profile
+            update, and profile completion helper.
+          </div>
+          <div class="step">
+            <strong>4. Build edit form</strong>
+            Add authenticated profile settings LiveView with
+            <code>to_form/2</code>, <code>&lt;.input&gt;</code>, live validation,
+            and submit handling.
+          </div>
+          <div class="step">
+            <strong>5. Build member page</strong>
+            Add <code>/u/:username</code> LiveView using the Task 3 product
+            components and placeholder sections for future stats/feed.
+          </div>
+          <div class="step">
+            <strong>6. Add tests</strong>
+            Cover changeset validation, unique username constraint, profile
+            update authorization, authenticated rendering, and anonymous
+            redirects.
+          </div>
+          <div class="step">
+            <strong>7. Verify</strong>
+            Run focused tests first, then <code>mix precommit</code> as the
+            final gate.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Verification Matrix</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>Command or Method</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Migration and schema</td>
+              <td><code>mix test test/ascents/accounts_test.exs</code></td>
+              <td>
+                Profile changeset accepts valid values, rejects invalid
+                usernames, and surfaces unique username errors through the
+                changeset.
+              </td>
+            </tr>
+            <tr>
+              <td>Settings flow</td>
+              <td>
+                <code>mix test test/ascents_web/live/profile_live_test.exs</code>
+              </td>
+              <td>
+                Authenticated users can render, validate, and submit the
+                LiveView profile settings form; anonymous users are redirected
+                to login.
+              </td>
+            </tr>
+            <tr>
+              <td>Member profile page</td>
+              <td>
+                <code>mix test test/ascents_web/live/profile_live/show_test.exs</code>
+              </td>
+              <td>
+                <code>/u/:username</code> renders for a logged-in visitor, does
+                not expose email, redirects anonymous visitors to login, and
+                returns 404 for unknown usernames.
+              </td>
+            </tr>
+            <tr>
+              <td>Format</td>
+              <td><code>mix format --check-formatted</code></td>
+              <td>No formatting changes are required.</td>
+            </tr>
+            <tr>
+              <td>Compile</td>
+              <td><code>mix compile --warnings-as-errors</code></td>
+              <td>
+                Migrations, contexts, controllers, LiveViews, and HEEx
+                templates compile without warnings.
+              </td>
+            </tr>
+            <tr>
+              <td>Final gate</td>
+              <td><code>mix precommit</code></td>
+              <td>Project precommit alias passes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Risks</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Risk</th>
+              <th>Impact</th>
+              <th>Mitigation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Profile task is early</td>
+              <td>
+                A member profile will be mostly empty before gyms, posts,
+                routes, ascents, and stats exist.
+              </td>
+              <td>
+                Keep the UI intentionally simple: profile header, bio, avatar
+                fallback, and clearly reusable placeholder sections. Do not fake
+                real stats in production code.
+              </td>
+            </tr>
+            <tr>
+              <td>Username migration conflicts with existing users</td>
+              <td>
+                Adding a non-null unique username immediately can fail in any
+                database with preexisting auth users.
+              </td>
+              <td>
+                Either keep <code>username</code> nullable until profile
+                completion, or backfill deterministic usernames in the migration
+                before adding a non-null constraint. Because this app is early,
+                nullable plus profile-complete checks is the safer first pass.
+              </td>
+            </tr>
+            <tr>
+              <td>Email leaks into profile UI</td>
+              <td>
+                Generated auth users are email-first, so careless templates may
+                expose private account identifiers.
+              </td>
+              <td>
+                Profile templates must use username, display name, bio,
+                and avatar fallback only. Tests should assert the email is not
+                rendered.
+              </td>
+            </tr>
+            <tr>
+              <td>Avatar field becomes media architecture</td>
+              <td>
+                Implementing uploads now duplicates or undermines the future
+                media boundary.
+              </td>
+              <td>
+                Store only a reference field and render initials until Task 10
+                defines signed URLs and object storage access.
+              </td>
+            </tr>
+            <tr>
+              <td>Route ordering conflict</td>
+              <td>
+                A broad username route could accidentally capture existing
+                routes if placed poorly.
+              </td>
+              <td>
+                Use a namespaced member route such as <code>/u/:username</code>
+                instead of <code>/:username</code>.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Acceptance Criteria</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Data model is accepted when</strong>
+            Users have profile fields, username uniqueness is enforced at the
+            database and changeset layers, and existing auth tests still pass.
+          </li>
+          <li>
+            <strong>Profile editing is accepted when</strong>
+            A signed-in user can update their own username, display name, bio,
+            and avatar reference through an authenticated settings route, and
+            anonymous visitors are redirected away from that route.
+          </li>
+          <li>
+            <strong>Member profile is accepted when</strong>
+            <code>/u/:username</code> renders a profile only for authenticated
+            visitors, uses <code>Layouts.app</code> with
+            <code>current_scope</code>, redirects anonymous visitors to login,
+            and never renders the user's email.
+          </li>
+          <li>
+            <strong>Tests are accepted when</strong>
+            Fixture helpers create profile-ready users; context tests cover
+            validation and uniqueness; web tests cover authenticated rendering,
+            settings updates, anonymous redirects, and not-found behavior.
+          </li>
+          <li>
+            <strong>Task 4 is complete when</strong>
+            <code>mix precommit</code> passes after implementation.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Open Questions</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Bio length</strong>
+            The plan recommends a short bio limit, but the product decision
+            The product decision is <code>280</code> characters so profiles
+            remain feed-card friendly.
+          </li>
+          <li>
+            <strong>Username reservation</strong>
+            Do not reserve special usernames in this task. The
+            <code>/u/:username</code> namespace is enough to avoid route
+            collisions for the MVP.
+          </li>
+          <li>
+            <strong>Profile completion timing</strong>
+            Username is required during registration. Display name, bio, and
+            avatar reference can still be edited later from settings.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Implementation Notes</h2>
+        <ul class="note-list">
+          <li>
+            <strong>Do not use <code>@current_user</code></strong>
+            Templates should derive the user from <code>@current_scope.user</code>
+            when needed, following the generated auth model.
+          </li>
+          <li>
+            <strong>Use form assigns</strong>
+            Profile templates should use <code>to_form/2</code> in the LiveView
+            and reference fields as
+            <code>@profile_form[:username]</code>, never as changeset fields.
+          </li>
+          <li>
+            <strong>Keep visible data intentional</strong>
+            The member profile page should not render email, auth state, token
+            state, or settings links unless the viewer is the profile owner.
+          </li>
+          <li>
+            <strong>Reuse Task 3 components</strong>
+            Use the app shell, buttons, empty states, stat blocks, and avatar
+            style from <code>AscentsWeb.ProductComponents</code> before adding new
+            one-off profile markup.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

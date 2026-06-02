@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Climb Task 3 Design System Plan</title>
+    <title>Ascents Task 3 Design System Plan</title>
     <style>
       :root {
         color-scheme: light;
@@ -246,7 +246,7 @@
           review cheap and keeps feature work from turning into one-off markup.
         </p>
         <p class="meta">
-          Source plan: <code>.plans/climb-social-plan.html</code>. Previous
+          Source plan: <code>.plans/ascents-social-plan.html</code>. Previous
           implementation plan: <code>.plans/tasks-1-2-implementation-plan.html</code>.
           Target stack: Phoenix 1.8, LiveView, HEEx, Tailwind CSS v4.
         </p>
@@ -271,7 +271,7 @@
               <td>
                 The project instructions explicitly say to manually write
                 Tailwind-based components instead of using DaisyUI. More
-                importantly, Climb needs domain-specific feed, route, grade,
+                importantly, Ascents needs domain-specific feed, route, grade,
                 ascent, and gym-management surfaces; those will feel generic if
                 the app is assembled mostly from preset Daisy classes.
               </td>
@@ -321,7 +321,7 @@
               <td>Visual language</td>
               <td><span class="status planned">Planned</span></td>
               <td>
-                Define the first Climb look: calm social app layout,
+                Define the first Ascents look: calm social app layout,
                 route-grade color treatment, strong readable cards, compact
                 action controls, and responsive spacing.
               </td>
@@ -385,7 +385,7 @@
               <td><code>/dev/components</code></td>
               <td>
                 Inside the existing
-                <code>if Application.compile_env(:climb, :dev_routes)</code>
+                <code>if Application.compile_env(:ascents, :dev_routes)</code>
                 block, in the <code>scope "/dev"</code> that uses
                 <code>pipe_through :browser</code>.
               </td>
@@ -407,7 +407,7 @@
         <div class="grid">
           <article class="panel">
             <span class="tag ok">Update</span>
-            <h3><code>lib/climb_web/components/core_components.ex</code></h3>
+            <h3><code>lib/ascents_web/components/core_components.ex</code></h3>
             <p>
               Restyle existing generated components with Tailwind classes under
               our control. Keep Phoenix component APIs stable where possible so
@@ -416,26 +416,26 @@
           </article>
           <article class="panel">
             <span class="tag ok">Update</span>
-            <h3><code>lib/climb_web/components/layouts.ex</code></h3>
+            <h3><code>lib/ascents_web/components/layouts.ex</code></h3>
             <p>
-              Replace the generated Phoenix demo shell with the first Climb app
+              Replace the generated Phoenix demo shell with the first Ascents app
               shell. Every LiveView template must be able to begin with
               <code>&lt;Layouts.app flash={@flash} current_scope={@current_scope}&gt;</code>.
             </p>
           </article>
           <article class="panel">
             <span class="tag ok">Create</span>
-            <h3><code>lib/climb_web/components/product_components.ex</code></h3>
+            <h3><code>lib/ascents_web/components/product_components.ex</code></h3>
             <p>
-              Add Climb-specific UI pieces: grade badge, route card, feed item,
+              Add Ascents-specific UI pieces: grade badge, route card, feed item,
               gym summary, stat block, member avatar, and empty-state panel.
-              Import this module through <code>climb_web.ex</code> if it becomes
+              Import this module through <code>ascents_web.ex</code> if it becomes
               broadly used.
             </p>
           </article>
           <article class="panel">
             <span class="tag ok">Create</span>
-            <h3><code>lib/climb_web/live/dev/component_gallery_live.ex</code></h3>
+            <h3><code>lib/ascents_web/live/dev/component_gallery_live.ex</code></h3>
             <p>
               Render the design system with static example data. Use
               <code>Layouts.app</code>, pass <code>current_scope</code>, and
@@ -444,7 +444,7 @@
           </article>
           <article class="panel">
             <span class="tag ok">Update</span>
-            <h3><code>lib/climb_web/router.ex</code></h3>
+            <h3><code>lib/ascents_web/router.ex</code></h3>
             <p>
               Add the gallery route under development-only routes in the
               <code>:browser</code> pipeline.
@@ -644,7 +644,7 @@
         <p>
           The reference images point toward a polished editorial-product
           language: generous white space, strong image-led modules, soft panels,
-          crisp typography, and a few high-energy accents. Climb should borrow
+          crisp typography, and a few high-energy accents. Ascents should borrow
           that layout confidence without copying the fashion, fitness, or AI
           startup color palettes directly.
         </p>
@@ -652,7 +652,7 @@
           <thead>
             <tr>
               <th>Principle</th>
-              <th>How to Apply It to Climb</th>
+              <th>How to Apply It to Ascents</th>
               <th>What to Avoid</th>
             </tr>
           </thead>
@@ -700,7 +700,7 @@
               <td>Confident type scale</td>
               <td>
                 Use large, clean headings for page identity and compact labels
-                for metadata such as grade, wall, setter, gym, and climb date.
+                for metadata such as grade, wall, setter, gym, and ascents date.
                 Keep letter spacing at zero and avoid viewport-scaled text.
               </td>
               <td>
@@ -1038,7 +1038,7 @@
           <li>
             <strong>Use Phoenix components as the boundary</strong>
             The user of the codebase should call <code>&lt;.button&gt;</code>,
-            <code>&lt;.input&gt;</code>, and Climb-specific helpers rather than
+            <code>&lt;.input&gt;</code>, and Ascents-specific helpers rather than
             remembering long repeated class strings in every feature template.
           </li>
           <li>

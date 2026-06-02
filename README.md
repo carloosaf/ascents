@@ -1,4 +1,4 @@
-# Climb
+# Ascents
 
 ## Local services
 
@@ -9,12 +9,12 @@ Review or edit local values in `.env` before starting services:
 ```sh
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=climb_dev
-POSTGRES_TEST_DB=climb_test
+POSTGRES_DB=ascents_dev
+POSTGRES_TEST_DB=ascents_test
 MINIO_API_PORT=9000
 MINIO_CONSOLE_PORT=9001
 S3_ENDPOINT=http://localhost:9000
-S3_BUCKET=climb-dev
+S3_BUCKET=ascents-dev
 ```
 
 Validate the compose file:

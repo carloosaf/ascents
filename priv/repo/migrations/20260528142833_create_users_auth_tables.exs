@@ -1,4 +1,4 @@
-defmodule Climb.Repo.Migrations.CreateUsersAuthTables do
+defmodule Ascents.Repo.Migrations.CreateUsersAuthTables do
   use Ecto.Migration
 
   def change do

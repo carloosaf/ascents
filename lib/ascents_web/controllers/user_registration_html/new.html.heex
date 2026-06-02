@@ -1,0 +1,44 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-md rounded-lg border border-ascents-line bg-ascents-panel p-6 shadow-2xl shadow-black/20">
+    <div class="text-center">
+      <.header>
+        Join Ascents
+        <:subtitle>
+          Already registered?
+          <.link
+            navigate={~p"/users/log-in"}
+            class="font-semibold text-ascents-tape hover:underline"
+          >
+            Log in
+          </.link>
+          to your account now.
+        </:subtitle>
+      </.header>
+    </div>
+
+    <.form for={@form} id="registration-form" action={~p"/users/register"}>
+      <.input
+        field={@form[:username]}
+        type="text"
+        label="Username"
+        autocomplete="username"
+        spellcheck="false"
+        required
+        phx-mounted={JS.focus()}
+      />
+
+      <.input
+        field={@form[:email]}
+        type="email"
+        label="Email"
+        autocomplete="email"
+        spellcheck="false"
+        required
+      />
+
+      <.button phx-disable-with="Creating account..." class="w-full">
+        Create an account
+      </.button>
+    </.form>
+  </div>
+</Layouts.app>

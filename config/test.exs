@@ -8,7 +8,7 @@ config :bcrypt_elixir, :log_rounds, 1
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :climb, Climb.Repo,
+config :ascents, Ascents.Repo,
   username: System.fetch_env!("POSTGRES_USER"),
   password: System.fetch_env!("POSTGRES_PASSWORD"),
   hostname: System.fetch_env!("POSTGRES_HOST"),
@@ -19,13 +19,13 @@ config :climb, Climb.Repo,
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :climb, ClimbWeb.Endpoint,
+config :ascents, AscentsWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "gDARj6d0RYHdPIPyjCc21SVxmTA1xbBpOM0xrLO0ZrgVg/W3erKN8bMS4bvXbQeZ",
   server: false
 
 # In test we don't send emails
-config :climb, Climb.Mailer, adapter: Swoosh.Adapters.Test
+config :ascents, Ascents.Mailer, adapter: Swoosh.Adapters.Test
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false

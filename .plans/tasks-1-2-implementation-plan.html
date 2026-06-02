@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Climb Tasks 1 and 2 Implementation Plan</title>
+    <title>Ascents Tasks 1 and 2 Implementation Plan</title>
     <style>
       :root {
         color-scheme: light;
@@ -245,7 +245,7 @@
           Phoenix project health baseline before domain work starts.
         </p>
         <p class="meta">
-          Source plan: <code>.plans/climb-social-plan.html</code>. Target stack:
+          Source plan: <code>.plans/ascents-social-plan.html</code>. Target stack:
           Elixir, Phoenix 1.8, LiveView, PostgreSQL, MinIO-compatible object
           storage.
         </p>
@@ -349,7 +349,7 @@
               <td><code>postgres</code></td>
               <td>
                 Port <code>5432</code>, user <code>postgres</code>, password
-                <code>postgres</code>, database <code>climb_dev</code>.
+                <code>postgres</code>, database <code>ascents_dev</code>.
               </td>
               <td>
                 Back Phoenix development and test workflows through Ecto.
@@ -392,7 +392,7 @@
           <tbody>
             <tr>
               <td><code>DATABASE_URL</code></td>
-              <td><code>ecto://postgres:postgres@localhost/climb_dev</code></td>
+              <td><code>ecto://postgres:postgres@localhost/ascents_dev</code></td>
               <td>
                 Optional Phoenix/Ecto override for development. Existing
                 Phoenix config may continue to use discrete repo settings.
@@ -400,7 +400,7 @@
             </tr>
             <tr>
               <td><code>TEST_DATABASE_URL</code></td>
-              <td><code>ecto://postgres:postgres@localhost/climb_test</code></td>
+              <td><code>ecto://postgres:postgres@localhost/ascents_test</code></td>
               <td>
                 Optional test database override if the test config is changed to
                 read a URL.
@@ -413,7 +413,7 @@
             </tr>
             <tr>
               <td><code>S3_BUCKET</code></td>
-              <td><code>climb-dev</code></td>
+              <td><code>ascents-dev</code></td>
               <td>Future object key storage and signed URL generation.</td>
             </tr>
             <tr>

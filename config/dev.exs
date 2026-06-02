@@ -1,7 +1,7 @@
 import Config
 
 # Configure your database
-config :climb, Climb.Repo,
+config :ascents, Ascents.Repo,
   username: System.fetch_env!("POSTGRES_USER"),
   password: System.fetch_env!("POSTGRES_PASSWORD"),
   hostname: System.fetch_env!("POSTGRES_HOST"),
@@ -17,7 +17,7 @@ config :climb, Climb.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :climb, ClimbWeb.Endpoint,
+config :ascents, AscentsWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}],
@@ -26,8 +26,8 @@ config :climb, ClimbWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "xlQxnd2HT/QJCuRPXCOr7hK1xsob3/fZjCs860acchtyWwBUTlxPlL5w07aLQI2l",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:climb, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:climb, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:ascents, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:ascents, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -54,7 +54,7 @@ config :climb, ClimbWeb.Endpoint,
 # different ports.
 
 # Reload browser tabs when matching files change.
-config :climb, ClimbWeb.Endpoint,
+config :ascents, AscentsWeb.Endpoint,
   live_reload: [
     web_console_logger: true,
     patterns: [
@@ -63,13 +63,13 @@ config :climb, ClimbWeb.Endpoint,
       # Gettext translations
       ~r"priv/gettext/.*\.po$"E,
       # Router, Controllers, LiveViews and LiveComponents
-      ~r"lib/climb_web/router\.ex$"E,
-      ~r"lib/climb_web/(controllers|live|components)/.*\.(ex|heex)$"E
+      ~r"lib/ascents_web/router\.ex$"E,
+      ~r"lib/ascents_web/(controllers|live|components)/.*\.(ex|heex)$"E
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :climb, dev_routes: true
+config :ascents, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"

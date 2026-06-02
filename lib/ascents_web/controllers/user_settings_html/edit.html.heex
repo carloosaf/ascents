@@ -1,0 +1,68 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-2xl rounded-lg border border-ascents-line bg-ascents-panel p-6 shadow-2xl shadow-black/20">
+    <div class="text-center">
+      <.header>
+        Account Settings
+        <:subtitle>Manage your account email address and password settings</:subtitle>
+      </.header>
+    </div>
+
+    <div class="mb-8 rounded-lg border border-ascents-line bg-ascents-panel-deep p-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-base font-bold text-ascents-chalk">Member profile</h2>
+          <p class="mt-1 text-sm text-ascents-muted">
+            Update your username, display name, and short bio.
+          </p>
+        </div>
+        <.link
+          href={~p"/users/settings/profile"}
+          class="inline-flex items-center justify-center rounded-md bg-ascents-action px-4 py-2 text-sm font-bold text-ascents-action-content shadow-lg transition hover:-translate-y-0.5 hover:bg-ascents-action-hover"
+        >
+          Edit Profile
+        </.link>
+      </div>
+    </div>
+
+    <.form for={@email_form} action={~p"/users/settings"} id="update_email">
+      <input type="hidden" name="action" value="update_email" />
+
+      <.input
+        field={@email_form[:email]}
+        type="email"
+        label="Email"
+        autocomplete="username"
+        spellcheck="false"
+        required
+      />
+
+      <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
+    </.form>
+
+    <div class="my-8 h-px bg-ascents-line"></div>
+
+    <.form for={@password_form} action={~p"/users/settings"} id="update_password">
+      <input type="hidden" name="action" value="update_password" />
+
+      <.input
+        field={@password_form[:password]}
+        type="password"
+        label="New password"
+        autocomplete="new-password"
+        spellcheck="false"
+        required
+      />
+      <.input
+        field={@password_form[:password_confirmation]}
+        type="password"
+        label="Confirm new password"
+        autocomplete="new-password"
+        spellcheck="false"
+        required
+      />
+      <.button variant="primary" phx-disable-with="Changing...">
+        Save Password
+      </.button>
+    </.form>
+  </div>
+</Layouts.app>

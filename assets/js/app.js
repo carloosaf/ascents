@@ -22,7 +22,7 @@ import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
-import {hooks as colocatedHooks} from "phoenix-colocated/climb"
+import {hooks as colocatedHooks} from "phoenix-colocated/ascents"
 import topbar from "../vendor/topbar"
 
 const setTheme = (theme) => {
@@ -50,8 +50,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
 
 // Show progress bar on live navigation and form submits.
 const themeStyles = getComputedStyle(document.documentElement)
-const actionColor = themeStyles.getPropertyValue("--climb-action").trim()
-const tapeColor = themeStyles.getPropertyValue("--climb-tape").trim()
+const actionColor = themeStyles.getPropertyValue("--ascents-action").trim()
+const tapeColor = themeStyles.getPropertyValue("--ascents-tape").trim()
 topbar.config({barColors: {0: actionColor, 1: tapeColor}, shadowColor: "rgba(0, 0, 0, .35)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
