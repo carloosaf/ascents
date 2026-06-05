@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ascents Task 6 Authorization Helpers Plan</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #18212f;
+        --muted: #617084;
+        --line: #d9e0e8;
+        --panel: #f7f9fb;
+        --accent-strong: #0d4f48;
+        --warn: #9a5a00;
+        --risk: #a43737;
+        --ok: #34714d;
+        --paper: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 32px;
+        padding-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.6rem);
+        max-width: 860px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 1.45rem;
+        margin-top: 34px;
+        padding-top: 26px;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      code {
+        background: #eef3f5;
+        border-radius: 4px;
+        font-size: 0.94em;
+        padding: 2px 5px;
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 1.12rem;
+        max-width: 840px;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 16px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 18px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .tag {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 10px;
+        padding: 3px 9px;
+        text-transform: uppercase;
+      }
+
+      .tag.ok {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .tag.warn {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .tag.risk {
+        background: #fae8e8;
+        color: var(--risk);
+      }
+
+      .data-table {
+        border-collapse: collapse;
+        margin-top: 14px;
+        width: 100%;
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .data-table th {
+        background: #eef3f5;
+      }
+
+      @media (max-width: 680px) {
+        main {
+          padding: 32px 18px 56px;
+        }
+
+        .data-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Task 6 Authorization Helpers Plan</h1>
+        <p class="lede">
+          Add a small, explicit authorization surface for gym community roles so
+          future gym, route, feed, ascent, and moderation code can ask clear
+          questions like "can this scope manage this gym?" without duplicating
+          role checks in LiveViews.
+        </p>
+        <p class="meta">
+          Source plan: <code>.plans/ascents-social-plan.html</code>. Prior task:
+          <code>.plans/task-5-gym-context-plan.html</code>. Target files:
+          <code>lib/ascents/gyms.ex</code>,
+          <code>test/ascents/gyms_test.exs</code>, and gym fixtures if needed.
+        </p>
+      </header>
+
+      <section>
+        <h2>Task Boundary</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag ok">In scope</span>
+            <ul>
+              <li>Expose role and capability helpers in <code>Ascents.Gyms</code>.</li>
+              <li>Use <code>current_scope</code> as the primary public API input.</li>
+              <li>Keep authorization enforced in context functions such as <code>update_gym/3</code>.</li>
+              <li>Add focused context tests for owner, admin, mod, member, non-member, and anonymous inputs.</li>
+            </ul>
+          </article>
+          <article class="panel">
+            <span class="tag warn">Out of scope</span>
+            <ul>
+              <li>No Gym LiveView routes or templates; those belong to task 7.</li>
+              <li>No promotion, demotion, invitation, banning, or transfer workflow.</li>
+              <li>No global admin or site staff authorization model.</li>
+              <li>No policy library dependency unless the authorization surface grows later.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Route And Auth Placement</h2>
+        <p>
+          Task 6 should not add routes. When task 7 consumes these helpers, gym
+          creation, gym editing, join, and leave pages should be placed inside a
+          router scope that pipes through <code>[:browser, :require_authenticated_user]</code>
+          because those workflows mutate user-owned or membership-scoped data.
+          Public read-only gym pages can stay in the plain <code>:browser</code>
+          pipeline if we intentionally allow anonymous viewing; they will still
+          receive <code>current_scope</code> from <code>:fetch_current_scope_for_user</code>.
+        </p>
+        <p>
+          LiveViews added later must render through
+          <code>&lt;Layouts.app flash={@flash} current_scope={@current_scope}&gt;</code>
+          so generated auth assigns are available consistently. Context
+          functions should continue to reject unauthorized mutation even if a UI
+          route is misplaced.
+        </p>
+      </section>
+
+      <section>
+        <h2>Proposed Helpers</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Helper</th>
+              <th>Meaning</th>
+              <th>Allowed roles</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>member?/2</code></td>
+              <td>User belongs to the gym community and may see member-only controls.</td>
+              <td><code>owner</code>, <code>admin</code>, <code>mod</code>, <code>member</code></td>
+            </tr>
+            <tr>
+              <td><code>admin?/2</code></td>
+              <td>User can manage gym metadata and future route resources.</td>
+              <td><code>owner</code>, <code>admin</code></td>
+            </tr>
+            <tr>
+              <td><code>moderator?/2</code></td>
+              <td>User can perform future moderation actions.</td>
+              <td><code>owner</code>, <code>admin</code>, <code>mod</code></td>
+            </tr>
+            <tr>
+              <td><code>owner?/2</code></td>
+              <td>User has owner-only capabilities such as future transfer or deletion rules.</td>
+              <td><code>owner</code></td>
+            </tr>
+            <tr>
+              <td><code>can_update_gym?/2</code></td>
+              <td>Explicit capability wrapper used by <code>update_gym/3</code>.</td>
+              <td><code>owner</code>, <code>admin</code></td>
+            </tr>
+            <tr>
+              <td><code>can_manage_routes?/2</code></td>
+              <td>Future route context gate for creating, editing, and archiving boulders.</td>
+              <td><code>owner</code>, <code>admin</code></td>
+            </tr>
+            <tr>
+              <td><code>can_moderate_gym?/2</code></td>
+              <td>Future feed/comment moderation gate.</td>
+              <td><code>owner</code>, <code>admin</code>, <code>mod</code></td>
+            </tr>
+            <tr>
+              <td><code>can_post_in_gym?/2</code></td>
+              <td>Future feed/ascent posting gate.</td>
+              <td><code>owner</code>, <code>admin</code>, <code>mod</code>, <code>member</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Implementation Steps</h2>
+        <ol>
+          <li>
+            Add module attributes or private role lists in <code>Ascents.Gyms</code>
+            for admin, moderator, and member capability groups.
+          </li>
+          <li>
+            Add public helpers that accept <code>%Ascents.Accounts.Scope{}</code>
+            and <code>%Ascents.Gyms.Gym{}</code>, returning booleans for invalid,
+            anonymous, or non-member inputs.
+          </li>
+          <li>
+            Keep lower-level user overloads private unless tests or fixtures need
+            them; this keeps app code aligned with generated auth's
+            <code>current_scope</code> model.
+          </li>
+          <li>
+            Replace the private <code>can_update_gym?/2</code> implementation
+            with the public scope-aware capability while preserving creator-owner
+            behavior through the owner membership.
+          </li>
+          <li>
+            Add a fixture helper for role-specific memberships only if direct
+            test setup becomes noisy. Prefer using <code>Repo.update!</code> in
+            tests sparingly if there is no product workflow for role assignment yet.
+          </li>
+          <li>
+            Run <code>mix precommit</code> after implementation and fix any
+            compile, format, or test failures.
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Test Plan</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Case</th>
+              <th>Expected result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Anonymous scope or invalid input</td>
+              <td>All role and capability helpers return <code>false</code>.</td>
+            </tr>
+            <tr>
+              <td>Non-member authenticated user</td>
+              <td>All gym-scoped capabilities return <code>false</code>.</td>
+            </tr>
+            <tr>
+              <td>Owner membership</td>
+              <td>All member, admin, route-management, posting, and moderation checks return <code>true</code>.</td>
+            </tr>
+            <tr>
+              <td>Admin membership</td>
+              <td>Admin, route-management, posting, and moderation checks return <code>true</code>; owner check returns <code>false</code>.</td>
+            </tr>
+            <tr>
+              <td>Mod membership</td>
+              <td>Posting and moderation checks return <code>true</code>; admin, owner, and route-management checks return <code>false</code>.</td>
+            </tr>
+            <tr>
+              <td>Member membership</td>
+              <td>Membership and posting checks return <code>true</code>; admin and moderation checks return <code>false</code>.</td>
+            </tr>
+            <tr>
+              <td><code>update_gym/3</code> authorization</td>
+              <td>Owners and admins can update gym metadata; mods, members, non-members, and anonymous callers are rejected.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Risks And Questions</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag risk">Risk</span>
+            <h3>No role-management workflow yet</h3>
+            <p>
+              Tests for <code>admin</code> and <code>mod</code> roles will need
+              direct fixture/database setup because the product does not yet
+              expose promotion or demotion actions. That is acceptable for task
+              6, but it means tests are proving intended policy rather than a
+              complete user workflow.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag risk">Risk</span>
+            <h3>Creator versus owner source of truth</h3>
+            <p>
+              Decision: remove <code>creator_id</code> from the gym model and
+              make the owner membership the source of truth. Task 5 already
+              creates that membership transactionally, and future ownership
+              transfer should update membership roles rather than a separate
+              creator field.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Decision</span>
+            <h3>Should admins edit gym metadata?</h3>
+            <p>
+              Yes. <code>admin</code> users can update gym metadata alongside
+              owners. The public <code>can_update_gym?/2</code> helper should
+              reflect that policy and <code>update_gym/3</code> should use it.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Decision</span>
+            <h3>What can mods post?</h3>
+            <p>
+              Moderators can post. <code>can_post_in_gym?/2</code> should allow
+              <code>owner</code>, <code>admin</code>, <code>mod</code>, and
+              <code>member</code> roles.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

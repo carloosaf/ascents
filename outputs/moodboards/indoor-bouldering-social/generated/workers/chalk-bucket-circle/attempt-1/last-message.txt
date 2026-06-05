@@ -1,0 +1,5 @@
+Generated exactly one image with `image_gen.imagegen`, but the native tool did not provide a local file handle I could copy to the requested PNG path.
+
+Wrote the required failed result JSON to:
+
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/chalk-bucket-circle/attempt-1/result.json`

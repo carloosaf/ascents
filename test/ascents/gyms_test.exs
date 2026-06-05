@@ -62,7 +62,6 @@ defmodule Ascents.GymsTest do
 
       assert gym.name == "The Arch"
       assert gym.slug == "the-arch"
-      assert gym.creator_id == user.id
 
       assert %GymMembership{role: "owner", user_id: user_id, gym_id: gym_id} =
                Gyms.get_membership(user, gym)
@@ -137,6 +136,28 @@ defmodule Ascents.GymsTest do
 
       assert Gyms.update_gym(other_scope, gym, %{name: "Nope"}) == {:error, :unauthorized}
     end
+
+    test "allows admins to update gym metadata" do
+      gym = gym_fixture(name: "Original Name")
+      admin = user_fixture()
+      admin_scope = user_scope_fixture(admin)
+      role_membership_fixture(gym, "admin", scope: admin_scope)
+
+      assert {:ok, updated_gym} = Gyms.update_gym(admin_scope, gym, %{name: "Admin Update"})
+      assert updated_gym.name == "Admin Update"
+    end
+
+    test "rejects mods and members" do
+      gym = gym_fixture()
+      mod_scope = user_scope_fixture()
+      member_scope = user_scope_fixture()
+
+      role_membership_fixture(gym, "mod", scope: mod_scope)
+      role_membership_fixture(gym, "member", scope: member_scope)
+
+      assert Gyms.update_gym(mod_scope, gym, %{name: "Nope"}) == {:error, :unauthorized}
+      assert Gyms.update_gym(member_scope, gym, %{name: "Nope"}) == {:error, :unauthorized}
+    end
   end
 
   describe "join_gym/2" do
@@ -200,6 +221,99 @@ defmodule Ascents.GymsTest do
 
       assert Gyms.leave_gym(scope, gym) == {:error, :only_owner}
       assert %GymMembership{role: "owner"} = Gyms.get_membership(user, gym)
+    end
+  end
+
+  describe "authorization helpers" do
+    test "reject anonymous and invalid inputs" do
+      gym = gym_fixture()
+
+      refute Gyms.member?(nil, gym)
+      refute Gyms.owner?(nil, gym)
+      refute Gyms.admin?(nil, gym)
+      refute Gyms.moderator?(nil, gym)
+      refute Gyms.can_update_gym?(nil, gym)
+      refute Gyms.can_manage_routes?(nil, gym)
+      refute Gyms.can_moderate_gym?(nil, gym)
+      refute Gyms.can_post_in_gym?(nil, gym)
+
+      scope = user_scope_fixture()
+      refute Gyms.member?(scope, nil)
+      refute Gyms.can_post_in_gym?(scope, nil)
+    end
+
+    test "reject non-members" do
+      gym = gym_fixture()
+      scope = user_scope_fixture()
+
+      refute Gyms.member?(scope, gym)
+      refute Gyms.owner?(scope, gym)
+      refute Gyms.admin?(scope, gym)
+      refute Gyms.moderator?(scope, gym)
+      refute Gyms.can_update_gym?(scope, gym)
+      refute Gyms.can_manage_routes?(scope, gym)
+      refute Gyms.can_moderate_gym?(scope, gym)
+      refute Gyms.can_post_in_gym?(scope, gym)
+    end
+
+    test "allows all gym capabilities for owners" do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture(scope: scope)
+
+      assert Gyms.member?(scope, gym)
+      assert Gyms.owner?(scope, gym)
+      assert Gyms.admin?(scope, gym)
+      assert Gyms.moderator?(scope, gym)
+      assert Gyms.can_update_gym?(scope, gym)
+      assert Gyms.can_manage_routes?(scope, gym)
+      assert Gyms.can_moderate_gym?(scope, gym)
+      assert Gyms.can_post_in_gym?(scope, gym)
+    end
+
+    test "allows admin management without owner-only capabilities" do
+      gym = gym_fixture()
+      scope = user_scope_fixture()
+      role_membership_fixture(gym, "admin", scope: scope)
+
+      assert Gyms.member?(scope, gym)
+      refute Gyms.owner?(scope, gym)
+      assert Gyms.admin?(scope, gym)
+      assert Gyms.moderator?(scope, gym)
+      assert Gyms.can_update_gym?(scope, gym)
+      assert Gyms.can_manage_routes?(scope, gym)
+      assert Gyms.can_moderate_gym?(scope, gym)
+      assert Gyms.can_post_in_gym?(scope, gym)
+    end
+
+    test "allows moderators to moderate and post but not manage routes or settings" do
+      gym = gym_fixture()
+      scope = user_scope_fixture()
+      role_membership_fixture(gym, "mod", scope: scope)
+
+      assert Gyms.member?(scope, gym)
+      refute Gyms.owner?(scope, gym)
+      refute Gyms.admin?(scope, gym)
+      assert Gyms.moderator?(scope, gym)
+      refute Gyms.can_update_gym?(scope, gym)
+      refute Gyms.can_manage_routes?(scope, gym)
+      assert Gyms.can_moderate_gym?(scope, gym)
+      assert Gyms.can_post_in_gym?(scope, gym)
+    end
+
+    test "allows members to post only" do
+      gym = gym_fixture()
+      scope = user_scope_fixture()
+      role_membership_fixture(gym, "member", scope: scope)
+
+      assert Gyms.member?(scope, gym)
+      refute Gyms.owner?(scope, gym)
+      refute Gyms.admin?(scope, gym)
+      refute Gyms.moderator?(scope, gym)
+      refute Gyms.can_update_gym?(scope, gym)
+      refute Gyms.can_manage_routes?(scope, gym)
+      refute Gyms.can_moderate_gym?(scope, gym)
+      assert Gyms.can_post_in_gym?(scope, gym)
     end
   end
 end

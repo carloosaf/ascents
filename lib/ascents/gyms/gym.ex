@@ -2,7 +2,6 @@ defmodule Ascents.Gyms.Gym do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Ascents.Accounts.User
   alias Ascents.Gyms.GymMembership
 
   @grade_scales ~w(v_scale french)
@@ -15,7 +14,6 @@ defmodule Ascents.Gyms.Gym do
     field :grade_scale, :string, default: "v_scale"
     field :verified_at, :utc_datetime
 
-    belongs_to :creator, User
     has_many :memberships, GymMembership
 
     timestamps(type: :utc_datetime)
@@ -41,7 +39,6 @@ defmodule Ascents.Gyms.Gym do
     |> validate_length(:location, max: 160)
     |> validate_inclusion(:grade_scale, @grade_scales)
     |> unique_constraint(:slug)
-    |> foreign_key_constraint(:creator_id)
     |> check_constraint(:grade_scale, name: :gyms_grade_scale_check)
   end
 

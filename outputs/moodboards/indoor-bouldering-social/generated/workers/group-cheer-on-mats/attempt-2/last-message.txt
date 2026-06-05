@@ -1,0 +1,7 @@
+Done.
+
+Generated PNG:
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/group-cheer-on-mats/attempt-2/image.png`
+
+Worker result JSON:
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/group-cheer-on-mats/attempt-2/result.json`

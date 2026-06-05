@@ -1,0 +1,7 @@
+{
+  "id": "group-cheer-on-mats",
+  "status": "failed",
+  "image_path": null,
+  "error": "Native image generation returned an image but no accessible bytes or file path to save PNG.",
+  "caveats": ""
+}

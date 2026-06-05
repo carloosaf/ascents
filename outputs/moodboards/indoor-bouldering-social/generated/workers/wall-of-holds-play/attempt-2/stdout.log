@@ -1,0 +1,3 @@
+Failed to save the PNG because the native image tool returned no accessible file path or binary payload. I wrote the required failure JSON to:
+
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/wall-of-holds-play/attempt-2/result.json`

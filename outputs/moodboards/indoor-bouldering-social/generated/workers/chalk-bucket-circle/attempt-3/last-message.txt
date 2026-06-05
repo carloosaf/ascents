@@ -1,0 +1,7 @@
+Complete.
+
+PNG saved to:
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/chalk-bucket-circle/attempt-3/image.png`
+
+Result JSON saved to:
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/chalk-bucket-circle/attempt-3/result.json`

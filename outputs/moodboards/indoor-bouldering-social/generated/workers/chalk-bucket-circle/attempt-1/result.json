@@ -1,0 +1,7 @@
+{
+  "id": "chalk-bucket-circle",
+  "status": "failed",
+  "image_path": null,
+  "error": "Native image generation returned an image in the chat, but no local file handle was available to save it to the requested path.",
+  "caveats": ""
+}

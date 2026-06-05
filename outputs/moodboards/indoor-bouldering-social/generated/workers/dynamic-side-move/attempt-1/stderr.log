@@ -1,0 +1,411 @@
+Reading additional input from stdin...
+2026-06-03T11:17:52.688428Z  WARN codex_core_plugins::startup_sync: failed to compute curated plugins temp directory age error=second time provided was later than self path=/mnt/c/Users/carlo/.codex/.tmp/plugins-clone-7V90ud
+2026-06-03T11:17:52.690148Z  WARN codex_core_plugins::startup_sync: failed to compute curated plugins temp directory age error=second time provided was later than self path=/mnt/c/Users/carlo/.codex/.tmp/plugins-clone-AiAvsi
+2026-06-03T11:17:52.691250Z  WARN codex_core_plugins::startup_sync: failed to compute curated plugins temp directory age error=second time provided was later than self path=/mnt/c/Users/carlo/.codex/.tmp/plugins-clone-xUkr9s
+2026-06-03T11:17:54.300120Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:54.450420Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:54.579742Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:54.706422Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:54.818997Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:54.945794Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.039250Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.127379Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.210312Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.293596Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.374554Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.436908Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.509789Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.577873Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.639336Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-06-03T11:17:55.697101Z  WARN codex_core::shell_snapshot: Failed to delete shell snapshot at "/mnt/c/Users/carlo/.codex/shell_snapshots/019e8d2f-0b04-7772-8e66-e9a4314693a3.1780485132226420758.sh": Os { code: 2, kind: NotFound, message: "No such file or directory" }
+2026-06-03T11:17:55.764317Z  WARN codex_core::shell_snapshot: Failed to delete shell snapshot at "/mnt/c/Users/carlo/.codex/shell_snapshots/019e8d34-3f10-76f2-8891-c9478f71db88.1780485473005303608.sh": Os { code: 2, kind: NotFound, message: "No such file or directory" }
+2026-06-03T11:17:55.842354Z  WARN codex_core::shell_snapshot: Failed to delete shell snapshot at "/mnt/c/Users/carlo/.codex/shell_snapshots/019e8d34-3f14-78a2-9cbf-e3d86a85b6cd.1780485473006520068.sh": Os { code: 2, kind: NotFound, message: "No such file or directory" }
+2026-06-03T11:17:55.921444Z  WARN codex_core::shell_snapshot: Failed to delete shell snapshot at "/mnt/c/Users/carlo/.codex/shell_snapshots/019e8d34-3f32-7ee0-858e-24fbf222f1b0.1780485473067303961.sh": Os { code: 2, kind: NotFound, message: "No such file or directory" }
+2026-06-03T11:17:56.011950Z  WARN codex_core::shell_snapshot: Failed to delete shell snapshot at "/mnt/c/Users/carlo/.codex/shell_snapshots/019e8d34-3f4a-7562-9a81-93164c23db0a.1780485473068560139.sh": Os { code: 2, kind: NotFound, message: "No such file or directory" }
+OpenAI Codex v0.136.0-alpha.2
+--------
+workdir: /home/carlos/Repos/ascents
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: low
+reasoning summaries: none
+session id: 019e8d34-3fe4-73c3-8798-92b93c46a170
+--------
+user
+Generate exactly one PNG image with the native `image_gen.imagegen` tool.
+
+Image prompt:
+Single action editorial photograph inside an indoor bouldering gym, climber making a dynamic side reach on a low wall above thick mats, expression focused but happy, friends watching blurred in background, colorful cobalt lime orange holds, bright safe gym environment, approachable athletic energy, no readable text, no logos, no collage, no split panels. Single coherent frame, one composed scene or object detail, not a collage, not a grid, not a contact sheet, not a scrapbook, not a mood board layout.
+
+Save the final PNG exactly here:
+/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/image.png
+
+Then write this minimal worker result JSON exactly here:
+/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/result.json
+
+Required JSON shape:
+{
+  "id": "dynamic-side-move",
+  "status": "complete",
+  "image_path": "/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/image.png",
+  "error": null,
+  "caveats": ""
+}
+
+If native image generation is unavailable or the image cannot be saved, write the same JSON shape with "status": "failed", "image_path": null, and a concise "error".
+
+Rules:
+- Use `image_gen.imagegen`; do not call direct image APIs.
+- Use only the native image generation tool and the file writes required for the final PNG/result JSON.
+- If local CLI state or output-file writes are blocked by sandbox permissions, request escalation/outside-sandbox approval immediately.
+- Do not request approvals for unrelated tools, network calls, or direct image APIs.
+- Do not ask questions.
+- Do not create placeholder art with Python, PIL, SVG, canvas, HTML, or screenshots.
+
+2026-06-03T11:18:09.118113Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.118183Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.195488Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.195554Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.284432Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.284565Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.354389Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.354442Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.429564Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.429683Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.531593Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:09.531662Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.093690Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.093764Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.252917Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.252985Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.427161Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.427280Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.586997Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.587115Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.735824Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.735922Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.837989Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:23.838059Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:18:26.167391Z  WARN codex_core_plugins::startup_sync: git sync failed for curated plugin sync; falling back to GitHub HTTP error=git clone curated plugins repo timed out after 30s: Cloning into '/mnt/c/Users/carlo/.codex/.tmp/plugins-clone-AzdVvn'...
+Updating files:   0% (24/4646)Updating files:   0% (46/4646)Updating files:   1% (47/4646)Updating files:   1% (62/4646)Updating files:   1% (83/4646)Updating files:   2% (93/4646)Updating files:   2% (110/4646)Updating files:   2% (131/4646)Updating files:   3% (140/4646)Updating files:   3% (151/4646)Updating files:   3% (169/4646)Updating files:   3% (182/4646)Updating files:   4% (186/4646)Updating files:   4% (203/4646)Updating files:   4% (226/4646)Updating files:   5% (233/4646)Updating files:   5% (242/4646)Updating files:   5% (258/4646)Updating files:   5% (272/4646)Updating files:   6% (279/4646)Updating files:   6% (290/4646)Updating files:   6% (316/4646)Updating files:   7% (326/4646) git_binary="git"
+codex
+Using the imagegen skill because this turn requires a generated bitmap asset, and I’ll keep the workflow limited to native generation plus the requested file writes.
+exec
+/bin/bash -lc "sed -n '1,220p' /mnt/c/Users/carlo/.codex/skills/.system/imagegen/SKILL.md" in /home/carlos/Repos/ascents
+ succeeded in 0ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for normal image generation, editing, and simple transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for the CLI/API/model path, or after the user explicitly confirms a true model-native transparency fallback with `gpt-image-1.5`. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- If the user explicitly asks for a transparent image/background, stay on built-in `image_gen` first: prompt for a flat removable chroma-key background, then remove it locally with the installed helper at `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a model/path downgrade and ask the user before doing it, unless the user has already explicitly requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- If a transparent request appears too complex for clean chroma-key removal, asks for true/native transparency, or local removal fails validation, explain that true transparency requires CLI `gpt-image-1.5 --background transparent --output-format png` because `gpt-image-2` does not support `background=transparent`, then ask whether to proceed. Run the CLI fallback only after the user confirms.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires `OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+Local post-processing helper:
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: removes a flat chroma-key background from a generated image and writes a PNG/WebP with alpha. Prefer auto-key sampling, soft matte, and despill for antialiased edges.
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including simple transparent-output requests; fallback CLI only if explicitly requested or after the user explicitly confirms a transparent-output fallback.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with `view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `image_gen` on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default `$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Transparent-image requests still use built-in `image_gen` first. Because the built-in tool does not expose a true transparent-background control, create a removable chroma-key source image and then convert the key color to alpha locally.
+
+Default sequence:
+1. Use built-in `image_gen` to generate the requested subject on a perfectly flat solid chroma-key background.
+2. Choose a key color that is unlikely to appear in the subject: default `#00ff00`, use `#ff00ff` for green subjects, and avoid `#0000ff` for blue subjects.
+3. After generation, move or copy the selected source image from `$CODEX_HOME/generated_images/...` into the workspace or `tmp/imagegen/`.
+4. Run the installed helper path, not a project-relative script path:
+   ```bash
+   python "${CODEX_HOME:-$HOME/.codex}/skills/.system/imagegen/scripts/remove_chroma_key.py" \
+     --input <source> \
+     --out <final.png> \
+     --auto-key border \
+     --soft-matte \
+     --transparent-threshold 12 \
+     --opaque-threshold 220 \
+     --despill
+   ```
+5. Validate that the output has an alpha channel, transparent corners, plausible subject coverage, and no obvious key-color fringe. If a thin fringe remains, retry once with `--edge-contract 1`; use `--edge-feather 0.25` only when the edge is visibly stair-stepped and the subject is not shiny or reflective.
+6. Save the final alpha PNG/WebP in the project if the asset is project-bound. Never leave a project-referenced transparent asset only under `$CODEX_HOME/*`.
+
+Prompt transparent requests like this:
+
+```text
+Create the requested subject on a perfectly flat solid #00ff00 chroma-key background for background removal.
+The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation.
+Keep the subject fully separated from the background with crisp edges and generous padding.
+Do not use #00ff00 anywhere in the subject.
+No cast shadow, no contact shadow, no reflection, no watermark, and no text unless explicitly requested.
+```
+
+Do not automatically use CLI `gpt-image-1.5 --background transparent --output-format png` instead of chroma keying. Ask the user first when the user asks for true/native transparency, when local removal fails validation, or when the requested image is complex: hair, fur, feathers, smoke, glass, liquids, translucent materials, reflective objects, soft shadows, realistic product grounding, or subject colors that conflict with all practical key colors.
+
+Use a concise confirmation like:
+
+```text
+This likely needs true native transparency. The default built-in path uses a chroma-key background plus local removal, but true transparency requires the CLI fallback with gpt-image-1.5 because gpt-image-2 does not support background=transparent. It also requires OPENAI_API_KEY. Should I proceed with that CLI fallback?
+```
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural — candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup — product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup — app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram — diagrams/infographics with structured layout and text.
+- scientific-educational — classroom explainers, scientific diagrams, and learning visuals with required labels and accuracy constraints.
+- ads-marketing — campaign concepts and ad creatives with audience, brand position, scene, and exact tagline/copy.
+- productivity-visual — slide, chart, workflow, and data-heavy business visuals.
+- logo-brand — logo/mark exploration, vector-friendly.
+- illustration-story — comics, children’s book art, narrative scenes.
+- stylized-concept — style-driven concept art, 3D/stylized renders.
+- historical-scene — period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization — translate/replace in-image text, preserve layout.
+- identity-preserve — try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit — remove/replace a specific element (including interior swaps).
+- lighting-weather — time-of-day/season/atmosphere changes only.
+- background-extraction — transparent background / clean cutout. Use built-in `image_gen` with chroma-key removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
+- style-transfer — apply reference style while changing subject/scene.
+- compositing — multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render — drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+
+2026-06-03T11:20:48.514202Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.514353Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.590198Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.590263Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.653517Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.653586Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.732323Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.732496Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.861486Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.861552Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.118412Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:20:48.118498Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+codex
+The image is generated. I’m locating the native tool’s saved PNG and moving that artifact into the exact worker path, then I’ll write only the requested result JSON.
+exec
+/bin/bash -lc 'find "${CODEX_HOME:-$HOME/.codex}" -type f '"\\( -iname '*.png' -o -iname '*.webp' -o -iname '*.jpg' -o -iname '*.jpeg' \\) -printf '%T@ %p\\n' | sort -nr | head -20" in /home/carlos/Repos/ascents
+2026-06-03T11:25:31.822779Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:31.822856Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.045412Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.045485Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.267722Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.267824Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.488377Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.488549Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.738630Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.738702Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.962569Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:25:32.962699Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+ succeeded in 27310ms:
+1780485916.4286874000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3fe4-73c3-8798-92b93c46a170/ig_0fa119c45ca2b0a1016a200e8a3064819196271603407e70bb.png
+1780485906.6478174000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3fc7-7f80-957b-0d455c2fb6cc/ig_08ed66e26fca0dc7016a200e80959c819195a2377630c6fc25.png
+1780485889.7096236000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3fbc-75f1-8520-4c5255b85178/ig_05cdbdcc44f7a616016a200e659e78819186fa7d369367d3c8.png
+1780485840.1614961000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-4039-7322-96ea-87ea97645e34/ig_02e19ec4f42a0070016a200e356bfc8191be7e8e8af8713662.png
+1780485832.6558102000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-4027-7220-bb58-66fb14778d37/ig_0c17b757ef1dcf90016a200e3293bc8191a508ae0d48021de5.png
+1780485817.9842985000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3fe4-7551-a179-baf8d7ae700d/ig_0e60bd5b770e6ad2016a200e8183b081919b0c30fc07fada0f.png
+1780485782.6557423000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3fe7-7783-914f-b74cba69ff2c/ig_0c5cffea00228edb016a200e65581c81918374bdbe3336c198.png
+1780485707.1737489000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3f4a-7562-9a81-93164c23db0a/ig_01503f802949f28f016a200dfb2de88191ae095f47efbed3ea.png
+1780485697.6859864000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3fc5-7663-8724-5ad6c360a829/ig_08977fd79142b4e1016a200e060aa081938e95e5067de9f680.png
+1780485696.8861679000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3f10-76f2-8891-c9478f71db88/ig_048fc1c1f7b98649016a200e0560ac81918df1c4c1ac1db59a.png
+1780485694.2883099000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3f32-7ee0-858e-24fbf222f1b0/ig_027bc6b616804cc5016a200df6898481919d5dab135cb279a2.png
+1780485682.7140503000 /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3f14-78a2-9cbf-e3d86a85b6cd/ig_0a26394f35e37d2f016a200df7a03481918784946808d5b540.png
+1780484674.4573485000 /mnt/c/Users/carlo/.codex/.tmp/plugins/plugins/zotero/skills/zotero/assets/icon.png
+1780484674.3982822000 /mnt/c/Users/carlo/.codex/.tmp/plugins/plugins/zotero/assets/icon.png
+1780484674.3681052000 /mnt/c/Users/carlo/.codex/.tmp/plugins/plugins/zoominfo/assets/logo.png
+1780484661.1938487000 /mnt/c/Users/carlo/.codex/.tmp/plugins/plugins/zoom/assets/screenshot-4.png
+1780484661.1656946000 /mnt/c/Users/carlo/.codex/.tmp/plugins/plugins/zoom/assets/screenshot-3.png
+1780484661.1246878000 /mnt/c/Users/carlo/.codex/.tmp/plugins/plugins/zoom/assets/screenshot-2.png
+1780484661.0961622000 /mnt/c/Users/carlo/.codex/.tmp/plugins/plugins/zoom/assets/screenshot-1.png
+1780484660.9294661000 /mnt/c/Users/carlo/.codex/.tmp/plugins/plugins/zoho/assets/logo.png
+
+2026-06-03T11:28:36.625118Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:36.625188Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:36.804934Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:36.804998Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:36.980877Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:36.980936Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:37.158918Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:37.158986Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:37.329493Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:37.329559Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:37.503215Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:28:37.503309Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+codex
+I found the newest generated PNG under the native image output directory. I’m copying that file to the requested `attempt-1/image.png` path and writing the completion JSON beside it.
+exec
+/bin/bash -lc "mkdir -p /home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1
+cp /mnt/c/Users/carlo/.codex/generated_images/019e8d34-3fe4-73c3-8798-92b93c46a170/ig_0fa119c45ca2b0a1016a200e8a3064819196271603407e70bb.png /home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/image.png
+printf '%s
+' '{' '  \"id\": \"dynamic-side-move\",' '  \"status\": \"complete\",' '  \"image_path\": \"/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/image.png\",' '  \"error\": null,' '  \"caveats\": \"\"' '}' > /home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/result.json
+file /home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/image.png
+cat /home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/result.json" in /home/carlos/Repos/ascents
+ succeeded in 0ms:
+/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/image.png: PNG image data, 1536 x 1024, 8-bit/color RGB, non-interlaced
+{
+  "id": "dynamic-side-move",
+  "status": "complete",
+  "image_path": "/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/dynamic-side-move/attempt-1/image.png",
+  "error": null,
+  "caveats": ""
+}
+
+2026-06-03T11:31:37.363065Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.363166Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.496250Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.496314Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.632489Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.632555Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.763403Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.763545Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.893724Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:37.893789Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:38.029615Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-06-03T11:31:38.029686Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/

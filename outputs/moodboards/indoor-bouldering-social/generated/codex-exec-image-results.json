@@ -1,0 +1,23 @@
+{
+  "status": "complete",
+  "total": 2,
+  "complete": 2,
+  "failed": 0,
+  "pending": 0,
+  "results": [
+    {
+      "id": "chalk-bucket-circle",
+      "status": "complete",
+      "image_path": "/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/chalk-bucket-circle.png",
+      "error": null,
+      "caveats": ""
+    },
+    {
+      "id": "wall-of-holds-play",
+      "status": "complete",
+      "image_path": "/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/wall-of-holds-play.png",
+      "error": null,
+      "caveats": ""
+    }
+  ]
+}

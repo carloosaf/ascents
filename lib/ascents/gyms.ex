@@ -10,6 +10,10 @@ defmodule Ascents.Gyms do
   alias Ascents.Gyms.{Gym, GymMembership}
   alias Ascents.Repo
 
+  @admin_roles ~w(owner admin)
+  @moderator_roles ~w(owner admin mod)
+  @member_roles ~w(owner admin mod member)
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking gym changes.
   """
@@ -56,7 +60,7 @@ defmodule Ascents.Gyms do
     attrs = create_attrs(attrs)
 
     gym_changeset =
-      %Gym{creator_id: user.id}
+      %Gym{}
       |> Gym.changeset(Map.put(attrs, :slug, unique_slug(Map.get(attrs, :name))))
 
     Multi.new()
@@ -77,10 +81,10 @@ defmodule Ascents.Gyms do
   @doc """
   Updates gym metadata.
   """
-  def update_gym(%Scope{user: %User{} = user}, %Gym{} = gym, attrs) when is_map(attrs) do
+  def update_gym(%Scope{} = scope, %Gym{} = gym, attrs) when is_map(attrs) do
     gym = Repo.get!(Gym, gym.id)
 
-    if can_update_gym?(user, gym) do
+    if can_update_gym?(scope, gym) do
       gym
       |> Gym.changeset(update_attrs(attrs))
       |> Repo.update()
@@ -137,19 +141,59 @@ defmodule Ascents.Gyms do
 
   def get_membership(_user, _gym), do: nil
 
+  @doc """
+  Returns true when the current scope has any gym community membership.
+  """
+  def member?(scope, gym), do: has_role?(scope, gym, @member_roles)
+
+  @doc """
+  Returns true when the current scope owns the gym community.
+  """
+  def owner?(scope, gym), do: has_role?(scope, gym, ["owner"])
+
+  @doc """
+  Returns true when the current scope can manage gym settings and routes.
+  """
+  def admin?(scope, gym), do: has_role?(scope, gym, @admin_roles)
+
+  @doc """
+  Returns true when the current scope can moderate gym community content.
+  """
+  def moderator?(scope, gym), do: has_role?(scope, gym, @moderator_roles)
+
+  @doc """
+  Returns true when the current scope can update gym metadata.
+  """
+  def can_update_gym?(scope, gym), do: admin?(scope, gym)
+
+  @doc """
+  Returns true when the current scope can manage boulder problems for the gym.
+  """
+  def can_manage_routes?(scope, gym), do: admin?(scope, gym)
+
+  @doc """
+  Returns true when the current scope can moderate gym posts and comments.
+  """
+  def can_moderate_gym?(scope, gym), do: moderator?(scope, gym)
+
+  @doc """
+  Returns true when the current scope can create posts inside the gym community.
+  """
+  def can_post_in_gym?(scope, gym), do: member?(scope, gym)
+
   defp membership_changeset(%User{} = user, %Gym{} = gym, role, joined_at) do
     %GymMembership{user_id: user.id, gym_id: gym.id}
     |> GymMembership.changeset(%{role: role, joined_at: joined_at})
   end
 
-  defp can_update_gym?(%User{id: user_id}, %Gym{creator_id: user_id}), do: true
-
-  defp can_update_gym?(%User{} = user, %Gym{} = gym) do
+  defp has_role?(%Scope{user: %User{} = user}, %Gym{} = gym, roles) do
     case get_membership(user, gym) do
-      %GymMembership{role: "owner"} -> true
+      %GymMembership{role: role} -> role in roles
       _membership -> false
     end
   end
+
+  defp has_role?(_scope, _gym, _roles), do: false
 
   defp only_owner?(%Gym{id: gym_id}) do
     GymMembership

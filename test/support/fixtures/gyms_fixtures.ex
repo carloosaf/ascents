@@ -4,6 +4,8 @@ defmodule Ascents.GymsFixtures do
   """
 
   alias Ascents.Gyms
+  alias Ascents.Gyms.GymMembership
+  alias Ascents.Repo
 
   import Ascents.AccountsFixtures
 
@@ -31,9 +33,22 @@ defmodule Ascents.GymsFixtures do
 
   def member_membership_fixture(gym, attrs \\ %{}) do
     attrs = Enum.into(attrs, %{})
+    {role, attrs} = Map.pop(attrs, :role, "member")
     {scope, _attrs} = Map.pop(attrs, :scope, user_scope_fixture())
 
     {:ok, membership} = Gyms.join_gym(scope, gym)
+    update_membership_role(membership, role)
+  end
+
+  def role_membership_fixture(gym, role, attrs \\ %{}) do
+    member_membership_fixture(gym, Map.put(Enum.into(attrs, %{}), :role, role))
+  end
+
+  defp update_membership_role(%GymMembership{} = membership, "member"), do: membership
+
+  defp update_membership_role(%GymMembership{} = membership, role) do
     membership
+    |> GymMembership.changeset(%{role: role, joined_at: membership.joined_at})
+    |> Repo.update!()
   end
 end

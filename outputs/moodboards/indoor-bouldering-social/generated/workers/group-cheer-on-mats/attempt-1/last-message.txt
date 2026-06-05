@@ -1,0 +1,5 @@
+Generated via `image_gen.imagegen`, but the tool did not expose accessible image bytes or a file path I could copy to the requested PNG path.
+
+Wrote the fallback failed JSON to:
+
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/group-cheer-on-mats/attempt-1/result.json`

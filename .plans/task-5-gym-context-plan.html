@@ -433,9 +433,9 @@
             <span class="tag ok">Create</span>
             <h3><code>lib/ascents/gyms/gym.ex</code></h3>
             <p>
-              Define the gym schema and changeset. Keep creator assignment
-              programmatic; do not cast <code>creator_id</code> from browser
-              params.
+              Define the gym schema and changeset. Keep ownership in
+              <code>gym_memberships</code> rather than a separate
+              <code>creator_id</code> field.
             </p>
           </article>
           <article class="panel">
@@ -534,15 +534,6 @@
               <td>
                 Required; default <code>v_scale</code>; allow only
                 <code>v_scale</code> and <code>french</code> for now.
-              </td>
-            </tr>
-            <tr>
-              <td><code>gyms</code></td>
-              <td><code>creator_id</code></td>
-              <td><code>references(:users)</code></td>
-              <td>
-                Required foreign key. Set from <code>current_scope.user</code>,
-                never from cast params.
               </td>
             </tr>
             <tr>
@@ -873,7 +864,7 @@
             <strong>Gym creation is accepted when</strong>
             A signed-in user's scope creates a gym and exactly one owner
             community membership transactionally, with no browser-controlled
-            <code>creator_id</code> or <code>user_id</code> assignment.
+            <code>user_id</code> assignment.
           </li>
           <li>
             <strong>Community memberships are accepted when</strong>
@@ -943,9 +934,9 @@
           </li>
           <li>
             <strong>Keep user IDs out of casts</strong>
-            Fields such as <code>creator_id</code>, membership
-            <code>user_id</code>, and owner role assignment are programmatic
-            security decisions, not browser form params.
+            Fields such as membership <code>user_id</code> and owner role
+            assignment are programmatic security decisions, not browser form
+            params.
           </li>
           <li>
             <strong>Use database constraints</strong>

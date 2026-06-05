@@ -1,0 +1,7 @@
+{
+  "id": "wall-of-holds-play",
+  "status": "failed",
+  "image_path": null,
+  "error": "Native image generation returned an image to the chat, but no writable PNG file path or binary payload was available to save it.",
+  "caveats": ""
+}

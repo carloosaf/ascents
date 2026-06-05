@@ -1,0 +1,7 @@
+Generated and saved exactly one PNG at:
+
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/wall-of-holds-play/attempt-1/image.png`
+
+Wrote the required result JSON at:
+
+`/home/carlos/Repos/ascents/outputs/moodboards/indoor-bouldering-social/generated/workers/wall-of-holds-play/attempt-1/result.json`

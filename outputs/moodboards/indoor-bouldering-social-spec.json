@@ -1,0 +1,1053 @@
+{
+  "meta": {
+    "title": "Indoor Bouldering Social Mood Board",
+    "brief": "A social media campaign visual world for indoor climbing gyms focused on bouldering. The mood should feel fun, joyful, welcoming, and community driven.",
+    "theme": "indoor bouldering gym social campaign",
+    "goal": "Create a visual direction for social posts that makes bouldering feel approachable, social, energetic, and worth joining.",
+    "audience": "New and returning indoor climbers, friend groups, students, young professionals, and community-minded gym members.",
+    "output": "first-pass generated mood board",
+    "assumptions": [
+      "No existing brand colors, logo, or campaign assets were provided.",
+      "Avoid extreme-risk outdoor imagery; keep the world indoor, supervised, and welcoming.",
+      "Images should work as inspiration for posts, stories, reels covers, event promos, and membership/community content."
+    ]
+  },
+  "signals": {
+    "visual_territories": [
+      "Joyful group encouragement",
+      "Colorful bouldering movement",
+      "Chalk, holds, shoes, and wall texture",
+      "Warm community hangout energy"
+    ],
+    "palette_direction": "Clean gym neutrals with playful hold colors: coral, teal, lime, cobalt, sunny yellow, soft pink, and warm plywood.",
+    "emotional_register": "Fun, joyful, inclusive, active, supportive, lightly competitive, and social.",
+    "must_include": [
+      "indoor bouldering walls",
+      "colorful climbing holds",
+      "friends encouraging each other",
+      "chalk and climbing shoes",
+      "soft mats",
+      "diverse climbers",
+      "joyful post-climb moments"
+    ],
+    "avoid": [
+      "outdoor cliff climbing",
+      "dangerous or unsupervised risk",
+      "elite-only seriousness",
+      "dark gritty cave lighting",
+      "readable text",
+      "logos",
+      "collage layouts"
+    ]
+  },
+  "items": [
+    {
+      "id": "group-cheer-on-mats",
+      "title": "Group Cheer On Mats",
+      "caption": "A welcoming group moment that makes the gym feel social and easy to join.",
+      "source": "campaign brief",
+      "tone": "joyful, inclusive, energetic",
+      "motif": "friends cheering under a bouldering wall",
+      "palette": "warm plywood, coral holds, teal holds, soft grey mats",
+      "prompt": "Single editorial photograph inside a bright modern indoor bouldering gym, a diverse group of young adult climbers sitting and kneeling on soft grey mats cheering for a friend on a low overhanging wall, colorful holds in coral teal yellow and cobalt, warm plywood wall, candid joyful expressions, clean natural light, social media campaign energy, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Candid Social",
+            "description": "Push the image toward a spontaneous community snapshot.",
+            "promptHint": "more candid documentary photography, natural laughter, imperfect real gym moment"
+          },
+          {
+            "label": "Polished Campaign",
+            "description": "Make the group moment feel more composed for campaign use.",
+            "promptHint": "clean editorial campaign photography, balanced composition, refined lighting"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Bright Holds",
+            "description": "Use the wall colors as the playful visual anchor.",
+            "promptHint": "saturated coral teal lime yellow and cobalt climbing holds"
+          },
+          {
+            "label": "Warm Plywood",
+            "description": "Let the wood wall and mat neutrals feel softer.",
+            "promptHint": "warm plywood, soft grey, cream light, small color accents"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Big Group",
+            "description": "Make community the hero.",
+            "promptHint": "larger group of climbers gathered on mats, welcoming social circle"
+          },
+          {
+            "label": "One Attempt",
+            "description": "Focus the energy around a single climber trying a problem.",
+            "promptHint": "one climber mid-move while friends watch and cheer closely"
+          }
+        ],
+        "props": [
+          {
+            "label": "Chalk Bags",
+            "description": "Add small climbing details around the group.",
+            "promptHint": "chalk bags, climbing shoes, brushes, water bottles neatly on mats"
+          },
+          {
+            "label": "Route Tags Hidden",
+            "description": "Keep route labels abstract and unreadable.",
+            "promptHint": "small route tags blurred and unreadable, no legible signage"
+          }
+        ],
+        "character": [
+          {
+            "label": "Beginners",
+            "description": "Make the scene approachable for first-timers.",
+            "promptHint": "beginner-friendly climbers, relaxed body language, supportive coaching"
+          },
+          {
+            "label": "Mixed Levels",
+            "description": "Show a natural range of ability.",
+            "promptHint": "mixed skill levels, experienced climber encouraging a newer climber"
+          }
+        ],
+        "format": [
+          {
+            "label": "Story Crop",
+            "description": "Make it work for vertical social placements.",
+            "promptHint": "vertical composition with breathing room at top and bottom"
+          },
+          {
+            "label": "Feed Crop",
+            "description": "Make it work as a square or feed hero.",
+            "promptHint": "centered square-friendly composition, strong group silhouette"
+          }
+        ]
+      }
+    },
+    {
+      "id": "colorful-hold-closeup",
+      "title": "Colorful Hold Closeup",
+      "caption": "A tactile detail tile for texture, color, and recognizability.",
+      "source": "campaign brief",
+      "tone": "playful, tactile, bright",
+      "motif": "chalky hands and colorful bouldering holds",
+      "palette": "magenta, lime, cobalt, chalk white, pale wood",
+      "prompt": "Single close-up editorial photograph of chalky hands gripping bright indoor bouldering holds on a pale plywood wall, visible climbing texture and chalk dust, magenta lime cobalt and yellow holds, shallow depth of field, crisp tactile detail, joyful athletic feeling, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Macro Texture",
+            "description": "Lean into chalk and skin texture.",
+            "promptHint": "macro detail, chalk dust particles, skin texture, hold surface texture"
+          },
+          {
+            "label": "Clean Product",
+            "description": "Make the detail more polished and graphic.",
+            "promptHint": "clean editorial detail, crisp color blocking, premium sports photography"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Candy Bright",
+            "description": "Make the holds joyful and saturated.",
+            "promptHint": "magenta lime cobalt yellow climbing holds, high color contrast"
+          },
+          {
+            "label": "Soft Pastel",
+            "description": "Make the color more friendly and light.",
+            "promptHint": "pastel pink mint soft blue butter yellow holds"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Two Hands",
+            "description": "Show effort and motion.",
+            "promptHint": "both hands gripping adjacent holds, forearms entering frame"
+          },
+          {
+            "label": "One Hand",
+            "description": "Create a simple iconic detail.",
+            "promptHint": "single chalky hand on one bright hold, clean negative space"
+          }
+        ],
+        "props": [
+          {
+            "label": "Chalk Cloud",
+            "description": "Add a tiny burst of action.",
+            "promptHint": "subtle chalk dust cloud around fingers"
+          },
+          {
+            "label": "Brush Detail",
+            "description": "Include a small route-care cue.",
+            "promptHint": "small climbing brush tucked near holds, no text"
+          }
+        ],
+        "character": [
+          {
+            "label": "Anonymous",
+            "description": "Keep it universal and usable.",
+            "promptHint": "hands only, no face visible"
+          },
+          {
+            "label": "Smiling Edge",
+            "description": "Hint at joy without losing the detail.",
+            "promptHint": "partial smiling face softly blurred in background"
+          }
+        ],
+        "format": [
+          {
+            "label": "Vertical Detail",
+            "description": "Useful for Stories and Reels covers.",
+            "promptHint": "vertical close crop, strong diagonal hand line"
+          },
+          {
+            "label": "Square Icon",
+            "description": "Useful for carousel covers.",
+            "promptHint": "square composition, central hold and hand"
+          }
+        ]
+      }
+    },
+    {
+      "id": "first-time-climber-smile",
+      "title": "First-Time Climber Smile",
+      "caption": "A beginner-friendly image that lowers the barrier to entry.",
+      "source": "campaign brief",
+      "tone": "welcoming, proud, light",
+      "motif": "new climber celebrating a small win",
+      "palette": "mint, sunny yellow, soft blue, gym neutrals",
+      "prompt": "Single editorial photograph in an indoor bouldering gym, a beginner climber standing on grey mats smiling after finishing a low bouldering problem, friends in soft focus clapping nearby, colorful holds on clean walls, bright friendly lighting, approachable social media campaign mood, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Warm Candid",
+            "description": "Make it feel real and immediate.",
+            "promptHint": "warm candid documentary photo, natural smile, relaxed posture"
+          },
+          {
+            "label": "Ad Ready",
+            "description": "Make the win feel polished.",
+            "promptHint": "clean campaign portrait, polished but natural lighting"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Sunny",
+            "description": "More energetic and optimistic.",
+            "promptHint": "sunny yellow accents, bright white gym light"
+          },
+          {
+            "label": "Soft Mint",
+            "description": "More beginner-friendly and calm.",
+            "promptHint": "mint, soft blue, pale wood, gentle contrast"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Just Landed",
+            "description": "Capture the moment after the attempt.",
+            "promptHint": "climber just stepped down onto mats, excited smile"
+          },
+          {
+            "label": "High Five",
+            "description": "Turn the win into a shared moment.",
+            "promptHint": "climber high fiving a friend after a problem"
+          }
+        ],
+        "props": [
+          {
+            "label": "Shoes Visible",
+            "description": "Add recognizable climbing equipment.",
+            "promptHint": "climbing shoes visible on mat, chalk bag nearby"
+          },
+          {
+            "label": "Mat Space",
+            "description": "Keep it clean for social cropping.",
+            "promptHint": "open grey mat area, uncluttered foreground"
+          }
+        ],
+        "character": [
+          {
+            "label": "Solo Hero",
+            "description": "One new climber owns the frame.",
+            "promptHint": "one beginner climber in focus"
+          },
+          {
+            "label": "Friend Pair",
+            "description": "Show the social hook.",
+            "promptHint": "two friends celebrating together"
+          }
+        ],
+        "format": [
+          {
+            "label": "Portrait",
+            "description": "Optimized for Stories.",
+            "promptHint": "vertical portrait composition"
+          },
+          {
+            "label": "Carousel",
+            "description": "Optimized for feed.",
+            "promptHint": "square crop, centered subject"
+          }
+        ]
+      }
+    },
+    {
+      "id": "chalk-bucket-circle",
+      "title": "Chalk Bucket Circle",
+      "caption": "A small ritual that signals community and shared activity.",
+      "source": "campaign brief",
+      "tone": "social, tactile, grounded",
+      "motif": "hands around chalk and shoes",
+      "palette": "chalk white, soft grey, coral, teal, black rubber",
+      "prompt": "Single overhead editorial photograph of several climbers sitting in a loose circle on indoor bouldering mats, hands reaching toward a shared chalk bucket, climbing shoes and brushes nearby, colorful wall and holds blurred in background, warm friendly community energy, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Overhead Graphic",
+            "description": "Make the composition clean and social.",
+            "promptHint": "direct overhead, circular composition, graphic spacing"
+          },
+          {
+            "label": "Documentary",
+            "description": "Make it feel casually observed.",
+            "promptHint": "candid angle, natural clutter, real gym texture"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Neutral Gear",
+            "description": "Use chalk and shoe details as the anchor.",
+            "promptHint": "chalk white, grey mats, black rubber, muted gear"
+          },
+          {
+            "label": "Color Pop",
+            "description": "Let nearby holds add joy.",
+            "promptHint": "coral teal yellow hold colors blurred in background"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Pre-Climb",
+            "description": "Show anticipation.",
+            "promptHint": "hands chalking up before a climb"
+          },
+          {
+            "label": "Between Burns",
+            "description": "Show relaxed community rest.",
+            "promptHint": "climbers resting between attempts, casual smiles"
+          }
+        ],
+        "props": [
+          {
+            "label": "Brushes",
+            "description": "Add authentic bouldering details.",
+            "promptHint": "climbing brushes, tape, chalk bucket, shoes"
+          },
+          {
+            "label": "Water Bottles",
+            "description": "Add social hangout realism.",
+            "promptHint": "water bottles and gym bags at edge of mat"
+          }
+        ],
+        "character": [
+          {
+            "label": "Hands Only",
+            "description": "Make it broadly relatable.",
+            "promptHint": "diverse hands only, no faces"
+          },
+          {
+            "label": "Faces Edge",
+            "description": "Add warmth.",
+            "promptHint": "partial smiling faces at frame edge"
+          }
+        ],
+        "format": [
+          {
+            "label": "Square",
+            "description": "Strong feed composition.",
+            "promptHint": "square overhead crop"
+          },
+          {
+            "label": "Wide",
+            "description": "Good for web/social headers.",
+            "promptHint": "landscape overhead composition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dynamic-side-move",
+      "title": "Dynamic Side Move",
+      "caption": "A joyful action image without making the sport feel intimidating.",
+      "source": "campaign brief",
+      "tone": "energetic, playful, athletic",
+      "motif": "climber reaching across colorful holds",
+      "palette": "cobalt, lime, orange, pale grey, wood",
+      "prompt": "Single action editorial photograph inside an indoor bouldering gym, climber making a dynamic side reach on a low wall above thick mats, expression focused but happy, friends watching blurred in background, colorful cobalt lime orange holds, bright safe gym environment, approachable athletic energy, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Motion Blur",
+            "description": "Add speed and play.",
+            "promptHint": "subtle motion blur on limbs, crisp face and holds"
+          },
+          {
+            "label": "Frozen Action",
+            "description": "Make the move crisp and graphic.",
+            "promptHint": "sharp frozen action, clean diagonal body shape"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Electric Holds",
+            "description": "More high-energy.",
+            "promptHint": "electric blue lime orange holds"
+          },
+          {
+            "label": "Soft Gym",
+            "description": "More approachable.",
+            "promptHint": "soft grey wall, warm wood, moderate color accents"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Side Wall",
+            "description": "Strong diagonal movement.",
+            "promptHint": "climber traversing sideways across wall"
+          },
+          {
+            "label": "Low Dyno",
+            "description": "Fun without danger.",
+            "promptHint": "low playful dynamic move above mats"
+          }
+        ],
+        "props": [
+          {
+            "label": "Visible Mats",
+            "description": "Make safety clear.",
+            "promptHint": "thick clean crash mats prominent below"
+          },
+          {
+            "label": "Route Holds",
+            "description": "Show a clear problem.",
+            "promptHint": "single route color dominates the holds"
+          }
+        ],
+        "character": [
+          {
+            "label": "Joyful Focus",
+            "description": "Keep the athlete expressive.",
+            "promptHint": "focused happy expression, not extreme seriousness"
+          },
+          {
+            "label": "Friend Watching",
+            "description": "Keep community in frame.",
+            "promptHint": "friend watching and smiling in background"
+          }
+        ],
+        "format": [
+          {
+            "label": "Vertical Action",
+            "description": "Reels cover energy.",
+            "promptHint": "vertical action crop"
+          },
+          {
+            "label": "Wide Motion",
+            "description": "Good for banners.",
+            "promptHint": "wide composition emphasizing lateral movement"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shoe-wall-ready",
+      "title": "Shoe Wall Ready",
+      "caption": "An approachable preparation moment for new climbers.",
+      "source": "campaign brief",
+      "tone": "inviting, practical, friendly",
+      "motif": "climbing shoes before the session",
+      "palette": "soft grey, teal, coral, off-white, black rubber",
+      "prompt": "Single editorial photograph of a cheerful indoor bouldering gym preparation moment, climber tying bright climbing shoes while seated on clean grey mats, colorful holds and friends blurred behind, chalk bag nearby, warm friendly lighting, approachable community atmosphere, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Lifestyle Detail",
+            "description": "Make it easy and welcoming.",
+            "promptHint": "lifestyle editorial detail, soft natural light"
+          },
+          {
+            "label": "Gear Editorial",
+            "description": "Make the shoes the hero.",
+            "promptHint": "polished gear-focused close-up, crisp texture"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Teal Coral",
+            "description": "Social and bright.",
+            "promptHint": "teal and coral accents with clean grey mats"
+          },
+          {
+            "label": "Minimal Neutral",
+            "description": "Cleaner and more premium.",
+            "promptHint": "off-white, grey, black rubber, tiny color accents"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Getting Ready",
+            "description": "Before-session anticipation.",
+            "promptHint": "tying climbing shoes before starting"
+          },
+          {
+            "label": "Shoe Swap",
+            "description": "Beginner rental cue.",
+            "promptHint": "friend helping choose climbing shoes, no readable labels"
+          }
+        ],
+        "props": [
+          {
+            "label": "Chalk Bag",
+            "description": "Add climbing specificity.",
+            "promptHint": "chalk bag and brush next to shoes"
+          },
+          {
+            "label": "Gym Bag",
+            "description": "Make it a social outing.",
+            "promptHint": "small gym bag and water bottle nearby"
+          }
+        ],
+        "character": [
+          {
+            "label": "Hands Only",
+            "description": "Simple universal detail.",
+            "promptHint": "hands tying shoes, no face"
+          },
+          {
+            "label": "Smiling Friend",
+            "description": "Add community context.",
+            "promptHint": "friend smiling softly blurred behind"
+          }
+        ],
+        "format": [
+          {
+            "label": "Square Detail",
+            "description": "Works as a carousel opener.",
+            "promptHint": "square detail crop"
+          },
+          {
+            "label": "Vertical Lifestyle",
+            "description": "Works for Story framing.",
+            "promptHint": "vertical seated composition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wall-of-holds-play",
+      "title": "Wall Of Holds Play",
+      "caption": "A graphic color field that makes the gym instantly recognizable.",
+      "source": "campaign brief",
+      "tone": "playful, graphic, modern",
+      "motif": "colorful climbing wall pattern",
+      "palette": "white wall, cobalt, pink, yellow, lime, teal",
+      "prompt": "Single graphic editorial photograph of an indoor bouldering wall filled with colorful holds on a clean light wall, one climber entering from the lower edge for scale, bright modern gym lighting, playful visual rhythm, social media friendly negative space, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Graphic Minimal",
+            "description": "Use holds as a pattern.",
+            "promptHint": "minimal graphic photography, clean wall, strong color rhythm"
+          },
+          {
+            "label": "Lifestyle Scale",
+            "description": "Add more human warmth.",
+            "promptHint": "one climber visible for scale, soft human presence"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Primary Pop",
+            "description": "Bolder social impact.",
+            "promptHint": "cobalt yellow pink lime holds on white wall"
+          },
+          {
+            "label": "Pastel Holds",
+            "description": "Softer and more playful.",
+            "promptHint": "pastel teal peach butter yellow lavender holds"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Empty Wall",
+            "description": "Useful as a background visual.",
+            "promptHint": "mostly empty wall with holds, no people"
+          },
+          {
+            "label": "Climber Edge",
+            "description": "Add a subtle activity cue.",
+            "promptHint": "climber cropped at bottom edge reaching upward"
+          }
+        ],
+        "props": [
+          {
+            "label": "No Gear",
+            "description": "Keep the tile clean.",
+            "promptHint": "no loose gear, clean wall and mats"
+          },
+          {
+            "label": "Mat Line",
+            "description": "Ground the gym setting.",
+            "promptHint": "soft grey mat line visible at bottom"
+          }
+        ],
+        "character": [
+          {
+            "label": "Tiny Human",
+            "description": "Let the wall dominate.",
+            "promptHint": "small human figure for scale"
+          },
+          {
+            "label": "No Face",
+            "description": "Make it reusable.",
+            "promptHint": "face not visible, body cropped"
+          }
+        ],
+        "format": [
+          {
+            "label": "Background",
+            "description": "Good for posts with later text overlays.",
+            "promptHint": "vertical background composition with negative space"
+          },
+          {
+            "label": "Pattern Square",
+            "description": "Good for feed rhythm.",
+            "promptHint": "square patterned composition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "post-climb-laugh",
+      "title": "Post-Climb Laugh",
+      "caption": "The community payoff after the climbing effort.",
+      "source": "campaign brief",
+      "tone": "warm, social, joyful",
+      "motif": "friends laughing after climbing",
+      "palette": "warm light, grey mats, teal, yellow, coral",
+      "prompt": "Single editorial photograph in an indoor bouldering gym lounge edge near the mats, a small diverse group of climbers laughing together after a session, climbing wall and colorful holds visible behind them, chalk on hands, relaxed body language, warm community feeling, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Lifestyle Warmth",
+            "description": "Make the community emotion primary.",
+            "promptHint": "warm lifestyle photography, relaxed smiles, soft light"
+          },
+          {
+            "label": "Editorial Gym",
+            "description": "Keep it sharper and brand-ready.",
+            "promptHint": "clean editorial composition inside gym, crisp background color"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Golden Warm",
+            "description": "Friendly and inviting.",
+            "promptHint": "warm golden indoor light, coral and yellow accents"
+          },
+          {
+            "label": "Clean Bright",
+            "description": "More modern gym feel.",
+            "promptHint": "bright white light, teal and cobalt holds"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Mat Hangout",
+            "description": "Keep them close to the climb.",
+            "promptHint": "group seated on mats below bouldering wall"
+          },
+          {
+            "label": "Lounge Edge",
+            "description": "Show the gym as a social space.",
+            "promptHint": "group near gym lounge benches with wall behind"
+          }
+        ],
+        "props": [
+          {
+            "label": "Chalk Hands",
+            "description": "Keep climbing authenticity.",
+            "promptHint": "chalky hands visible while laughing"
+          },
+          {
+            "label": "Water Bottles",
+            "description": "Casual after-session detail.",
+            "promptHint": "water bottles and shoes nearby"
+          }
+        ],
+        "character": [
+          {
+            "label": "Four Friends",
+            "description": "Clear group dynamic.",
+            "promptHint": "four climbers laughing together"
+          },
+          {
+            "label": "Pair Laugh",
+            "description": "More intimate and simple.",
+            "promptHint": "two friends sharing a laugh"
+          }
+        ],
+        "format": [
+          {
+            "label": "Social Feed",
+            "description": "Balanced group framing.",
+            "promptHint": "square social feed composition"
+          },
+          {
+            "label": "Story Slice",
+            "description": "Vertical human moment.",
+            "promptHint": "vertical crop, faces and wall visible"
+          }
+        ]
+      }
+    },
+    {
+      "id": "coach-beta-moment",
+      "title": "Coach Beta Moment",
+      "caption": "A supportive teaching moment that reinforces belonging.",
+      "source": "campaign brief",
+      "tone": "supportive, friendly, instructional",
+      "motif": "climbers discussing a bouldering route",
+      "palette": "pale wood, blue holds, coral holds, grey mats",
+      "prompt": "Single editorial photograph inside an indoor bouldering gym, two climbers and a friendly coach pointing at a route on a low bouldering wall, everyone smiling and engaged, colorful holds, grey mats, bright clean lighting, community learning moment, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Documentary",
+            "description": "Make the coaching feel natural.",
+            "promptHint": "candid documentary gym photography"
+          },
+          {
+            "label": "Campaign Polish",
+            "description": "Make it more composed.",
+            "promptHint": "polished campaign photo, clear gesture, clean composition"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Blue Coral",
+            "description": "Friendly contrast.",
+            "promptHint": "blue and coral route holds, pale wood wall"
+          },
+          {
+            "label": "Soft Neutral",
+            "description": "Less busy and more premium.",
+            "promptHint": "neutral wall, grey mats, small color accents"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Pointing Route",
+            "description": "Show problem-solving.",
+            "promptHint": "coach pointing at next handhold"
+          },
+          {
+            "label": "Reading Wall",
+            "description": "More contemplative and social.",
+            "promptHint": "climbers studying the wall together"
+          }
+        ],
+        "props": [
+          {
+            "label": "Brush In Hand",
+            "description": "Add an authentic detail.",
+            "promptHint": "coach holding small climbing brush"
+          },
+          {
+            "label": "Chalk Bag",
+            "description": "Keep the gear cue subtle.",
+            "promptHint": "chalk bag visible near feet"
+          }
+        ],
+        "character": [
+          {
+            "label": "Coach + Pair",
+            "description": "Clear instruction dynamic.",
+            "promptHint": "coach with two climbers"
+          },
+          {
+            "label": "Peer Beta",
+            "description": "Make it community-led.",
+            "promptHint": "friends sharing beta without formal coach"
+          }
+        ],
+        "format": [
+          {
+            "label": "Horizontal",
+            "description": "Good for web banners.",
+            "promptHint": "horizontal composition with wall and group"
+          },
+          {
+            "label": "Vertical",
+            "description": "Good for social stories.",
+            "promptHint": "vertical composition, gesture centered"
+          }
+        ]
+      }
+    },
+    {
+      "id": "after-work-group",
+      "title": "After-Work Group",
+      "caption": "A social outing angle for adults and friend groups.",
+      "source": "campaign brief",
+      "tone": "upbeat, social, urban",
+      "motif": "friends arriving for bouldering",
+      "palette": "clean white, teal, cobalt, coral, grey",
+      "prompt": "Single editorial photograph of an after-work friend group arriving inside a modern indoor bouldering gym, casual athletic clothes, climbing walls and colorful holds visible, relaxed excited expressions, clean urban social energy, bright welcoming light, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Urban Social",
+            "description": "Friend group as the hook.",
+            "promptHint": "urban lifestyle campaign photography, group energy"
+          },
+          {
+            "label": "Gym Editorial",
+            "description": "More polished and structured.",
+            "promptHint": "clean editorial gym arrival scene"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Clean Pop",
+            "description": "Modern and bright.",
+            "promptHint": "clean white walls with teal cobalt coral accents"
+          },
+          {
+            "label": "Evening Warm",
+            "description": "After-work warmth.",
+            "promptHint": "warm indoor evening light, soft colorful holds"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Arrival",
+            "description": "Show the outing beginning.",
+            "promptHint": "friends entering gym space with excitement"
+          },
+          {
+            "label": "Locker Edge",
+            "description": "Show pre-session transition.",
+            "promptHint": "friends dropping bags and changing shoes near mats"
+          }
+        ],
+        "props": [
+          {
+            "label": "Work Bags",
+            "description": "Signal after-work convenience.",
+            "promptHint": "small work bags and gym bags, no readable labels"
+          },
+          {
+            "label": "Climbing Shoes",
+            "description": "Immediate activity cue.",
+            "promptHint": "climbing shoes in hand"
+          }
+        ],
+        "character": [
+          {
+            "label": "Friend Group",
+            "description": "Make it a shared plan.",
+            "promptHint": "group of four friends"
+          },
+          {
+            "label": "Duo",
+            "description": "More intimate invite.",
+            "promptHint": "two friends arriving together"
+          }
+        ],
+        "format": [
+          {
+            "label": "Reels Cover",
+            "description": "Vertical and energetic.",
+            "promptHint": "vertical arrival composition"
+          },
+          {
+            "label": "Feed Wide",
+            "description": "Useful for carousel opener.",
+            "promptHint": "horizontal group composition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "route-reading-huddle",
+      "title": "Route Reading Huddle",
+      "caption": "A problem-solving social image, not just action.",
+      "source": "campaign brief",
+      "tone": "curious, collaborative, playful",
+      "motif": "friends reading a bouldering problem",
+      "palette": "pale grey, warm wood, pink, lime, blue",
+      "prompt": "Single editorial photograph inside an indoor bouldering gym, three climbers standing close together reading a bouldering route and gesturing at colorful holds, backs and profiles visible, soft smiles, collaborative problem-solving mood, clean bright wall and mats, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Quiet Focus",
+            "description": "Collaborative and thoughtful.",
+            "promptHint": "quiet focused candid moment, soft smiles"
+          },
+          {
+            "label": "Playful Debate",
+            "description": "More animated and fun.",
+            "promptHint": "friends laughing while debating the route"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Pastel Problem",
+            "description": "Light and social.",
+            "promptHint": "pink lime blue holds, pale grey wall"
+          },
+          {
+            "label": "Warm Wood",
+            "description": "More tactile.",
+            "promptHint": "warm plywood wall, colorful holds"
+          }
+        ],
+        "scene": [
+          {
+            "label": "Pointing Up",
+            "description": "Clear route-reading gesture.",
+            "promptHint": "hands pointing up at holds"
+          },
+          {
+            "label": "Low Huddle",
+            "description": "More intimate group shape.",
+            "promptHint": "small huddle near the wall, heads close"
+          }
+        ],
+        "props": [
+          {
+            "label": "Chalked Hands",
+            "description": "Authentic climbing detail.",
+            "promptHint": "chalked hands gesturing"
+          },
+          {
+            "label": "Shoes On Mat",
+            "description": "Ground the scene.",
+            "promptHint": "climbing shoes and mat texture visible"
+          }
+        ],
+        "character": [
+          {
+            "label": "Three Friends",
+            "description": "Balanced group.",
+            "promptHint": "three climbers"
+          },
+          {
+            "label": "Mixed Ages",
+            "description": "Broaden community.",
+            "promptHint": "mixed ages adult climbers"
+          }
+        ],
+        "format": [
+          {
+            "label": "Vertical Wall",
+            "description": "Show holds above them.",
+            "promptHint": "vertical wall composition"
+          },
+          {
+            "label": "Square Huddle",
+            "description": "Focus group connection.",
+            "promptHint": "square group huddle crop"
+          }
+        ]
+      }
+    },
+    {
+      "id": "membership-community-wall",
+      "title": "Community Wall Moment",
+      "caption": "A soft brand-world image for belonging and repeat visits.",
+      "source": "campaign brief",
+      "tone": "belonging, warm, communal",
+      "motif": "gym community gathering by the wall",
+      "palette": "warm white, grey, teal, yellow, soft red",
+      "prompt": "Single editorial photograph inside a modern indoor bouldering gym, community members gathered casually near a bouldering wall after a session, some seated on mats and some standing, colorful holds, warm welcoming light, joyful inclusive gym culture, no readable text, no logos, no collage, no split panels.",
+      "remixSuggestions": {
+        "style": [
+          {
+            "label": "Community Event",
+            "description": "Make it feel like a regular gym gathering.",
+            "promptHint": "community event atmosphere, relaxed group near wall"
+          },
+          {
+            "label": "Editorial Belonging",
+            "description": "More polished membership image.",
+            "promptHint": "refined editorial community photograph, balanced group composition"
+          }
+        ],
+        "palette": [
+          {
+            "label": "Warm Light",
+            "description": "More welcoming.",
+            "promptHint": "warm white light, yellow and soft red accents"
+          },
+          {
+            "label": "Modern Bright",
+            "description": "Cleaner gym feel.",
+            "promptHint": "bright white gym, teal and cobalt holds"
+          }
+        ],
+        "scene": [
+          {
+            "label": "After Session",
+            "description": "Relaxed and social.",
+            "promptHint": "post-session gathering on mats"
+          },
+          {
+            "label": "Event Night",
+            "description": "More campaignable community energy.",
+            "promptHint": "friendly bouldering community night, no signage text"
+          }
+        ],
+        "props": [
+          {
+            "label": "Gear Cluster",
+            "description": "Add authentic lived-in detail.",
+            "promptHint": "chalk bags shoes brushes clustered on mat"
+          },
+          {
+            "label": "Open Space",
+            "description": "Keep room for later design overlays.",
+            "promptHint": "clean negative space on wall, no text"
+          }
+        ],
+        "character": [
+          {
+            "label": "Diverse Group",
+            "description": "Inclusive membership signal.",
+            "promptHint": "diverse adult climbers"
+          },
+          {
+            "label": "Small Circle",
+            "description": "More intimate belonging.",
+            "promptHint": "small circle of friends"
+          }
+        ],
+        "format": [
+          {
+            "label": "Hero Wide",
+            "description": "Reusable as a banner.",
+            "promptHint": "wide hero composition"
+          },
+          {
+            "label": "Social Vertical",
+            "description": "Reusable for Stories.",
+            "promptHint": "vertical social composition"
+          }
+        ]
+      }
+    }
+  ]
+}
