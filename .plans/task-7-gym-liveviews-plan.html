@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ascents Task 7 Gym LiveViews Plan</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #18212f;
+        --muted: #617084;
+        --line: #d9e0e8;
+        --panel: #f7f9fb;
+        --accent: #167267;
+        --accent-strong: #0d4f48;
+        --warn: #9a5a00;
+        --risk: #a43737;
+        --ok: #34714d;
+        --paper: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 32px;
+        padding-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.8rem);
+        max-width: 860px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 1.48rem;
+        margin-top: 34px;
+        padding-top: 26px;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      code {
+        background: #eef3f5;
+        border-radius: 4px;
+        font-size: 0.94em;
+        padding: 2px 5px;
+      }
+
+      .status {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        white-space: nowrap;
+      }
+
+      .status.ready {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .status.planned {
+        background: #eef3f5;
+        color: #4d5d70;
+      }
+
+      .status.question {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 1.12rem;
+        max-width: 840px;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 16px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 18px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .tag {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 10px;
+        padding: 3px 9px;
+        text-transform: uppercase;
+      }
+
+      .tag.ok {
+        background: #e9f4ee;
+        color: var(--ok);
+      }
+
+      .tag.warn {
+        background: #fff2dc;
+        color: var(--warn);
+      }
+
+      .tag.risk {
+        background: #fae8e8;
+        color: var(--risk);
+      }
+
+      .data-table {
+        border-collapse: collapse;
+        margin-top: 14px;
+        width: 100%;
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .data-table th {
+        background: #eef3f5;
+      }
+
+      .flow {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        margin-top: 14px;
+      }
+
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      .step strong {
+        color: var(--accent-strong);
+        display: block;
+      }
+
+      @media (max-width: 680px) {
+        main {
+          padding: 32px 18px 56px;
+        }
+
+        .data-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Task 7 Gym LiveViews Plan</h1>
+        <p class="lede">
+          Build the authenticated gym community UI layer for creating gyms,
+          viewing gym pages, editing gym settings, and joining or leaving gym
+          communities, plus the first owner/admin member-management workflow,
+          using the existing <code>Ascents.Gyms</code> context and Task 6
+          authorization helpers.
+        </p>
+        <p class="meta">
+          Source plan: <code>.plans/ascents-social-plan.html</code>. Prior
+          implementation plans: <code>.plans/task-5-gym-context-plan.html</code>
+          and <code>.plans/task-6-authorization-helpers-plan.html</code>.
+          Target stack: Phoenix 1.8, LiveView, generated auth scopes, Tailwind
+          v4.
+        </p>
+      </header>
+
+      <section>
+        <h2>Task Boundary</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag ok">In scope</span>
+            <ul>
+              <li>Create a new <code>AscentsWeb.GymLive</code> namespace for gym pages.</li>
+              <li>Add LiveViews for gym index, new gym, show gym, edit settings, and member management.</li>
+              <li>Wire create, join, leave, update, member removal, and role changes through <code>Ascents.Gyms</code>.</li>
+              <li>Use <code>current_scope</code> throughout and pass it into <code>&lt;Layouts.app&gt;</code>.</li>
+              <li>Add LiveView tests using stable element IDs for form and membership actions.</li>
+            </ul>
+          </article>
+          <article class="panel">
+            <span class="tag warn">Out of scope</span>
+            <ul>
+              <li>No boulder problem management UI; that belongs to a route/problem task.</li>
+              <li>No feed, post, comment, ascent, or media upload workflows.</li>
+              <li>No invitations, pending requests, banning, ownership transfer, or verification review.</li>
+              <li>No public search ranking beyond a deterministic gym list.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Decisions</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Decision</th>
+              <th>Why it matters</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Should gym show pages be public?</td>
+              <td><span class="status ready">Yes, read-only public</span></td>
+              <td>
+                A public gym page makes community discovery possible. Anonymous
+                users can view gym metadata but cannot join, leave, create, or
+                edit without logging in.
+              </td>
+            </tr>
+            <tr>
+              <td>Should the gym index be public?</td>
+              <td><span class="status ready">Yes</span></td>
+              <td>
+                <code>Gyms.list_gyms/0</code> is already unscoped and
+                deterministic. A public index fits discovery while mutation
+                remains protected by authenticated routes and context checks.
+              </td>
+            </tr>
+            <tr>
+              <td>Should users choose slugs during creation?</td>
+              <td><span class="status ready">No</span></td>
+              <td>
+                Task 5 intentionally generates slugs from gym names. The new
+                form should collect name, description, location, and grade
+                scale only, then navigate to <code>/gyms/:slug</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>Should owners be allowed to leave their own gym?</td>
+              <td><span class="status ready">Use context result</span></td>
+              <td>
+                <code>Gyms.leave_gym/2</code> already rejects
+                <code>:only_owner</code>. The UI should surface that as a clear
+                flash message rather than hiding it with special template logic.
+              </td>
+            </tr>
+            <tr>
+              <td>Should task 7 include owner/admin role workflows?</td>
+              <td><span class="status ready">Yes, basic member management</span></td>
+              <td>
+                Add a protected member-management page for the existing role
+                model. Owners and admins can view gym members, promote or demote
+                members among <code>admin</code>, <code>mod</code>, and
+                <code>member</code>, and remove non-owner memberships. Owner
+                transfer stays out of scope because the current context protects
+                the last owner and no transfer rule has been designed yet.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Route And Auth Placement</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Scope and pipeline</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>live "/gyms", GymLive.Index</code></td>
+              <td>
+                Plain browser scope:
+                <code>scope "/", AscentsWeb</code> with
+                <code>pipe_through :browser</code>.
+              </td>
+              <td>
+                Listing gyms is read-only and works with or without
+                authentication. The browser pipeline still assigns
+                <code>current_scope</code> through
+                <code>:fetch_current_scope_for_user</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>live "/gyms/:slug", GymLive.Show</code></td>
+              <td>
+                Plain browser scope:
+                <code>scope "/", AscentsWeb</code> with
+                <code>pipe_through :browser</code>.
+              </td>
+              <td>
+                Public read-only gym pages support discovery. Authenticated
+                users see join, leave, and settings controls based on
+                <code>current_scope</code> and capability helpers.
+              </td>
+            </tr>
+            <tr>
+              <td><code>live "/gyms/new", GymLive.New</code></td>
+              <td>
+                Authenticated scope:
+                <code>scope "/", AscentsWeb</code> with
+                <code>pipe_through [:browser, :require_authenticated_user]</code>.
+              </td>
+              <td>
+                Gym creation mutates data, creates an owner membership, and must
+                use the generated auth <code>current_scope</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>live "/gyms/:slug/settings", GymLive.Edit</code></td>
+              <td>
+                Authenticated scope:
+                <code>scope "/", AscentsWeb</code> with
+                <code>pipe_through [:browser, :require_authenticated_user]</code>.
+              </td>
+              <td>
+                Gym settings are mutable and must be guarded by
+                <code>Gyms.can_update_gym?/2</code>. The context must still
+                reject unauthorized updates if a route is misconfigured.
+              </td>
+            </tr>
+            <tr>
+              <td><code>live "/gyms/:slug/members", GymLive.Members</code></td>
+              <td>
+                Authenticated scope:
+                <code>scope "/", AscentsWeb</code> with
+                <code>pipe_through [:browser, :require_authenticated_user]</code>.
+              </td>
+              <td>
+                Viewing and changing member roles exposes community membership
+                state and mutates authorization-sensitive data. The LiveView
+                should require <code>Gyms.can_update_gym?/2</code> or a
+                dedicated <code>Gyms.can_manage_members?/2</code> helper before
+                rendering controls.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Every LiveView template must begin with
+          <code>&lt;Layouts.app flash={@flash} current_scope={@current_scope}&gt;</code>.
+          Route definitions should be added inside the existing
+          <code>AscentsWeb</code> scopes without manually aliasing route modules.
+        </p>
+      </section>
+
+      <section>
+        <h2>Target Files</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents_web/live/gym_live/index.ex</code></h3>
+            <p>
+              Render all gyms with a primary link to create a gym for
+              authenticated users and login/register links for anonymous users.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents_web/live/gym_live/new.ex</code></h3>
+            <p>
+              Build a <code>to_form/2</code>-driven creation form that calls
+              <code>Gyms.create_gym/2</code>, validates with
+              <code>Gyms.change_gym/2</code>, and navigates to the created gym.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents_web/live/gym_live/show.ex</code></h3>
+            <p>
+              Load a gym by slug, assign membership and capability booleans,
+              show empty placeholders for routes/feed, and handle join and
+              leave events.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents_web/live/gym_live/edit.ex</code></h3>
+            <p>
+              Require an authenticated user, reject non-admin members with a
+              redirect and flash, and save metadata changes through
+              <code>Gyms.update_gym/3</code>.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>lib/ascents_web/live/gym_live/members.ex</code></h3>
+            <p>
+              Require owner/admin access, list memberships with user profile
+              data preloaded, and handle role changes and member removal through
+              scoped context functions.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>lib/ascents/gyms.ex</code></h3>
+            <p>
+              Add member-management APIs only if they do not already exist:
+              <code>list_gym_memberships/2</code>,
+              <code>update_membership_role/4</code>,
+              <code>remove_membership/3</code>, and optionally
+              <code>can_manage_members?/2</code>. Keep owner-protection rules in
+              the context, not only in templates.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>lib/ascents_web/router.ex</code></h3>
+            <p>
+              Add public read-only gym routes in the browser scope and mutating
+              gym routes, including <code>/gyms/:slug/members</code>, in the
+              authenticated browser scope.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Create</span>
+            <h3><code>test/ascents_web/live/gym_live_test.exs</code></h3>
+            <p>
+              Cover anonymous/public viewing, authenticated create, join, leave,
+              settings authorization, validation, successful update flows, and
+              member-management authorization.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag ok">Update</span>
+            <h3><code>test/ascents/gyms_test.exs</code></h3>
+            <p>
+              Cover scoped member listing, role update authorization, invalid
+              role rejection, member removal, and owner-protection edge cases.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>UX Requirements</h2>
+        <ul>
+          <li>Use the existing dark climbing social visual language from the component gallery and profile pages.</li>
+          <li>Use imported core inputs with <code>&lt;.input field={@form[:field]} ... /&gt;</code> for all form fields.</li>
+          <li>Give key elements stable IDs: <code>gyms-index</code>, <code>gym-new-form</code>, <code>gym-show</code>, <code>gym-join-button</code>, <code>gym-leave-button</code>, <code>gym-settings-link</code>, <code>gym-settings-form</code>, <code>gym-members-link</code>, and <code>gym-members-table</code>.</li>
+          <li>Represent the gym's selected grade scale in readable copy: <code>V scale</code> or <code>French bouldering</code>.</li>
+          <li>Do not expose slug editing in creation, settings, or member-management screens.</li>
+          <li>Use a compact table or list for members with explicit role controls and disabled owner-protected actions.</li>
+          <li>Include empty states for routes, feed posts, and recent ascents, but do not implement those workflows in this task.</li>
+          <li>Use subtle hover and focus transitions, but avoid external scripts, inline scripts, or new CSS bundles.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Implementation Flow</h2>
+        <div class="flow">
+          <div class="step">
+            <strong>1. Router</strong>
+            Place public and authenticated routes in the correct existing
+            scopes.
+          </div>
+          <div class="step">
+            <strong>2. Shared Helpers</strong>
+            Add small private LiveView helpers for scope loading only if needed;
+            avoid premature components.
+          </div>
+          <div class="step">
+            <strong>3. Index</strong>
+            Render gym cards from <code>Gyms.list_gyms/0</code> and link to
+            show pages.
+          </div>
+          <div class="step">
+            <strong>4. New Form</strong>
+            Build validation and submit events around <code>to_form/2</code> and
+            <code>Gyms.create_gym/2</code>.
+          </div>
+          <div class="step">
+            <strong>5. Show Actions</strong>
+            Assign membership state and wire join/leave events with flash
+            feedback.
+          </div>
+          <div class="step">
+            <strong>6. Settings</strong>
+            Gate edit access with <code>Gyms.can_update_gym?/2</code> and route
+            unauthorized users back to the gym page.
+          </div>
+          <div class="step">
+            <strong>7. Members</strong>
+            Add owner/admin member-management APIs and a protected members
+            LiveView for role updates and member removal.
+          </div>
+          <div class="step">
+            <strong>8. Tests</strong>
+            Add LiveView tests using element selectors rather than raw HTML
+            assertions.
+          </div>
+          <div class="step">
+            <strong>9. Verify</strong>
+            Run <code>mix precommit</code> and fix compile, format, and test
+            failures.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Test Plan</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Case</th>
+              <th>Expected result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Anonymous user views <code>/gyms</code></td>
+              <td>Index renders <code>#gyms-index</code> and does not show member-only controls.</td>
+            </tr>
+            <tr>
+              <td>Anonymous user views <code>/gyms/:slug</code></td>
+              <td>Show page renders <code>#gym-show</code>, public metadata, and a login prompt instead of join/leave buttons.</td>
+            </tr>
+            <tr>
+              <td>Anonymous user visits <code>/gyms/new</code> or settings</td>
+              <td>Router redirects to <code>/users/log-in</code>.</td>
+            </tr>
+            <tr>
+              <td>Authenticated user creates a gym</td>
+              <td>Submitting <code>#gym-new-form</code> creates a gym, creates an owner membership, and navigates to the generated slug URL.</td>
+            </tr>
+            <tr>
+              <td>Create form validation fails</td>
+              <td>Invalid fields render changeset errors through the existing <code>&lt;.input&gt;</code> component.</td>
+            </tr>
+            <tr>
+              <td>Authenticated non-member joins a gym</td>
+              <td>Clicking <code>#gym-join-button</code> creates a member membership, updates controls, and shows success flash.</td>
+            </tr>
+            <tr>
+              <td>Member leaves a gym</td>
+              <td>Clicking <code>#gym-leave-button</code> removes membership and updates controls.</td>
+            </tr>
+            <tr>
+              <td>Only owner tries to leave</td>
+              <td>Context returns <code>:only_owner</code> and the LiveView shows an explanatory error flash.</td>
+            </tr>
+            <tr>
+              <td>Non-admin opens settings</td>
+              <td>User is redirected to the gym show page with an authorization flash.</td>
+            </tr>
+            <tr>
+              <td>Owner or admin updates settings</td>
+              <td>Submitting <code>#gym-settings-form</code> persists metadata and navigates back to the gym show page.</td>
+            </tr>
+            <tr>
+              <td>Non-admin opens member management</td>
+              <td>User is redirected to the gym show page with an authorization flash.</td>
+            </tr>
+            <tr>
+              <td>Owner or admin opens member management</td>
+              <td>Page renders <code>#gym-members-table</code> with member usernames, roles, and role controls.</td>
+            </tr>
+            <tr>
+              <td>Owner or admin changes a role</td>
+              <td>Allowed role changes persist, controls refresh, and invalid role params are rejected by the context.</td>
+            </tr>
+            <tr>
+              <td>Owner or admin removes a member</td>
+              <td>Non-owner membership is removed and no longer appears in <code>#gym-members-table</code>.</td>
+            </tr>
+            <tr>
+              <td>Owner-protected membership action</td>
+              <td>Removing or demoting the last owner is rejected with a clear flash message.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Risks</h2>
+        <div class="grid">
+          <article class="panel">
+            <span class="tag risk">Risk</span>
+            <h3>Manual session scope loading</h3>
+            <p>
+              Existing profile LiveViews reconstruct <code>current_scope</code>
+              from the session token. Best path for task 7: add a small
+              reusable LiveView helper or <code>on_mount</code> hook in
+              <code>AscentsWeb.UserAuth</code> if it fits the existing auth
+              module, then use it across all new gym LiveViews. Keep the API
+              compatible with generated auth and always assign
+              <code>current_scope</code>.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag risk">Risk</span>
+              <h3>Public routes with member actions</h3>
+            <p>
+              A public show page must never assume <code>@current_scope.user</code>
+              exists. All membership controls should be conditional and all
+              mutating events should re-check authenticated scope before calling
+              the context. Join and leave should either redirect anonymous
+              users to login or show a login link instead of rendering buttons.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag risk">Risk</span>
+            <h3>Slug changes are not supported</h3>
+            <p>
+              The current update path does not accept slug edits. Settings UI
+              must not expose slug editing. If a future task adds slug editing,
+              it needs redirect behavior, conflict handling, and old URL
+              strategy.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="tag risk">Risk</span>
+            <h3>Role workflows touch authorization state</h3>
+            <p>
+              Task 7 should include the basic member-management route and UI
+              because owners/admins need a real workflow for the roles added in
+              Task 6. Keep the context as the source of truth: prevent
+              unauthorized role updates, reject invalid roles, and preserve at
+              least one owner so the gym cannot become ownerless.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

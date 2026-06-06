@@ -91,14 +91,21 @@ defmodule Ascents.GymsTest do
     end
   end
 
-  describe "get_gym!/1 and get_gym_by_slug/1" do
+  describe "get_gym!/1, get_gym_by_slug/1, and get_gym_by_slug!/1" do
     test "loads gyms by id and normalized slug" do
       gym = gym_fixture(name: "Crux Central")
 
       assert Gyms.get_gym!(gym.id).id == gym.id
       assert Gyms.get_gym_by_slug(" CRUX-CENTRAL ").id == gym.id
+      assert Gyms.get_gym_by_slug!(" CRUX-CENTRAL ").id == gym.id
       refute Gyms.get_gym_by_slug("missing")
       refute Gyms.get_gym_by_slug("")
+    end
+
+    test "raises for missing slug in bang lookup" do
+      assert_raise Ecto.NoResultsError, fn ->
+        Gyms.get_gym_by_slug!("missing")
+      end
     end
   end
 
@@ -224,6 +231,138 @@ defmodule Ascents.GymsTest do
     end
   end
 
+  describe "list_gym_memberships/2" do
+    test "requires owner or admin access" do
+      gym = gym_fixture()
+      member_scope = user_scope_fixture()
+      role_membership_fixture(gym, "member", scope: member_scope)
+
+      assert Gyms.list_gym_memberships(nil, gym) == {:error, :unauthorized}
+      assert Gyms.list_gym_memberships(member_scope, gym) == {:error, :unauthorized}
+    end
+
+    test "returns ordered memberships with users preloaded" do
+      owner = user_fixture(username: "owner_user")
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+
+      member_scope = user_scope_fixture(user_fixture(username: "member_user"))
+      mod_scope = user_scope_fixture(user_fixture(username: "mod_user"))
+      admin_scope = user_scope_fixture(user_fixture(username: "admin_user"))
+
+      role_membership_fixture(gym, "member", scope: member_scope)
+      role_membership_fixture(gym, "mod", scope: mod_scope)
+      role_membership_fixture(gym, "admin", scope: admin_scope)
+
+      assert {:ok, memberships} = Gyms.list_gym_memberships(owner_scope, gym)
+      assert Enum.map(memberships, & &1.role) == ["owner", "admin", "mod", "member"]
+
+      assert Enum.map(memberships, & &1.user.username) == [
+               "owner_user",
+               "admin_user",
+               "mod_user",
+               "member_user"
+             ]
+    end
+  end
+
+  describe "update_membership_role/4" do
+    test "requires owner or admin access" do
+      gym = gym_fixture()
+      member_scope = user_scope_fixture()
+      membership = role_membership_fixture(gym, "member", scope: member_scope)
+
+      assert Gyms.update_membership_role(nil, gym, membership.id, "mod") ==
+               {:error, :unauthorized}
+
+      assert Gyms.update_membership_role(member_scope, gym, membership.id, "mod") ==
+               {:error, :unauthorized}
+    end
+
+    test "allows owners and admins to update non-owner roles" do
+      owner_scope = user_scope_fixture()
+      gym = gym_fixture(scope: owner_scope)
+      membership = role_membership_fixture(gym, "member")
+
+      assert {:ok, updated_membership} =
+               Gyms.update_membership_role(owner_scope, gym, membership.id, "mod")
+
+      assert updated_membership.role == "mod"
+
+      admin_scope = user_scope_fixture()
+      role_membership_fixture(gym, "admin", scope: admin_scope)
+
+      assert {:ok, updated_membership} =
+               Gyms.update_membership_role(admin_scope, gym, membership.id, "admin")
+
+      assert updated_membership.role == "admin"
+    end
+
+    test "rejects invalid roles and missing memberships" do
+      owner_scope = user_scope_fixture()
+      gym = gym_fixture(scope: owner_scope)
+
+      assert Gyms.update_membership_role(owner_scope, gym, -1, "mod") == {:error, :not_found}
+      assert Gyms.update_membership_role(owner_scope, gym, -1, "owner") == {:error, :invalid_role}
+
+      assert Gyms.update_membership_role(owner_scope, gym, -1, "spectator") ==
+               {:error, :invalid_role}
+    end
+
+    test "does not allow changing owner memberships" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+      owner_membership = Gyms.get_membership(owner, gym)
+
+      assert Gyms.update_membership_role(owner_scope, gym, owner_membership.id, "admin") ==
+               {:error, :owner_role_locked}
+
+      assert Gyms.get_membership(owner, gym).role == "owner"
+    end
+  end
+
+  describe "remove_membership/3" do
+    test "requires owner or admin access" do
+      gym = gym_fixture()
+      member_scope = user_scope_fixture()
+      membership = role_membership_fixture(gym, "member", scope: member_scope)
+
+      assert Gyms.remove_membership(nil, gym, membership.id) == {:error, :unauthorized}
+      assert Gyms.remove_membership(member_scope, gym, membership.id) == {:error, :unauthorized}
+    end
+
+    test "allows owners and admins to remove non-owner memberships" do
+      owner_scope = user_scope_fixture()
+      gym = gym_fixture(scope: owner_scope)
+      membership = role_membership_fixture(gym, "member")
+
+      assert {:ok, deleted_membership} = Gyms.remove_membership(owner_scope, gym, membership.id)
+      assert deleted_membership.id == membership.id
+
+      admin_scope = user_scope_fixture()
+      role_membership_fixture(gym, "admin", scope: admin_scope)
+      membership = role_membership_fixture(gym, "mod")
+
+      assert {:ok, deleted_membership} = Gyms.remove_membership(admin_scope, gym, membership.id)
+      assert deleted_membership.id == membership.id
+    end
+
+    test "rejects missing and owner memberships" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+      owner_membership = Gyms.get_membership(owner, gym)
+
+      assert Gyms.remove_membership(owner_scope, gym, -1) == {:error, :not_found}
+
+      assert Gyms.remove_membership(owner_scope, gym, owner_membership.id) ==
+               {:error, :owner_role_locked}
+
+      assert %GymMembership{role: "owner"} = Gyms.get_membership(owner, gym)
+    end
+  end
+
   describe "authorization helpers" do
     test "reject anonymous and invalid inputs" do
       gym = gym_fixture()
@@ -234,6 +373,7 @@ defmodule Ascents.GymsTest do
       refute Gyms.moderator?(nil, gym)
       refute Gyms.can_update_gym?(nil, gym)
       refute Gyms.can_manage_routes?(nil, gym)
+      refute Gyms.can_manage_members?(nil, gym)
       refute Gyms.can_moderate_gym?(nil, gym)
       refute Gyms.can_post_in_gym?(nil, gym)
 
@@ -252,6 +392,7 @@ defmodule Ascents.GymsTest do
       refute Gyms.moderator?(scope, gym)
       refute Gyms.can_update_gym?(scope, gym)
       refute Gyms.can_manage_routes?(scope, gym)
+      refute Gyms.can_manage_members?(scope, gym)
       refute Gyms.can_moderate_gym?(scope, gym)
       refute Gyms.can_post_in_gym?(scope, gym)
     end
@@ -267,6 +408,7 @@ defmodule Ascents.GymsTest do
       assert Gyms.moderator?(scope, gym)
       assert Gyms.can_update_gym?(scope, gym)
       assert Gyms.can_manage_routes?(scope, gym)
+      assert Gyms.can_manage_members?(scope, gym)
       assert Gyms.can_moderate_gym?(scope, gym)
       assert Gyms.can_post_in_gym?(scope, gym)
     end
@@ -282,6 +424,7 @@ defmodule Ascents.GymsTest do
       assert Gyms.moderator?(scope, gym)
       assert Gyms.can_update_gym?(scope, gym)
       assert Gyms.can_manage_routes?(scope, gym)
+      assert Gyms.can_manage_members?(scope, gym)
       assert Gyms.can_moderate_gym?(scope, gym)
       assert Gyms.can_post_in_gym?(scope, gym)
     end
@@ -297,6 +440,7 @@ defmodule Ascents.GymsTest do
       assert Gyms.moderator?(scope, gym)
       refute Gyms.can_update_gym?(scope, gym)
       refute Gyms.can_manage_routes?(scope, gym)
+      refute Gyms.can_manage_members?(scope, gym)
       assert Gyms.can_moderate_gym?(scope, gym)
       assert Gyms.can_post_in_gym?(scope, gym)
     end
@@ -312,6 +456,7 @@ defmodule Ascents.GymsTest do
       refute Gyms.moderator?(scope, gym)
       refute Gyms.can_update_gym?(scope, gym)
       refute Gyms.can_manage_routes?(scope, gym)
+      refute Gyms.can_manage_members?(scope, gym)
       refute Gyms.can_moderate_gym?(scope, gym)
       assert Gyms.can_post_in_gym?(scope, gym)
     end

@@ -54,6 +54,13 @@ defmodule AscentsWeb.Layouts do
         </.link>
 
         <div class="flex items-center gap-2 sm:gap-3">
+          <.link
+            href={~p"/gyms"}
+            class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
+          >
+            Gyms
+          </.link>
+
           <.theme_toggle />
 
           <%= if @current_scope do %>

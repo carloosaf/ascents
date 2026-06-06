@@ -75,6 +75,26 @@ defmodule AscentsWeb.UserAuth do
     end
   end
 
+  @doc """
+  Builds the current scope from a LiveView session map.
+  """
+  def current_scope_from_session(session) when is_map(session) do
+    session
+    |> Map.get("user_token")
+    |> current_scope_from_token()
+  end
+
+  def current_scope_from_session(_session), do: Scope.for_user(nil)
+
+  defp current_scope_from_token(nil), do: Scope.for_user(nil)
+
+  defp current_scope_from_token(token) do
+    case Accounts.get_user_by_session_token(token) do
+      {user, _inserted_at} -> Scope.for_user(user)
+      nil -> Scope.for_user(nil)
+    end
+  end
+
   defp ensure_user_token(conn) do
     if token = get_session(conn, :user_token) do
       {token, conn}

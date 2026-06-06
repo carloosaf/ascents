@@ -21,6 +21,7 @@ defmodule AscentsWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/gyms", GymLive.Index
   end
 
   # Other scopes may use custom stacks.
@@ -58,11 +59,20 @@ defmodule AscentsWeb.Router do
   scope "/", AscentsWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    live "/gyms/new", GymLive.New
+    live "/gyms/:slug/settings", GymLive.Edit
+    live "/gyms/:slug/members", GymLive.Members
     live "/u/:username", ProfileLive.Show
     live "/users/settings/profile", ProfileLive.Edit
     get "/users/settings", UserSettingsController, :edit
     put "/users/settings", UserSettingsController, :update
     get "/users/settings/confirm-email/:token", UserSettingsController, :confirm_email
+  end
+
+  scope "/", AscentsWeb do
+    pipe_through :browser
+
+    live "/gyms/:slug", GymLive.Show
   end
 
   scope "/", AscentsWeb do

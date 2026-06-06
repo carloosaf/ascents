@@ -13,6 +13,7 @@ defmodule Ascents.Gyms do
   @admin_roles ~w(owner admin)
   @moderator_roles ~w(owner admin mod)
   @member_roles ~w(owner admin mod member)
+  @manageable_roles ~w(admin mod member)
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking gym changes.
@@ -51,6 +52,30 @@ defmodule Ascents.Gyms do
   end
 
   def get_gym_by_slug(_slug), do: nil
+
+  @doc """
+  Gets a gym by slug.
+
+  Raises `Ecto.NoResultsError` if the Gym does not exist.
+  """
+  def get_gym_by_slug!(slug) do
+    case get_gym_by_slug(slug) do
+      %Gym{} = gym -> gym
+      nil -> raise Ecto.NoResultsError, queryable: Gym
+    end
+  end
+
+  @doc """
+  Counts community memberships for a gym.
+  """
+  def count_gym_memberships(%Gym{id: gym_id}) do
+    GymMembership
+    |> where([membership], membership.gym_id == ^gym_id)
+    |> select([membership], count(membership.id))
+    |> Repo.one()
+  end
+
+  def count_gym_memberships(_gym), do: 0
 
   @doc """
   Creates a gym community and owner membership for the current user.
@@ -142,6 +167,89 @@ defmodule Ascents.Gyms do
   def get_membership(_user, _gym), do: nil
 
   @doc """
+  Lists gym memberships with user data for owner/admin member management.
+  """
+  def list_gym_memberships(%Scope{} = scope, %Gym{} = gym) do
+    if can_manage_members?(scope, gym) do
+      memberships =
+        GymMembership
+        |> where([membership], membership.gym_id == ^gym.id)
+        |> join(:inner, [membership], user in assoc(membership, :user))
+        |> preload([_membership, user], user: user)
+        |> order_by([membership, user],
+          asc:
+            fragment(
+              "CASE ? WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'mod' THEN 2 ELSE 3 END",
+              membership.role
+            ),
+          asc: user.username,
+          asc: membership.id
+        )
+        |> Repo.all()
+
+      {:ok, memberships}
+    else
+      {:error, :unauthorized}
+    end
+  end
+
+  def list_gym_memberships(_scope, _gym), do: {:error, :unauthorized}
+
+  @doc """
+  Updates a non-owner gym membership role.
+  """
+  def update_membership_role(%Scope{} = scope, %Gym{} = gym, membership_id, role)
+      when is_binary(role) do
+    cond do
+      not can_manage_members?(scope, gym) ->
+        {:error, :unauthorized}
+
+      role not in @manageable_roles ->
+        {:error, :invalid_role}
+
+      true ->
+        case get_gym_membership(gym, membership_id) do
+          nil ->
+            {:error, :not_found}
+
+          %GymMembership{role: "owner"} ->
+            {:error, :owner_role_locked}
+
+          %GymMembership{} = membership ->
+            membership
+            |> GymMembership.changeset(%{role: role, joined_at: membership.joined_at})
+            |> Repo.update()
+        end
+    end
+  end
+
+  def update_membership_role(_scope, _gym, _membership_id, _role), do: {:error, :unauthorized}
+
+  @doc """
+  Removes a non-owner gym membership.
+  """
+  def remove_membership(%Scope{} = scope, %Gym{} = gym, membership_id) do
+    cond do
+      not can_manage_members?(scope, gym) ->
+        {:error, :unauthorized}
+
+      true ->
+        case get_gym_membership(gym, membership_id) do
+          nil ->
+            {:error, :not_found}
+
+          %GymMembership{role: "owner"} ->
+            {:error, :owner_role_locked}
+
+          %GymMembership{} = membership ->
+            Repo.delete(membership)
+        end
+    end
+  end
+
+  def remove_membership(_scope, _gym, _membership_id), do: {:error, :unauthorized}
+
+  @doc """
   Returns true when the current scope has any gym community membership.
   """
   def member?(scope, gym), do: has_role?(scope, gym, @member_roles)
@@ -165,6 +273,11 @@ defmodule Ascents.Gyms do
   Returns true when the current scope can update gym metadata.
   """
   def can_update_gym?(scope, gym), do: admin?(scope, gym)
+
+  @doc """
+  Returns true when the current scope can manage gym members and roles.
+  """
+  def can_manage_members?(scope, gym), do: admin?(scope, gym)
 
   @doc """
   Returns true when the current scope can manage boulder problems for the gym.
@@ -201,6 +314,10 @@ defmodule Ascents.Gyms do
     |> select([membership], count(membership.id))
     |> Repo.one()
     |> Kernel.==(1)
+  end
+
+  defp get_gym_membership(%Gym{id: gym_id}, membership_id) do
+    Repo.get_by(GymMembership, id: membership_id, gym_id: gym_id)
   end
 
   defp create_attrs(attrs) do
