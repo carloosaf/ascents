@@ -346,7 +346,7 @@
             <tr>
               <td>Grade normalization</td>
               <td>
-                Difficulty varies by gym, wall angle, setter, and grading scale.
+                Difficulty varies by gym, wall angle, and grading scale.
                 Cross-gym comparisons can become misleading.
               </td>
               <td>
@@ -438,17 +438,18 @@
             </tr>
             <tr>
               <td>ROUTE-01</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Gym admins can create boulder problems.</td>
               <td>
                 A problem has title, grade, color, description, active status,
-                and optional image; it belongs to exactly one gym; grade values
-                are validated against the gym's selected grade scale.
+                and optional image object key for future media integration; it
+                belongs to exactly one gym; grade values are validated against
+                the gym's selected grade scale.
               </td>
             </tr>
             <tr>
               <td>ROUTE-02</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Each gym selects a supported bouldering grade scale.</td>
               <td>
                 Gyms support <code>v_scale</code> and <code>french</code> by
@@ -458,11 +459,12 @@
             </tr>
             <tr>
               <td>ROUTE-03</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Gym admins can archive boulder problems.</td>
               <td>
-                Archived problems stay visible in historical ascents but are not
-                shown as active options for new ascent posts by default.
+                Archived problems stay visible for admin review and future
+                historical ascents, are not shown as active route options by
+                default, and can be reactivated by gym admins.
               </td>
             </tr>
             <tr>
@@ -577,7 +579,8 @@
               <td><code>boulder_problems</code></td>
               <td>Admin-managed climbable routes inside a gym.</td>
               <td>
-                gym_id, title, grade, color, description, active, setter_id
+                gym_id, title, grade, color, description, active,
+                image_object_key
               </td>
             </tr>
             <tr>
@@ -884,12 +887,13 @@
             </tr>
             <tr>
               <td>8</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Boulder problem context</td>
               <td>
-                Implement <code>Ascents.Routes</code> with active and archived
-                boulder problems scoped to gyms. Implement grade scale helpers
-                for V scale and French bouldering grades.
+                Implemented <code>Ascents.Routes</code> with active and archived
+                boulder problems scoped to gyms, nullable image object keys for
+                future media wiring, reactivation support, and grade scale
+                helpers for V scale and French bouldering grades.
               </td>
               <td>
                 Context tests cover CRUD, archive behavior, gym scoping, and
@@ -898,11 +902,12 @@
             </tr>
             <tr>
               <td>9</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Boulder problem admin UI</td>
               <td>
-                Add admin-only route management inside gym pages, including
-                create, edit, archive, and active route list.
+                Added admin-only route management through separate gym-scoped
+                problem routes, including create, edit, archive, reactivate, and
+                active route display on gym pages.
               </td>
               <td>
                 LiveView tests prove admins can manage problems and regular
@@ -916,7 +921,9 @@
               <td>
                 Add a media module that uploads images to MinIO-compatible
                 private storage, returns persisted object keys, and generates
-                authorization-checked signed access URLs.
+                authorization-checked signed access URLs. Wire this into
+                boulder problem image object keys created earlier by the route
+                management work.
               </td>
               <td>
                 Unit tests cover key generation, ownership checks, signed URL

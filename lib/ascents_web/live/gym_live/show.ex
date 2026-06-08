@@ -2,6 +2,7 @@ defmodule AscentsWeb.GymLive.Show do
   use AscentsWeb, :live_view
 
   alias Ascents.Gyms
+  alias Ascents.Routes, as: ClimbingRoutes
   alias AscentsWeb.UserAuth
 
   def mount(%{"slug" => slug}, session, socket) do
@@ -64,7 +65,7 @@ defmodule AscentsWeb.GymLive.Show do
           name={@gym.name}
           location={@gym.location || "Location TBD"}
           members={Integer.to_string(@member_count)}
-          active_routes="0"
+          active_routes={Integer.to_string(@active_route_count)}
         />
 
         <section class="flex flex-wrap items-center justify-between gap-4">
@@ -101,6 +102,14 @@ defmodule AscentsWeb.GymLive.Show do
               <.icon name="hero-user-minus" class="size-4" /> Leave gym
             </.button>
             <.button
+              :if={@can_manage_routes?}
+              id="gym-routes-link"
+              navigate={~p"/gyms/#{@gym.slug}/problems"}
+              variant="secondary"
+            >
+              <.icon name="hero-map" class="size-4" /> Routes
+            </.button>
+            <.button
               :if={@can_update_gym?}
               id="gym-settings-link"
               navigate={~p"/gyms/#{@gym.slug}/settings"}
@@ -126,12 +135,49 @@ defmodule AscentsWeb.GymLive.Show do
           </p>
         </section>
 
-        <section class="grid gap-4 lg:grid-cols-3">
+        <section id="gym-active-routes" class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-black text-ascents-chalk">Active routes</h2>
+              <p class="mt-1 text-sm text-ascents-muted">
+                Current boulder problems for this gym.
+              </p>
+            </div>
+            <.button
+              :if={@can_manage_routes?}
+              id="gym-new-route-link"
+              navigate={~p"/gyms/#{@gym.slug}/problems/new"}
+              variant="primary"
+            >
+              <.icon name="hero-plus" class="size-4" /> Add route
+            </.button>
+          </div>
+
           <.empty_state
+            :if={@active_problems == []}
             title="No routes yet"
-            description="Gym admins will add active boulder problems in the route-management task."
+            description="Gym admins can add active boulder problems from route management."
             icon="hero-map"
           />
+
+          <div
+            :if={@active_problems != []}
+            id="gym-active-route-list"
+            class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          >
+            <.route_card
+              :for={problem <- @active_problems}
+              id={"gym-route-card-#{problem.id}"}
+              title={problem.title}
+              gym={@gym.name}
+              grade={problem.grade}
+              status="Active"
+              meta={problem.description || problem.color}
+            />
+          </div>
+        </section>
+
+        <section class="grid gap-4 lg:grid-cols-2">
           <.empty_state
             title="No posts yet"
             description="Session notes and gym feed posts will appear here once feed workflows land."
@@ -156,8 +202,11 @@ defmodule AscentsWeb.GymLive.Show do
       gym: gym,
       membership: Gyms.get_membership(current_scope, gym),
       member_count: Gyms.count_gym_memberships(gym),
+      active_route_count: ClimbingRoutes.count_active_boulder_problems(gym),
+      active_problems: ClimbingRoutes.list_boulder_problems(gym),
       can_update_gym?: Gyms.can_update_gym?(current_scope, gym),
-      can_manage_members?: Gyms.can_manage_members?(current_scope, gym)
+      can_manage_members?: Gyms.can_manage_members?(current_scope, gym),
+      can_manage_routes?: Gyms.can_manage_routes?(current_scope, gym)
     )
   end
 

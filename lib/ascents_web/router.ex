@@ -62,6 +62,9 @@ defmodule AscentsWeb.Router do
     live "/gyms/new", GymLive.New
     live "/gyms/:slug/settings", GymLive.Edit
     live "/gyms/:slug/members", GymLive.Members
+    live "/gyms/:slug/problems", ProblemLive.Index
+    live "/gyms/:slug/problems/new", ProblemLive.New
+    live "/gyms/:slug/problems/:id/edit", ProblemLive.Edit
     live "/u/:username", ProfileLive.Show
     live "/users/settings/profile", ProfileLive.Edit
     get "/users/settings", UserSettingsController, :edit
