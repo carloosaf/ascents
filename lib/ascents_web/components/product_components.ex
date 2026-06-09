@@ -184,6 +184,7 @@ defmodule AscentsWeb.ProductComponents do
   attr :location, :string, required: true
   attr :members, :string, required: true
   attr :active_routes, :string, required: true
+  attr :image_url, :string, default: nil
 
   def gym_header(assigns) do
     ~H"""
@@ -191,10 +192,23 @@ defmodule AscentsWeb.ProductComponents do
       data-component="gym-header"
       class="chalk-panel relative overflow-hidden rounded-lg border border-ascents-line"
     >
-      <div class="route-hold-field relative overflow-hidden p-6 sm:p-8">
-        <span class="hold right-[14%] top-[18%] size-10 rotate-[24deg] bg-grade-blue opacity-85">
+      <div class="route-hold-field relative min-h-64 overflow-hidden p-6 sm:p-8">
+        <img
+          :if={@image_url}
+          src={@image_url}
+          alt=""
+          class="absolute inset-0 h-full w-full object-cover opacity-70"
+        />
+        <div :if={@image_url} class="absolute inset-0 bg-ascents-ink/45"></div>
+        <span
+          :if={!@image_url}
+          class="hold right-[14%] top-[18%] size-10 rotate-[24deg] bg-grade-blue opacity-85"
+        >
         </span>
-        <span class="hold right-[34%] bottom-[18%] size-8 rotate-[-16deg] bg-grade-pink opacity-85">
+        <span
+          :if={!@image_url}
+          class="hold right-[34%] bottom-[18%] size-8 rotate-[-16deg] bg-grade-pink opacity-85"
+        >
         </span>
         <div class="route-title-plate relative z-10 max-w-2xl rounded-lg px-4 py-3 backdrop-blur">
           <p class="text-sm font-bold uppercase text-ascents-route-subtitle">{@location}</p>

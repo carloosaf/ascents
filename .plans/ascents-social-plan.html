@@ -916,19 +916,19 @@
             </tr>
             <tr>
               <td>10</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Media boundary</td>
               <td>
-                Add a media module that uploads images to MinIO-compatible
-                private storage, returns persisted object keys, and generates
-                authorization-checked signed access URLs. Wire this into
-                boulder problem image object keys created earlier by the route
-                management work.
+                Added a media module backed by S3-compatible private storage
+                through ExAws and Req. It validates image uploads, stores object
+                keys, generates short-lived signed application URLs, and wires
+                upload/display flows into boulder problems, gyms, and user
+                avatars.
               </td>
               <td>
-                Unit tests cover key generation, ownership checks, signed URL
-                expiry behavior, and validation; integration test can be enabled
-                when MinIO is running.
+                Unit and controller tests cover key generation, ownership checks,
+                signed token access, delivery, and validation. LiveView tests
+                cover image uploads for problems, gyms, and users.
               </td>
             </tr>
             <tr>

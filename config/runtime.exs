@@ -23,6 +23,21 @@ end
 config :ascents, AscentsWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+config :ex_aws,
+  http_client: ExAws.Request.Req
+
+config :ascents, Ascents.Media,
+  bucket: System.get_env("S3_BUCKET", "ascents-dev"),
+  endpoint: System.get_env("S3_ENDPOINT", "http://localhost:9000"),
+  access_key_id: System.get_env("S3_ACCESS_KEY_ID", "minioadmin"),
+  secret_access_key: System.get_env("S3_SECRET_ACCESS_KEY", "minioadmin"),
+  region: System.get_env("S3_REGION", "us-east-1"),
+  create_bucket_on_upload:
+    System.get_env(
+      "S3_CREATE_BUCKET_ON_UPLOAD",
+      if(config_env() == :prod, do: "false", else: "true")
+    ) in ~w(true 1 yes)
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

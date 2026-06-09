@@ -322,12 +322,12 @@ defmodule Ascents.Gyms do
 
   defp create_attrs(attrs) do
     attrs
-    |> take_attrs([:name, :description, :location, :grade_scale])
+    |> take_attrs([:name, :description, :location, :image_object_key, :grade_scale])
     |> Map.put_new(:grade_scale, "v_scale")
   end
 
   defp update_attrs(attrs) do
-    take_attrs(attrs, [:name, :description, :location, :grade_scale])
+    take_attrs(attrs, [:name, :description, :location, :image_object_key, :grade_scale])
   end
 
   defp take_attrs(attrs, keys) do

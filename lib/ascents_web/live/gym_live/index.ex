@@ -2,6 +2,7 @@ defmodule AscentsWeb.GymLive.Index do
   use AscentsWeb, :live_view
 
   alias Ascents.Gyms
+  alias Ascents.Media
   alias AscentsWeb.UserAuth
 
   def mount(_params, session, socket) do
@@ -48,6 +49,12 @@ defmodule AscentsWeb.GymLive.Index do
             navigate={~p"/gyms/#{gym.slug}"}
             class="chalk-panel group relative overflow-hidden rounded-lg border border-ascents-line p-5 transition hover:-translate-y-1 hover:border-ascents-action/60"
           >
+            <img
+              :if={gym.image_object_key}
+              src={Media.signed_url(gym.image_object_key)}
+              alt=""
+              class="-mx-5 -mt-5 mb-5 aspect-video w-[calc(100%+2.5rem)] object-cover"
+            />
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
                 <p class="text-xs font-bold uppercase text-ascents-route-subtitle">

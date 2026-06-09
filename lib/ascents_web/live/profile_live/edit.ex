@@ -3,6 +3,7 @@ defmodule AscentsWeb.ProfileLive.Edit do
 
   alias Ascents.Accounts
   alias Ascents.Accounts.Scope
+  alias Ascents.Media
 
   def mount(_params, session, socket) do
     current_scope =
@@ -14,6 +15,11 @@ defmodule AscentsWeb.ProfileLive.Edit do
       {:ok,
        socket
        |> assign(:current_scope, current_scope)
+       |> allow_upload(:avatar,
+         accept: ~w(.jpg .jpeg .png .webp),
+         max_entries: 1,
+         max_file_size: Media.max_file_size()
+       )
        |> assign_profile_form()}
     else
       {:ok, redirect(socket, to: ~p"/users/log-in")}
@@ -31,15 +37,21 @@ defmodule AscentsWeb.ProfileLive.Edit do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.update_user_profile(socket.assigns.current_scope, user_params) do
-      {:ok, user} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Profile updated successfully.")
-         |> push_navigate(to: ~p"/u/#{user.username}")}
+    case put_uploaded_avatar(socket, user_params) do
+      {:ok, user_params} ->
+        case Accounts.update_user_profile(socket.assigns.current_scope, user_params) do
+          {:ok, user} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Profile updated successfully.")
+             |> push_navigate(to: ~p"/u/#{user.username}")}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :profile_form, to_form(changeset))}
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign(socket, :profile_form, to_form(changeset))}
+        end
+
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
     end
   end
 
@@ -78,6 +90,32 @@ defmodule AscentsWeb.ProfileLive.Edit do
 
           <.input field={@profile_form[:bio]} type="textarea" label="Bio" />
 
+          <input
+            type="hidden"
+            name="user[avatar_object_key]"
+            value={@profile_form[:avatar_object_key].value}
+          />
+          <div class="mb-4">
+            <label for={@uploads.avatar.ref} class="block">
+              <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
+                Avatar
+              </span>
+              <.live_file_input
+                upload={@uploads.avatar}
+                class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
+              />
+            </label>
+            <p class="mt-1.5 text-xs text-ascents-muted">
+              JPG, PNG, or WebP up to 5 MB.
+            </p>
+            <p
+              :for={err <- upload_errors(@uploads.avatar)}
+              class="mt-1.5 text-sm text-ascents-danger-hover"
+            >
+              {upload_error_message(err)}
+            </p>
+          </div>
+
           <div class="flex flex-wrap gap-3">
             <.button variant="primary" phx-disable-with="Saving...">Save Profile</.button>
             <.link
@@ -102,6 +140,26 @@ defmodule AscentsWeb.ProfileLive.Edit do
       |> to_form()
     )
   end
+
+  defp put_uploaded_avatar(socket, attrs) do
+    owner = {:user, socket.assigns.current_scope.user}
+
+    case consume_uploaded_entries(socket, :avatar, fn %{path: path}, entry ->
+           result = Media.upload_image(owner, path, entry.client_name, entry.client_type)
+           {:ok, result}
+         end) do
+      [] -> {:ok, attrs}
+      [{:ok, key}] -> {:ok, Map.put(attrs, "avatar_object_key", key)}
+      [{:error, reason}] -> {:error, upload_error_message(reason)}
+    end
+  end
+
+  defp upload_error_message(:too_large), do: "Choose an image up to 5 MB."
+  defp upload_error_message(:not_accepted), do: "Choose a JPG, PNG, or WebP image."
+  defp upload_error_message(:invalid_content_type), do: "Choose a JPG, PNG, or WebP image."
+  defp upload_error_message(:invalid_extension), do: "Choose a JPG, PNG, or WebP image."
+  defp upload_error_message(:missing_bucket), do: "Storage is not ready. Check the MinIO bucket."
+  defp upload_error_message(_reason), do: "The image could not be uploaded."
 
   defp scope_from_token(nil), do: Scope.for_user(nil)
 

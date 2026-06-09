@@ -3,6 +3,7 @@ defmodule AscentsWeb.ProfileLive.Show do
 
   alias Ascents.Accounts
   alias Ascents.Accounts.Scope
+  alias Ascents.Media
 
   def mount(%{"username" => username}, session, socket) do
     current_scope =
@@ -17,7 +18,8 @@ defmodule AscentsWeb.ProfileLive.Show do
        assign(socket,
          current_scope: current_scope,
          profile_user: profile_user,
-         owner?: current_scope.user.id == profile_user.id
+         owner?: current_scope.user.id == profile_user.id,
+         avatar_url: profile_avatar_url(current_scope, profile_user)
        )}
     else
       {:ok, redirect(socket, to: ~p"/users/log-in")}
@@ -38,11 +40,19 @@ defmodule AscentsWeb.ProfileLive.Show do
             <div class="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div class="flex min-w-0 items-center gap-4">
                 <div
+                  :if={!@avatar_url}
                   id="profile-avatar"
                   class="tape-label flex size-20 shrink-0 items-center justify-center bg-ascents-tape text-2xl font-black text-ascents-tape-content shadow-xl"
                 >
                   {profile_initials(@profile_user)}
                 </div>
+                <img
+                  :if={@avatar_url}
+                  id="profile-avatar"
+                  src={@avatar_url}
+                  alt=""
+                  class="size-20 shrink-0 rounded-md border border-ascents-line object-cover shadow-xl"
+                />
 
                 <div class="min-w-0">
                   <p class="text-sm font-bold uppercase text-ascents-route-subtitle">
@@ -121,5 +131,11 @@ defmodule AscentsWeb.ProfileLive.Show do
     |> Enum.take(2)
     |> Enum.map_join(&String.first/1)
     |> String.upcase()
+  end
+
+  defp profile_avatar_url(scope, user) do
+    if Media.authorized?(scope, {:user, user}) do
+      Media.signed_url(user.avatar_object_key)
+    end
   end
 end

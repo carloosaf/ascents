@@ -1,0 +1,125 @@
+defmodule Ascents.Media do
+  @moduledoc """
+  Boundary for private image storage.
+  """
+
+  alias Ascents.Accounts.{Scope, User}
+  alias Ascents.Gyms.Gym
+  alias Ascents.Routes.BoulderProblem
+
+  @allowed_content_types ~w(image/jpeg image/png image/webp)
+  @allowed_extensions ~w(.jpg .jpeg .png .webp)
+  @max_file_size 5 * 1024 * 1024
+  @signed_max_age_seconds 5 * 60
+
+  @doc """
+  Uploads a validated image and returns its private object key.
+  """
+  def upload_image(owner, source_path, client_name, content_type) do
+    with :ok <- validate_image(source_path, client_name, content_type),
+         {:ok, body} <- File.read(source_path),
+         key <- object_key(owner, client_name),
+         :ok <- storage().put_object(key, body, content_type, config()) do
+      {:ok, key}
+    end
+  end
+
+  @doc """
+  Downloads a private object by key.
+  """
+  def get_object(object_key) when is_binary(object_key) do
+    storage().get_object(object_key, config())
+  end
+
+  def get_object(_object_key), do: {:error, :not_found}
+
+  @doc """
+  Generates a short-lived application URL for a stored object.
+  """
+  def signed_url(object_key) when is_binary(object_key) and object_key != "" do
+    token = Phoenix.Token.sign(AscentsWeb.Endpoint, signing_salt(), object_key)
+    AscentsWeb.Endpoint.url() <> "/media/#{token}"
+  end
+
+  def signed_url(_object_key), do: nil
+
+  @doc """
+  Verifies a signed media token.
+  """
+  def verify_token(token) when is_binary(token) do
+    Phoenix.Token.verify(AscentsWeb.Endpoint, signing_salt(), token,
+      max_age: @signed_max_age_seconds
+    )
+  end
+
+  def verify_token(_token), do: {:error, :invalid}
+
+  @doc """
+  Returns true when the current scope can receive a signed URL for an owner image.
+  """
+  def authorized?(%Scope{user: %User{}}, {:user, %User{}}), do: true
+  def authorized?(_scope, {:user, _user}), do: false
+
+  def authorized?(_scope, {:gym, %Gym{}}), do: true
+  def authorized?(_scope, {:problem, %BoulderProblem{}}), do: true
+  def authorized?(_scope, _owner), do: false
+
+  def allowed_content_types, do: @allowed_content_types
+  def max_file_size, do: @max_file_size
+
+  defp validate_image(source_path, client_name, content_type) do
+    cond do
+      content_type not in @allowed_content_types ->
+        {:error, :invalid_content_type}
+
+      extension(client_name) not in @allowed_extensions ->
+        {:error, :invalid_extension}
+
+      file_size(source_path) > @max_file_size ->
+        {:error, :too_large}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp object_key({:problem, %BoulderProblem{id: id}}, client_name),
+    do: scoped_key("problems", id, client_name)
+
+  defp object_key({:gym, %Gym{id: id}}, client_name), do: scoped_key("gyms", id, client_name)
+  defp object_key({:user, %User{id: id}}, client_name), do: scoped_key("users", id, client_name)
+
+  defp object_key(:problem, client_name), do: scoped_key("problems", "pending", client_name)
+  defp object_key(:gym, client_name), do: scoped_key("gyms", "pending", client_name)
+  defp object_key(:user, client_name), do: scoped_key("users", "pending", client_name)
+
+  defp scoped_key(prefix, id, client_name) do
+    "#{prefix}/#{id}/#{System.system_time(:millisecond)}-#{Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false)}#{extension(client_name)}"
+  end
+
+  defp extension(client_name) when is_binary(client_name) do
+    client_name
+    |> Path.extname()
+    |> String.downcase()
+  end
+
+  defp extension(_client_name), do: ""
+
+  defp file_size(source_path) do
+    case File.stat(source_path) do
+      {:ok, %{size: size}} -> size
+      {:error, _reason} -> @max_file_size + 1
+    end
+  end
+
+  defp storage do
+    Application.get_env(:ascents, __MODULE__, [])
+    |> Keyword.get(:storage, Ascents.Media.S3Storage)
+  end
+
+  defp config do
+    Application.fetch_env!(:ascents, __MODULE__)
+  end
+
+  defp signing_salt, do: "media object access"
+end

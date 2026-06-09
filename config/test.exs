@@ -27,6 +27,14 @@ config :ascents, AscentsWeb.Endpoint,
 # In test we don't send emails
 config :ascents, Ascents.Mailer, adapter: Swoosh.Adapters.Test
 
+config :ascents, Ascents.Media,
+  storage: Ascents.Media.TestStorage,
+  bucket: "ascents-test",
+  endpoint: "http://localhost:9000",
+  access_key_id: "test",
+  secret_access_key: "test",
+  region: "us-east-1"
+
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 

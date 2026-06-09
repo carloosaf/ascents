@@ -21,6 +21,7 @@ defmodule AscentsWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/media/:token", MediaController, :show
     live "/gyms", GymLive.Index
   end
 

@@ -1,5 +1,5 @@
 defmodule AscentsWeb.ProblemLiveTest do
-  use AscentsWeb.ConnCase, async: true
+  use AscentsWeb.ConnCase
 
   import Ascents.AccountsFixtures
   import Ascents.GymsFixtures
@@ -7,6 +7,12 @@ defmodule AscentsWeb.ProblemLiveTest do
   import Phoenix.LiveViewTest
 
   alias Ascents.Routes, as: ClimbingRoutes
+  alias Ascents.Media.TestStorage
+
+  setup do
+    TestStorage.reset!()
+    :ok
+  end
 
   describe "gym route visibility" do
     test "renders active routes on the public gym page", %{conn: conn} do
@@ -118,8 +124,7 @@ defmodule AscentsWeb.ProblemLiveTest do
           title: "Pinch Rail",
           grade: "V4",
           color: "Green",
-          description: "Hard first move.",
-          image_object_key: "routes/pinch-rail.jpg"
+          description: "Hard first move."
         }
       )
       |> render_submit()
@@ -128,7 +133,39 @@ defmodule AscentsWeb.ProblemLiveTest do
 
       assert [problem] = ClimbingRoutes.list_boulder_problems(gym)
       assert problem.title == "Pinch Rail"
-      assert problem.image_object_key == "routes/pinch-rail.jpg"
+      assert problem.image_object_key == nil
+    end
+
+    test "uploads a boulder problem image", %{conn: conn} do
+      owner = user_fixture()
+      scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: scope)
+      conn = log_in_user(conn, owner)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}/problems/new")
+
+      upload =
+        file_input(view, "#problem-new-form", :image, [
+          %{name: "pinch-rail.jpg", content: "route image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "pinch-rail.jpg") =~ "100%"
+
+      view
+      |> form("#problem-new-form",
+        boulder_problem: %{
+          title: "Pinch Rail",
+          grade: "V4",
+          color: "Green",
+          description: "Hard first move."
+        }
+      )
+      |> render_submit()
+
+      assert_redirect(view, ~p"/gyms/#{gym.slug}/problems")
+
+      assert [problem] = ClimbingRoutes.list_boulder_problems(gym)
+      assert problem.image_object_key =~ ~r/^problems\/pending\//
     end
 
     test "validates the route form", %{conn: conn} do

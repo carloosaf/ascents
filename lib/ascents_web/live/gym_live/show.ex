@@ -2,6 +2,7 @@ defmodule AscentsWeb.GymLive.Show do
   use AscentsWeb, :live_view
 
   alias Ascents.Gyms
+  alias Ascents.Media
   alias Ascents.Routes, as: ClimbingRoutes
   alias AscentsWeb.UserAuth
 
@@ -66,6 +67,7 @@ defmodule AscentsWeb.GymLive.Show do
           location={@gym.location || "Location TBD"}
           members={Integer.to_string(@member_count)}
           active_routes={Integer.to_string(@active_route_count)}
+          image_url={Media.signed_url(@gym.image_object_key)}
         />
 
         <section class="flex flex-wrap items-center justify-between gap-4">
@@ -173,6 +175,7 @@ defmodule AscentsWeb.GymLive.Show do
               grade={problem.grade}
               status="Active"
               meta={problem.description || problem.color}
+              image_url={Media.signed_url(problem.image_object_key)}
             />
           </div>
         </section>

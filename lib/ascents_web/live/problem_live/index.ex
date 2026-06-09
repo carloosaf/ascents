@@ -2,6 +2,7 @@ defmodule AscentsWeb.ProblemLive.Index do
   use AscentsWeb, :live_view
 
   alias Ascents.Gyms
+  alias Ascents.Media
   alias Ascents.Routes, as: ClimbingRoutes
   alias AscentsWeb.UserAuth
 
@@ -99,6 +100,12 @@ defmodule AscentsWeb.ProblemLive.Index do
             id={"problem-admin-card-#{problem.id}"}
             class="chalk-panel relative rounded-lg border border-ascents-line p-4"
           >
+            <img
+              :if={problem.image_object_key}
+              src={Media.signed_url(problem.image_object_key)}
+              alt=""
+              class="-m-4 mb-4 aspect-video w-[calc(100%+2rem)] rounded-t-lg object-cover"
+            />
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <.grade_badge grade={problem.grade} />

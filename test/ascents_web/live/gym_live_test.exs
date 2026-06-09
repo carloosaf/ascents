@@ -1,11 +1,17 @@
 defmodule AscentsWeb.GymLiveTest do
-  use AscentsWeb.ConnCase, async: true
+  use AscentsWeb.ConnCase
 
   import Ascents.AccountsFixtures
   import Ascents.GymsFixtures
   import Phoenix.LiveViewTest
 
   alias Ascents.Gyms
+  alias Ascents.Media.TestStorage
+
+  setup do
+    TestStorage.reset!()
+    :ok
+  end
 
   describe "index" do
     test "renders public gym index", %{conn: conn} do
@@ -54,7 +60,38 @@ defmodule AscentsWeb.GymLiveTest do
 
       gym = Gyms.get_gym_by_slug("summit-house")
       assert gym.name == "Summit House"
+      assert gym.image_object_key == nil
       assert Gyms.get_membership(user, gym).role == "owner"
+    end
+
+    test "uploads a gym image", %{conn: conn} do
+      user = user_fixture()
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/new")
+
+      upload =
+        file_input(view, "#gym-new-form", :image, [
+          %{name: "wall.jpg", content: "gym image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "wall.jpg") =~ "100%"
+
+      view
+      |> form("#gym-new-form",
+        gym: %{
+          name: "Upload Wall",
+          location: "Madrid",
+          grade_scale: "v_scale",
+          description: "Fresh paint."
+        }
+      )
+      |> render_submit()
+
+      assert_redirect(view, ~p"/gyms/upload-wall")
+
+      gym = Gyms.get_gym_by_slug("upload-wall")
+      assert gym.image_object_key =~ ~r/^gyms\/pending\//
     end
 
     test "validates the create form", %{conn: conn} do

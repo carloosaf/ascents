@@ -1,11 +1,17 @@
 defmodule AscentsWeb.ProfileLiveTest do
-  use AscentsWeb.ConnCase, async: true
+  use AscentsWeb.ConnCase
 
   import Ascents.AccountsFixtures
   import Phoenix.LiveViewTest
 
   alias Ascents.Accounts
   alias Ascents.Accounts.Scope
+  alias Ascents.Media.TestStorage
+
+  setup do
+    TestStorage.reset!()
+    :ok
+  end
 
   describe "show" do
     test "redirects anonymous users", %{conn: conn} do
@@ -87,6 +93,32 @@ defmodule AscentsWeb.ProfileLiveTest do
       assert updated_user.username == "fresh_send"
       assert updated_user.display_name == "Fresh Send"
       assert updated_user.bio == "Short and steep."
+    end
+
+    test "uploads an avatar", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/users/settings/profile")
+
+      upload =
+        file_input(view, "#profile-settings-form", :avatar, [
+          %{name: "avatar.jpg", content: "avatar image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "avatar.jpg") =~ "100%"
+
+      view
+      |> form("#profile-settings-form",
+        user: %{
+          username: user.username,
+          display_name: "Avatar User",
+          bio: "Updated."
+        }
+      )
+      |> render_submit()
+
+      assert_redirect(view, ~p"/u/#{user.username}")
+
+      updated_user = Accounts.get_user!(user.id)
+      assert updated_user.avatar_object_key =~ ~r/^users\/#{user.id}\//
     end
   end
 end
