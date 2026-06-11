@@ -2,9 +2,11 @@ defmodule AscentsWeb.GymLiveTest do
   use AscentsWeb.ConnCase
 
   import Ascents.AccountsFixtures
+  import Ascents.FeedFixtures
   import Ascents.GymsFixtures
   import Phoenix.LiveViewTest
 
+  alias Ascents.Feed
   alias Ascents.Gyms
   alias Ascents.Media.TestStorage
 
@@ -180,6 +182,113 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert has_element?(view, "#gym-settings-link")
       assert has_element?(view, "#gym-members-link")
+    end
+
+    test "renders gym feed posts on the gym root", %{conn: conn} do
+      gym = gym_fixture(name: "Feed Wall")
+      post = post_fixture(gym: gym, body: "Evening session notes.")
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      assert has_element?(view, "#gym-feed")
+      assert has_element?(view, "#posts-#{post.id}")
+      refute has_element?(view, "#gym-post-form")
+    end
+
+    test "allows members to create posts", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view
+      |> element("#gym-new-post-button")
+      |> render_click()
+
+      assert has_element?(view, "#gym-post-modal")
+
+      view
+      |> form("#gym-post-form", post: %{body: "New slab is technical."})
+      |> render_submit()
+
+      assert [post] = Feed.list_gym_posts(gym)
+      assert post.body == "New slab is technical."
+      assert has_element?(view, "#posts-#{post.id}")
+    end
+
+    test "allows post images", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view
+      |> element("#gym-new-post-button")
+      |> render_click()
+
+      upload =
+        file_input(view, "#gym-post-form", :image, [
+          %{name: "send.jpg", content: "post image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "send.jpg") =~ "100%"
+
+      view
+      |> form("#gym-post-form", post: %{body: "Photo beta."})
+      |> render_submit()
+
+      assert [post] = Feed.list_gym_posts(gym)
+      assert post.image_object_key =~ ~r/^posts\/pending\//
+    end
+
+    test "allows members to comment and content owners to delete comments", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      post = post_fixture(gym: gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view
+      |> form("#home-comment-form-#{post.id}", post_id: post.id, comment: %{body: "Looks good."})
+      |> render_submit()
+
+      reloaded_post = Feed.get_post(gym, post.id)
+      assert [comment] = reloaded_post.comments
+      assert has_element?(view, "#home-comment-#{comment.id}")
+
+      view
+      |> element("#home-comment-delete-#{comment.id}")
+      |> render_click()
+
+      assert [deleted_comment] = Feed.get_post(gym, post.id).comments
+      assert deleted_comment.deleted_at
+    end
+
+    test "allows content owners to delete posts", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      {:ok, post} = Feed.create_post(scope, gym, %{body: "Delete me"})
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view
+      |> element("#home-post-delete-#{post.id}")
+      |> render_click()
+
+      assert Feed.list_gym_posts(gym) == []
+      refute has_element?(view, "#posts-#{post.id}")
     end
   end
 

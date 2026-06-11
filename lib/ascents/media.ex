@@ -4,6 +4,7 @@ defmodule Ascents.Media do
   """
 
   alias Ascents.Accounts.{Scope, User}
+  alias Ascents.Feed.Post
   alias Ascents.Gyms.Gym
   alias Ascents.Routes.BoulderProblem
 
@@ -62,6 +63,7 @@ defmodule Ascents.Media do
 
   def authorized?(_scope, {:gym, %Gym{}}), do: true
   def authorized?(_scope, {:problem, %BoulderProblem{}}), do: true
+  def authorized?(_scope, {:post, %Post{}}), do: true
   def authorized?(_scope, _owner), do: false
 
   def allowed_content_types, do: @allowed_content_types
@@ -87,10 +89,12 @@ defmodule Ascents.Media do
     do: scoped_key("problems", id, client_name)
 
   defp object_key({:gym, %Gym{id: id}}, client_name), do: scoped_key("gyms", id, client_name)
+  defp object_key({:post, %Post{id: id}}, client_name), do: scoped_key("posts", id, client_name)
   defp object_key({:user, %User{id: id}}, client_name), do: scoped_key("users", id, client_name)
 
   defp object_key(:problem, client_name), do: scoped_key("problems", "pending", client_name)
   defp object_key(:gym, client_name), do: scoped_key("gyms", "pending", client_name)
+  defp object_key(:post, client_name), do: scoped_key("posts", "pending", client_name)
   defp object_key(:user, client_name), do: scoped_key("users", "pending", client_name)
 
   defp scoped_key(prefix, id, client_name) do

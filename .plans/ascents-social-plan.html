@@ -933,11 +933,12 @@
             </tr>
             <tr>
               <td>11</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Feed context</td>
               <td>
-                Implement <code>Ascents.Feed</code> with posts and comments scoped
-                to gyms.
+                Implemented <code>Ascents.Feed</code> with posts and comments
+                scoped to gyms. Posts support body text and optional image object
+                keys; comments preserve thread history through soft deletion.
               </td>
               <td>
                 Context tests cover normal posts, comments, membership-required
@@ -946,11 +947,13 @@
             </tr>
             <tr>
               <td>12</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Feed LiveViews</td>
               <td>
-                Add gym feed, home feed for joined gyms, post creation, and
-                comment interaction.
+                Added the joined-gym <code>/feed</code>, embedded gym feeds on
+                gym root pages, post creation through a modal composer, comment
+                interaction, reusable feed post/profile-picture components, and
+                authenticated root redirects to the general feed.
               </td>
               <td>
                 LiveView tests cover feed rendering, post creation, comment

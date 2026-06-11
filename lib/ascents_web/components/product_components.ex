@@ -4,7 +4,169 @@ defmodule AscentsWeb.ProductComponents do
   """
   use Phoenix.Component
 
+  use Phoenix.VerifiedRoutes,
+    endpoint: AscentsWeb.Endpoint,
+    router: AscentsWeb.Router,
+    statics: AscentsWeb.static_paths()
+
   import AscentsWeb.CoreComponents
+
+  alias Ascents.Media
+
+  attr :user, :map, required: true
+  attr :size, :string, default: "md", values: ~w(sm md lg xl)
+  attr :id, :string, default: nil
+  attr :class, :any, default: nil
+
+  def profile_picture(assigns) do
+    assigns =
+      assigns
+      |> assign(:name, profile_name(assigns.user))
+      |> assign(:avatar_url, Media.signed_url(assigns.user.avatar_object_key))
+      |> assign(:size_class, profile_picture_size(assigns.size))
+
+    ~H"""
+    <span
+      id={@id}
+      data-component="profile-picture"
+      class={["relative inline-flex shrink-0 overflow-hidden rounded-md", @size_class, @class]}
+    >
+      <img
+        :if={@avatar_url}
+        src={@avatar_url}
+        alt={"#{@name} avatar"}
+        class="h-full w-full object-cover"
+      />
+      <span
+        :if={!@avatar_url}
+        class="tape-label flex h-full w-full items-center justify-center bg-ascents-tape font-black text-ascents-tape-content"
+      >
+        {initials(@name)}
+      </span>
+    </span>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :post, :map, required: true
+  attr :current_scope, :map, required: true
+  attr :comment_form, Phoenix.HTML.Form, required: true
+  attr :show_gym?, :boolean, default: true
+
+  def feed_post(assigns) do
+    ~H"""
+    <article id={@id} class="chalk-panel relative rounded-lg border border-ascents-line p-4">
+      <div class="flex items-start gap-3">
+        <.profile_picture user={@post.user} />
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <.link
+              navigate={~p"/u/#{@post.user.username}"}
+              class="font-bold text-ascents-chalk hover:text-white"
+            >
+              {profile_name(@post.user)}
+            </.link>
+            <span :if={@show_gym?} class="text-sm text-ascents-muted">in</span>
+            <.link
+              :if={@show_gym?}
+              navigate={~p"/gyms/#{@post.gym.slug}"}
+              class="text-sm font-semibold text-ascents-tape hover:text-ascents-tape-hover"
+            >
+              {@post.gym.name}
+            </.link>
+            <span class="text-xs text-ascents-muted-strong">{format_time(@post.inserted_at)}</span>
+          </div>
+        </div>
+        <button
+          :if={owns?(@current_scope, @post)}
+          id={"home-post-delete-#{@post.id}"}
+          type="button"
+          phx-click="delete-post"
+          phx-value-id={@post.id}
+          class="rounded-md p-2 text-ascents-muted transition hover:bg-ascents-danger/10 hover:text-ascents-danger-hover"
+          aria-label="Delete post"
+        >
+          <.icon name="hero-trash" class="size-4" />
+        </button>
+      </div>
+
+      <p class="mt-3 whitespace-pre-line text-sm leading-6 text-ascents-chalk-soft">
+        {@post.body}
+      </p>
+
+      <div
+        :if={@post.image_object_key}
+        class="mt-3 overflow-hidden rounded-lg border border-ascents-line"
+      >
+        <img
+          src={Media.signed_url(@post.image_object_key)}
+          alt=""
+          class="aspect-video w-full object-cover"
+        />
+      </div>
+
+      <section class="mt-4 space-y-3 border-t border-ascents-line pt-4">
+        <div id={"home-post-comments-#{@post.id}"} class="space-y-2">
+          <div
+            :for={comment <- @post.comments}
+            id={"home-comment-#{comment.id}"}
+            class="rounded-md bg-ascents-panel-deep px-3 py-2 text-sm"
+          >
+            <%= if comment.deleted_at do %>
+              <p class="text-ascents-muted">Comment deleted.</p>
+            <% else %>
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex min-w-0 items-start gap-2">
+                  <.profile_picture user={comment.user} size="sm" />
+                  <p class="min-w-0 text-ascents-chalk-soft">
+                    <span class="font-bold text-ascents-chalk">{profile_name(comment.user)}</span>
+                    {comment.body}
+                  </p>
+                </div>
+                <button
+                  :if={owns?(@current_scope, comment)}
+                  id={"home-comment-delete-#{comment.id}"}
+                  type="button"
+                  phx-click="delete-comment"
+                  phx-value-post_id={@post.id}
+                  phx-value-id={comment.id}
+                  class="rounded p-1 text-ascents-muted transition hover:text-ascents-danger-hover"
+                  aria-label="Delete comment"
+                >
+                  <.icon name="hero-x-mark" class="size-4" />
+                </button>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <.form
+          for={@comment_form}
+          id={"home-comment-form-#{@post.id}"}
+          phx-submit="comment"
+          class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+        >
+          <input type="hidden" name="post_id" value={@post.id} />
+          <.input
+            field={@comment_form[:body]}
+            type="text"
+            label="Comment"
+            placeholder="Add a comment"
+            class="min-h-10 w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk outline-none transition placeholder:text-ascents-muted-strong focus:border-ascents-action focus:ring-2 focus:ring-ascents-action/20 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+          <button
+            type="submit"
+            class="mb-4 flex size-10 shrink-0 items-center justify-center rounded-md bg-ascents-action text-ascents-action-content shadow-lg transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-ascents-action-hover focus:outline-none focus:ring-2 focus:ring-ascents-tape/70 focus:ring-offset-2 focus:ring-offset-ascents-ink disabled:pointer-events-none disabled:opacity-50"
+            phx-disable-with="Posting..."
+            aria-label="Post comment"
+          >
+            <.icon name="hero-paper-airplane" class="size-5" />
+          </button>
+        </.form>
+      </section>
+    </article>
+    """
+  end
 
   attr :grade, :string, required: true
   attr :label, :string, default: nil
@@ -164,12 +326,14 @@ defmodule AscentsWeb.ProductComponents do
   attr :title, :string, required: true
   attr :description, :string, required: true
   attr :icon, :string, default: "hero-face-smile"
+  attr :rest, :global
 
   def empty_state(assigns) do
     ~H"""
     <section
       data-component="empty-state"
       class="rounded-lg border border-dashed border-ascents-line bg-ascents-panel-deep/80 p-8 text-center"
+      {@rest}
     >
       <div class="mx-auto flex size-12 items-center justify-center rounded-lg bg-ascents-panel-hover text-ascents-tape">
         <.icon name={@icon} class="size-6" />
@@ -251,6 +415,19 @@ defmodule AscentsWeb.ProductComponents do
     |> String.downcase()
     |> String.replace(~r/[^a-z0-9]+/, "-")
   end
+
+  defp profile_picture_size("sm"), do: "size-7 text-xs"
+  defp profile_picture_size("lg"), do: "size-14 text-lg"
+  defp profile_picture_size("xl"), do: "size-20 text-2xl"
+  defp profile_picture_size(_size), do: "size-10 text-sm"
+
+  defp profile_name(user), do: user.display_name || user.username
+
+  defp owns?(%{user: %{id: user_id}}, %{user_id: user_id}), do: true
+  defp owns?(_scope, _struct), do: false
+
+  defp format_time(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%b %-d, %Y")
+  defp format_time(_datetime), do: ""
 
   defp initials(name) do
     name

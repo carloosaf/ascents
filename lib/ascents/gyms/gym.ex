@@ -3,6 +3,7 @@ defmodule Ascents.Gyms.Gym do
   import Ecto.Changeset
 
   alias Ascents.Gyms.GymMembership
+  alias Ascents.Feed.Post
   alias Ascents.Routes.BoulderProblem
 
   @grade_scales ~w(v_scale french)
@@ -18,6 +19,7 @@ defmodule Ascents.Gyms.Gym do
 
     has_many :memberships, GymMembership
     has_many :boulder_problems, BoulderProblem
+    has_many :posts, Post
 
     timestamps(type: :utc_datetime)
   end

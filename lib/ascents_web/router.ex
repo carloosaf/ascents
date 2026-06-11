@@ -60,6 +60,7 @@ defmodule AscentsWeb.Router do
   scope "/", AscentsWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    live "/feed", FeedLive.Index
     live "/gyms/new", GymLive.New
     live "/gyms/:slug/settings", GymLive.Edit
     live "/gyms/:slug/members", GymLive.Members

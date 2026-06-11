@@ -64,6 +64,12 @@ defmodule AscentsWeb.Layouts do
           <.theme_toggle />
 
           <%= if @current_scope do %>
+            <.link
+              href={~p"/feed"}
+              class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
+            >
+              Feed
+            </.link>
             <span class="hidden max-w-[14rem] truncate text-sm text-ascents-muted md:block">
               /u/{@current_scope.user.username}
             </span>

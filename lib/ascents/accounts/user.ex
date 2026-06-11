@@ -2,6 +2,8 @@ defmodule Ascents.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Ascents.Feed.{Comment, Post}
+
   schema "users" do
     field :email, :string
     field :username, :string
@@ -12,6 +14,9 @@ defmodule Ascents.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
+
+    has_many :posts, Post
+    has_many :comments, Comment
 
     timestamps(type: :utc_datetime)
   end

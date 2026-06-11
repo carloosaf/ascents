@@ -91,6 +91,9 @@ defmodule AscentsWeb.UserSessionControllerTest do
 
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/")
+      assert redirected_to(conn) == ~p"/feed"
+
+      conn = get(conn, ~p"/feed")
       response = html_response(conn, 200)
       assert response =~ "/u/#{user.username}"
       assert response =~ ~p"/u/#{user.username}"
@@ -168,6 +171,9 @@ defmodule AscentsWeb.UserSessionControllerTest do
 
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/")
+      assert redirected_to(conn) == ~p"/feed"
+
+      conn = get(conn, ~p"/feed")
       response = html_response(conn, 200)
       assert response =~ "/u/#{user.username}"
       assert response =~ ~p"/u/#{user.username}"
@@ -194,6 +200,9 @@ defmodule AscentsWeb.UserSessionControllerTest do
 
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/")
+      assert redirected_to(conn) == ~p"/feed"
+
+      conn = get(conn, ~p"/feed")
       response = html_response(conn, 200)
       assert response =~ "/u/#{user.username}"
       assert response =~ ~p"/u/#{user.username}"
