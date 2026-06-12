@@ -5,6 +5,7 @@ defmodule Ascents.Feed do
 
   import Ecto.Query, warn: false
 
+  alias Ascents.Ascents, as: AscentLogs
   alias Ascents.Accounts.{Scope, User}
   alias Ascents.Feed.{Comment, Post}
   alias Ascents.Gyms
@@ -124,6 +125,10 @@ defmodule Ascents.Feed do
         post
         |> Ecto.Changeset.change(deleted_at: DateTime.utc_now(:second))
         |> Repo.update()
+        |> tap(fn
+          {:ok, deleted_post} -> AscentLogs.soft_delete_ascent_for_post(deleted_post)
+          _result -> :ok
+        end)
     end
   end
 
@@ -161,6 +166,8 @@ defmodule Ascents.Feed do
     |> preload([post, user, gym],
       user: user,
       gym: gym,
+      boulder_problem: [],
+      ascent: [],
       comments:
         ^from(comment in Comment,
           order_by: [asc: comment.inserted_at, asc: comment.id],

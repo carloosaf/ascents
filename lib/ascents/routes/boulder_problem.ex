@@ -3,6 +3,8 @@ defmodule Ascents.Routes.BoulderProblem do
   import Ecto.Changeset
 
   alias Ascents.Gyms.Gym
+  alias Ascents.Ascents.Ascent
+  alias Ascents.Feed.Post
   alias Ascents.Routes.GradeScales
 
   schema "boulder_problems" do
@@ -15,6 +17,8 @@ defmodule Ascents.Routes.BoulderProblem do
     field :archived_at, :utc_datetime
 
     belongs_to :gym, Gym
+    has_many :posts, Post
+    has_many :ascents, Ascent
 
     timestamps(type: :utc_datetime)
   end

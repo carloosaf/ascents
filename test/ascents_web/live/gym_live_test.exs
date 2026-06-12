@@ -4,8 +4,10 @@ defmodule AscentsWeb.GymLiveTest do
   import Ascents.AccountsFixtures
   import Ascents.FeedFixtures
   import Ascents.GymsFixtures
+  import Ascents.RoutesFixtures
   import Phoenix.LiveViewTest
 
+  alias Ascents.Ascents, as: AscentLogs
   alias Ascents.Feed
   alias Ascents.Gyms
   alias Ascents.Media.TestStorage
@@ -245,6 +247,98 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert [post] = Feed.list_gym_posts(gym)
       assert post.image_object_key =~ ~r/^posts\/pending\//
+    end
+
+    test "allows members to create ascent posts without notes", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view
+      |> element("#gym-new-post-button")
+      |> render_click()
+
+      view
+      |> element("#gym-post-ascent-mode")
+      |> render_click()
+
+      assert has_element?(view, "#gym-ascent-post-form")
+
+      view
+      |> form("#gym-ascent-post-form",
+        ascent_post: %{
+          boulder_problem_id: problem.id,
+          climbed_at: "2026-06-11T10:30",
+          body: ""
+        }
+      )
+      |> render_submit()
+
+      assert [post] = Feed.list_gym_posts(gym)
+      assert post.post_type == "ascent"
+      assert post.body == nil
+      assert post.boulder_problem_id == problem.id
+      assert has_element?(view, "#home-post-ascent-#{post.id}")
+
+      ascent = AscentLogs.get_ascent_by_post(post)
+      assert ascent.grade_snapshot == problem.grade
+      assert ascent.climbed_at == ~U[2026-06-11 10:30:00Z]
+    end
+
+    test "shows validation when ascent route is missing", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view
+      |> element("#gym-new-post-button")
+      |> render_click()
+
+      view
+      |> element("#gym-post-ascent-mode")
+      |> render_click()
+
+      html =
+        view
+        |> form("#gym-ascent-post-form",
+          ascent_post: %{boulder_problem_id: "", climbed_at: "2026-06-11T10:30", body: ""}
+        )
+        |> render_submit()
+
+      assert html =~ "can&#39;t be blank"
+      assert Feed.list_gym_posts(gym) == []
+      assert has_element?(view, "#gym-ascent-post-form")
+    end
+
+    test "renders existing ascent posts in the gym feed", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym, title: "Moonboard Pinch")
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      {:ok, %{post: post}} =
+        AscentLogs.create_ascent_post(scope, gym, %{
+          boulder_problem_id: problem.id,
+          climbed_at: "2026-06-11T10:30",
+          body: "Finally linked the finish."
+        })
+
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      assert has_element?(view, "#posts-#{post.id}")
+      assert has_element?(view, "#home-post-ascent-#{post.id}")
     end
 
     test "allows members to comment and content owners to delete comments", %{conn: conn} do

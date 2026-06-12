@@ -1,6 +1,7 @@
 defmodule AscentsWeb.GymLive.Show do
   use AscentsWeb, :live_view
 
+  alias Ascents.Ascents, as: AscentLogs
   alias Ascents.Feed
   alias Ascents.Feed.{Comment, Post}
   alias Ascents.Gyms
@@ -16,7 +17,9 @@ defmodule AscentsWeb.GymLive.Show do
      socket
      |> assign(:current_scope, current_scope)
      |> assign(:post_form, to_form(Feed.change_post(%Post{})))
+     |> assign_ascent_form(AscentLogs.change_ascent_post(default_ascent_attrs()))
      |> assign(:comment_form, to_form(Feed.change_comment(%Comment{})))
+     |> assign(:post_mode, "normal")
      |> assign(:post_modal_open?, false)
      |> allow_upload(:image,
        accept: ~w(.jpg .jpeg .png .webp),
@@ -73,10 +76,11 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("close-post-modal", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(:post_modal_open?, false)
-     |> assign(:post_form, to_form(Feed.change_post(%Post{})))}
+    {:noreply, reset_post_modal(socket)}
+  end
+
+  def handle_event("select-post-mode", %{"mode" => mode}, socket) when mode in ~w(normal ascent) do
+    {:noreply, assign(socket, :post_mode, mode)}
   end
 
   def handle_event("validate-post", %{"post" => post_params}, socket) do
@@ -89,6 +93,15 @@ defmodule AscentsWeb.GymLive.Show do
     {:noreply, assign(socket, :post_form, to_form(changeset))}
   end
 
+  def handle_event("validate-ascent-post", %{"ascent_post" => ascent_params}, socket) do
+    changeset =
+      ascent_params
+      |> AscentLogs.change_ascent_post()
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign_ascent_form(socket, changeset)}
+  end
+
   def handle_event("create-post", %{"post" => post_params}, socket) do
     case put_uploaded_image(socket, post_params) do
       {:ok, post_params} ->
@@ -97,8 +110,7 @@ defmodule AscentsWeb.GymLive.Show do
             {:noreply,
              socket
              |> put_flash(:info, "Post published.")
-             |> assign(:post_modal_open?, false)
-             |> assign(:post_form, to_form(Feed.change_post(%Post{})))
+             |> reset_post_modal()
              |> assign_gym_state(socket.assigns.gym)}
 
           {:error, %Ecto.Changeset{} = changeset} ->
@@ -107,6 +119,33 @@ defmodule AscentsWeb.GymLive.Show do
 
           {:error, :unauthorized} ->
             {:noreply, put_flash(socket, :error, "Join this gym before posting.")}
+        end
+
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event("create-ascent-post", %{"ascent_post" => ascent_params}, socket) do
+    case put_uploaded_image(socket, ascent_params) do
+      {:ok, ascent_params} ->
+        case AscentLogs.create_ascent_post(
+               socket.assigns.current_scope,
+               socket.assigns.gym,
+               ascent_params
+             ) do
+          {:ok, _result} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Ascent posted.")
+             |> reset_post_modal()
+             |> assign_gym_state(socket.assigns.gym)}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign_ascent_form(socket, Map.put(changeset, :action, :validate))}
+
+          {:error, :unauthorized} ->
+            {:noreply, put_flash(socket, :error, "Join this gym before posting an ascent.")}
         end
 
       {:error, message} ->
@@ -346,7 +385,7 @@ defmodule AscentsWeb.GymLive.Show do
         <div
           :if={@post_modal_open?}
           id="gym-post-modal"
-          class="fixed inset-0 z-50 flex items-center justify-center bg-ascents-ink/80 px-4 py-8 backdrop-blur-sm"
+          class="ascents-modal-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ascents-ink/85 px-4 py-6 backdrop-blur-sm sm:items-center sm:py-8"
         >
           <button
             type="button"
@@ -355,12 +394,12 @@ defmodule AscentsWeb.GymLive.Show do
             aria-label="Close post modal"
           >
           </button>
-          <section class="chalk-panel relative z-10 w-full max-w-2xl rounded-lg border border-ascents-line p-5 shadow-2xl shadow-black/40 sm:p-6">
+          <section class="ascents-modal-panel chalk-panel relative z-10 my-auto w-full max-w-2xl rounded-lg border border-ascents-line p-5 shadow-2xl shadow-black/40 sm:p-6">
             <div class="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h2 class="text-lg font-black text-ascents-chalk">New post</h2>
                 <p class="mt-1 text-sm text-ascents-muted">
-                  Share an update with {@gym.name}.
+                  Share an update or log an ascent at {@gym.name}.
                 </p>
               </div>
               <button
@@ -374,7 +413,44 @@ defmodule AscentsWeb.GymLive.Show do
               </button>
             </div>
 
+            <div
+              id="gym-post-mode-toggle"
+              class="mb-5 grid grid-cols-2 gap-2 rounded-lg border border-ascents-line bg-ascents-panel-deep p-1"
+            >
+              <button
+                id="gym-post-normal-mode"
+                type="button"
+                phx-click="select-post-mode"
+                phx-value-mode="normal"
+                class={[
+                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
+                  @post_mode == "normal" &&
+                    "bg-ascents-action text-ascents-action-content shadow-lg",
+                  @post_mode != "normal" &&
+                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+                ]}
+              >
+                <.icon name="hero-chat-bubble-left-right" class="size-4" /> Post
+              </button>
+              <button
+                id="gym-post-ascent-mode"
+                type="button"
+                phx-click="select-post-mode"
+                phx-value-mode="ascent"
+                class={[
+                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
+                  @post_mode == "ascent" &&
+                    "bg-ascents-tape text-ascents-tape-content shadow-lg",
+                  @post_mode != "ascent" &&
+                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+                ]}
+              >
+                <.icon name="hero-sparkles" class="size-4" /> Ascent
+              </button>
+            </div>
+
             <.form
+              :if={@post_mode == "normal"}
               for={@post_form}
               id="gym-post-form"
               phx-change="validate-post"
@@ -386,29 +462,46 @@ defmodule AscentsWeb.GymLive.Show do
                 label="Post"
                 placeholder="Share beta, session notes, or gym updates"
               />
-              <div class="mb-4">
-                <label for={@uploads.image.ref} class="block">
-                  <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
-                    Image
-                  </span>
-                  <.live_file_input
-                    upload={@uploads.image}
-                    class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
-                  />
-                </label>
-                <p class="mt-1.5 text-xs text-ascents-muted">
-                  Optional JPG, PNG, or WebP up to 5 MB.
-                </p>
-                <p
-                  :for={err <- upload_errors(@uploads.image)}
-                  class="mt-1.5 text-sm text-ascents-danger-hover"
-                >
-                  {upload_error_message(err)}
-                </p>
-              </div>
+              <.post_image_input upload={@uploads.image} />
               <.button id="gym-post-submit" variant="primary" phx-disable-with="Posting...">
                 <.icon name="hero-paper-airplane" class="size-4" /> Post
               </.button>
+            </.form>
+
+            <.form
+              :if={@post_mode == "ascent"}
+              for={@ascent_form}
+              id="gym-ascent-post-form"
+              phx-change="validate-ascent-post"
+              phx-submit="create-ascent-post"
+            >
+              <.input
+                field={@ascent_form[:boulder_problem_id]}
+                type="select"
+                label="Route"
+                prompt="Choose an active route"
+                options={active_problem_options(@active_problems)}
+              />
+              <.input
+                field={@ascent_form[:climbed_at]}
+                type="datetime-local"
+                label="Climbed at"
+              />
+              <.input
+                field={@ascent_form[:body]}
+                type="textarea"
+                label="Notes"
+                placeholder="Optional beta, attempts, or session notes"
+              />
+              <.post_image_input upload={@uploads.image} />
+              <div class="flex flex-wrap items-center gap-3">
+                <.button id="gym-ascent-post-submit" variant="primary" phx-disable-with="Posting...">
+                  <.icon name="hero-sparkles" class="size-4" /> Post ascent
+                </.button>
+                <p :if={@active_problems == []} class="text-sm text-ascents-muted">
+                  This gym has no active routes to log yet.
+                </p>
+              </div>
             </.form>
           </section>
         </div>
@@ -478,6 +571,63 @@ defmodule AscentsWeb.GymLive.Show do
 
   defp current_user_id(%{user: %{id: id}}), do: id
   defp current_user_id(_scope), do: nil
+
+  defp reset_post_modal(socket) do
+    socket
+    |> assign(:post_modal_open?, false)
+    |> assign(:post_mode, "normal")
+    |> assign(:post_form, to_form(Feed.change_post(%Post{})))
+    |> assign_ascent_form(AscentLogs.change_ascent_post(default_ascent_attrs()))
+  end
+
+  defp assign_ascent_form(socket, changeset) do
+    assign(socket, :ascent_form, to_form(changeset, as: :ascent_post))
+  end
+
+  defp active_problem_options(problems) do
+    Enum.map(problems, fn problem ->
+      {"#{problem.grade} · #{problem.title}", problem.id}
+    end)
+  end
+
+  defp default_ascent_attrs do
+    %{climbed_at: format_datetime_local(DateTime.utc_now(:second))}
+  end
+
+  defp format_datetime_local(%DateTime{} = datetime) do
+    datetime
+    |> DateTime.to_naive()
+    |> NaiveDateTime.truncate(:second)
+    |> NaiveDateTime.to_iso8601()
+    |> String.slice(0, 16)
+  end
+
+  attr :upload, :map, required: true
+
+  defp post_image_input(assigns) do
+    ~H"""
+    <div class="mb-4">
+      <label for={@upload.ref} class="block">
+        <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
+          Image
+        </span>
+        <.live_file_input
+          upload={@upload}
+          class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
+        />
+      </label>
+      <p class="mt-1.5 text-xs text-ascents-muted">
+        Optional JPG, PNG, or WebP up to 5 MB.
+      </p>
+      <p
+        :for={err <- upload_errors(@upload)}
+        class="mt-1.5 text-sm text-ascents-danger-hover"
+      >
+        {upload_error_message(err)}
+      </p>
+    </div>
+    """
+  end
 
   defp upload_error_message(:too_large), do: "Choose an image up to 5 MB."
   defp upload_error_message(:not_accepted), do: "Choose a JPG, PNG, or WebP image."

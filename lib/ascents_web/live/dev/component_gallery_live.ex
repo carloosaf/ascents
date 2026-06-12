@@ -117,6 +117,46 @@ defmodule AscentsWeb.Dev.ComponentGalleryLive do
           </aside>
         </section>
 
+        <section class="space-y-4">
+          <.header>
+            Ascent Feed Treatment
+            <:subtitle>
+              The selected ascent treatment shown as a normal feed post, with and without
+              media, so spacing stays comparable to regular posts.
+            </:subtitle>
+          </.header>
+
+          <div class="mx-auto max-w-3xl space-y-5">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <h2 class="text-sm font-black uppercase text-ascents-chalk">
+                  Reference · Normal Post
+                </h2>
+                <span class="rounded-md bg-ascents-panel-hover px-2 py-1 text-xs font-bold text-ascents-muted">
+                  Baseline
+                </span>
+              </div>
+              <.feed_item
+                id="gallery-ascent-context-normal"
+                author="Joel Chen"
+                gym="Bloc District"
+                time="9 min ago"
+                body="Anyone working the cave set tonight? I want to trade beta on the blue compression problem."
+                comments={4}
+                reaction_count={18}
+              />
+            </div>
+
+            <.gallery_ascent_route_send_post id="gallery-ascent-route-send-post" />
+            <.gallery_ascent_route_send_post
+              id="gallery-ascent-route-send-post-with-image"
+              image_url={~p"/images/gallery-ascent-post.png"}
+              label="Chosen · With Image"
+              tone="Image check"
+            />
+          </div>
+        </section>
+
         <section class="grid gap-6 lg:grid-cols-2">
           <div class="rounded-lg border border-ascents-line bg-ascents-panel p-6">
             <.header>
@@ -174,5 +214,96 @@ defmodule AscentsWeb.Dev.ComponentGalleryLive do
       {user, _inserted_at} -> Scope.for_user(user)
       nil -> Scope.for_user(nil)
     end
+  end
+
+  attr :label, :string, required: true
+  attr :tone, :string, required: true
+
+  defp concept_label(assigns) do
+    ~H"""
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="text-sm font-black uppercase text-ascents-chalk">{@label}</h2>
+      <span class="rounded-md bg-ascents-panel-hover px-2 py-1 text-xs font-bold text-ascents-muted">
+        {@tone}
+      </span>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :image_url, :string, default: nil
+  attr :label, :string, default: "Chosen · Ascent Post"
+  attr :tone, :string, default: "Visual"
+
+  defp gallery_ascent_route_send_post(assigns) do
+    ~H"""
+    <div class="space-y-3">
+      <.concept_label label={@label} tone={@tone} />
+      <article id={@id} class="chalk-panel relative rounded-lg border border-ascents-line p-4">
+        <div class="flex items-start gap-3">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-md bg-ascents-tape text-sm font-black text-ascents-tape-content tape-label">
+            MS
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <h3 class="font-bold text-ascents-chalk">Mara Silva</h3>
+              <span class="text-sm text-ascents-muted">sent</span>
+              <span class="text-sm font-semibold text-ascents-tape">Compression Line</span>
+              <span class="text-sm text-ascents-muted">in Bloc District</span>
+              <span class="text-xs text-ascents-muted-strong">12 min ago</span>
+            </div>
+          </div>
+          <.grade_badge grade="V5" />
+        </div>
+
+        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-black uppercase text-ascents-muted">
+          <span class="inline-flex items-center gap-1 text-ascents-tape">
+            <.icon name="hero-check-badge" class="size-4" /> Ascent
+          </span>
+          <span>/</span>
+          <span class="inline-flex items-center gap-1">
+            <span class="size-2 rounded-full bg-grade-blue"></span>
+            Blue holds
+          </span>
+          <span>/</span>
+          <span>Cave wall</span>
+          <span>/</span>
+          <span>Jun 11 · 10:30</span>
+        </div>
+
+        <p class="mt-2 text-sm leading-6 text-ascents-chalk-soft">
+          Sent after three careful burns. The final bump felt much easier once the left heel stayed high.
+        </p>
+
+        <div
+          :if={@image_url}
+          class="mt-4 overflow-hidden rounded-lg border border-ascents-line bg-ascents-panel-deep"
+        >
+          <img src={@image_url} alt="" class="aspect-video w-full object-cover" />
+        </div>
+
+        <.gallery_post_actions />
+      </article>
+    </div>
+    """
+  end
+
+  defp gallery_post_actions(assigns) do
+    ~H"""
+      <div class="relative z-10 mt-4 flex flex-wrap items-center gap-2 border-t border-ascents-line pt-3 text-sm text-ascents-muted">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+        >
+          <.icon name="hero-sparkles" class="size-4 text-ascents-tape" /> 42
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+        >
+          <.icon name="hero-chat-bubble-left-ellipsis" class="size-4" /> 9
+        </button>
+      </div>
+    """
   end
 end

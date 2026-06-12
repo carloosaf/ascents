@@ -66,7 +66,12 @@ defmodule AscentsWeb.ProductComponents do
             >
               {profile_name(@post.user)}
             </.link>
-            <span :if={@show_gym?} class="text-sm text-ascents-muted">in</span>
+            <span :if={ascent_post?(@post)} class="text-sm text-ascents-muted">sent</span>
+            <span :if={!ascent_post?(@post) && @show_gym?} class="text-sm text-ascents-muted">in</span>
+            <span :if={ascent_post?(@post)} class="text-sm font-semibold text-ascents-tape">
+              {route_title(@post)}
+            </span>
+            <span :if={ascent_post?(@post) && @show_gym?} class="text-sm text-ascents-muted">in</span>
             <.link
               :if={@show_gym?}
               navigate={~p"/gyms/#{@post.gym.slug}"}
@@ -77,20 +82,46 @@ defmodule AscentsWeb.ProductComponents do
             <span class="text-xs text-ascents-muted-strong">{format_time(@post.inserted_at)}</span>
           </div>
         </div>
-        <button
-          :if={owns?(@current_scope, @post)}
-          id={"home-post-delete-#{@post.id}"}
-          type="button"
-          phx-click="delete-post"
-          phx-value-id={@post.id}
-          class="rounded-md p-2 text-ascents-muted transition hover:bg-ascents-danger/10 hover:text-ascents-danger-hover"
-          aria-label="Delete post"
-        >
-          <.icon name="hero-trash" class="size-4" />
-        </button>
+        <div class="flex shrink-0 items-start gap-2">
+          <.grade_badge :if={ascent_post?(@post)} grade={ascent_grade(@post)} />
+          <button
+            :if={owns?(@current_scope, @post)}
+            id={"home-post-delete-#{@post.id}"}
+            type="button"
+            phx-click="delete-post"
+            phx-value-id={@post.id}
+            class="rounded-md p-2 text-ascents-muted transition hover:bg-ascents-danger/10 hover:text-ascents-danger-hover"
+            aria-label="Delete post"
+          >
+            <.icon name="hero-trash" class="size-4" />
+          </button>
+        </div>
       </div>
 
-      <p class="mt-3 whitespace-pre-line text-sm leading-6 text-ascents-chalk-soft">
+      <div
+        :if={ascent_post?(@post)}
+        id={"home-post-ascent-#{@post.id}"}
+        class="mt-2 flex flex-wrap items-center gap-2 text-xs font-black uppercase text-ascents-muted"
+      >
+        <span class="inline-flex items-center gap-1 text-ascents-tape">
+          <.icon name="hero-check-badge" class="size-4" /> Ascent
+        </span>
+        <span>/</span>
+        <span :if={route_hold_color(@post)} class="inline-flex items-center gap-1">
+          <span class={["size-2 rounded-full", hold_color_class(route_hold_color(@post))]}></span>
+          {route_hold_color(@post)} holds
+        </span>
+        <span :if={route_hold_color(@post)}>/</span>
+        <span>{format_ascent_time(@post.ascent)}</span>
+      </div>
+
+      <p
+        :if={@post.body}
+        class={[
+          "whitespace-pre-line text-sm leading-6 text-ascents-chalk-soft",
+          if(ascent_post?(@post), do: "mt-2", else: "mt-3")
+        ]}
+      >
         {@post.body}
       </p>
 
@@ -405,6 +436,17 @@ defmodule AscentsWeb.ProductComponents do
     end
   end
 
+  defp hold_color_class(color) do
+    case String.downcase(to_string(color)) do
+      "blue" -> "bg-grade-blue text-grade-blue-content"
+      "purple" -> "bg-grade-purple text-grade-purple-content"
+      "pink" -> "bg-grade-pink text-grade-pink-content"
+      "yellow" -> "bg-grade-yellow text-grade-yellow-content"
+      "red" -> "bg-grade-red text-grade-red-content"
+      _color -> "bg-ascents-tape text-ascents-tape-content"
+    end
+  end
+
   defp stat_tone_class("lime"), do: "text-ascents-tape"
   defp stat_tone_class("clay"), do: "text-ascents-clay"
   defp stat_tone_class("blue"), do: "text-grade-blue"
@@ -428,6 +470,31 @@ defmodule AscentsWeb.ProductComponents do
 
   defp format_time(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%b %-d, %Y")
   defp format_time(_datetime), do: ""
+
+  defp format_ascent_time(%{climbed_at: %DateTime{} = datetime}) do
+    Calendar.strftime(datetime, "%b %-d, %Y at %H:%M")
+  end
+
+  defp format_ascent_time(_ascent), do: "Ascent date"
+
+  defp ascent_post?(%{post_type: "ascent"}), do: true
+  defp ascent_post?(_post), do: false
+
+  defp route_title(%{boulder_problem: %{title: title}}) when is_binary(title), do: title
+  defp route_title(_post), do: "Archived route"
+
+  defp route_hold_color(%{boulder_problem: %{color: color}}) when is_binary(color) do
+    case String.trim(color) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp route_hold_color(_post), do: nil
+
+  defp ascent_grade(%{ascent: %{grade_snapshot: grade}}) when is_binary(grade), do: grade
+  defp ascent_grade(%{boulder_problem: %{grade: grade}}) when is_binary(grade), do: grade
+  defp ascent_grade(_post), do: "Route"
 
   defp initials(name) do
     name

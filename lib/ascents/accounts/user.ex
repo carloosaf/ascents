@@ -2,6 +2,7 @@ defmodule Ascents.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Ascents.Ascents.Ascent
   alias Ascents.Feed.{Comment, Post}
 
   schema "users" do
@@ -17,6 +18,7 @@ defmodule Ascents.Accounts.User do
 
     has_many :posts, Post
     has_many :comments, Comment
+    has_many :ascents, Ascent
 
     timestamps(type: :utc_datetime)
   end
