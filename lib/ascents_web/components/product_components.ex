@@ -52,6 +52,7 @@ defmodule AscentsWeb.ProductComponents do
   attr :current_scope, :map, required: true
   attr :comment_form, Phoenix.HTML.Form, required: true
   attr :show_gym?, :boolean, default: true
+  attr :show_owner_actions, :boolean, default: true
 
   def feed_post(assigns) do
     ~H"""
@@ -67,7 +68,9 @@ defmodule AscentsWeb.ProductComponents do
               {profile_name(@post.user)}
             </.link>
             <span :if={ascent_post?(@post)} class="text-sm text-ascents-muted">sent</span>
-            <span :if={!ascent_post?(@post) && @show_gym?} class="text-sm text-ascents-muted">in</span>
+            <span :if={!ascent_post?(@post) && @show_gym?} class="text-sm text-ascents-muted">
+              in
+            </span>
             <span :if={ascent_post?(@post)} class="text-sm font-semibold text-ascents-tape">
               {route_title(@post)}
             </span>
@@ -85,7 +88,7 @@ defmodule AscentsWeb.ProductComponents do
         <div class="flex shrink-0 items-start gap-2">
           <.grade_badge :if={ascent_post?(@post)} grade={ascent_grade(@post)} />
           <button
-            :if={owns?(@current_scope, @post)}
+            :if={@show_owner_actions && owns?(@current_scope, @post)}
             id={"home-post-delete-#{@post.id}"}
             type="button"
             phx-click="delete-post"
@@ -155,7 +158,7 @@ defmodule AscentsWeb.ProductComponents do
                   </p>
                 </div>
                 <button
-                  :if={owns?(@current_scope, comment)}
+                  :if={@show_owner_actions && owns?(@current_scope, comment)}
                   id={"home-comment-delete-#{comment.id}"}
                   type="button"
                   phx-click="delete-comment"

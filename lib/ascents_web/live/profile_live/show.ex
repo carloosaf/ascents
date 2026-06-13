@@ -3,6 +3,8 @@ defmodule AscentsWeb.ProfileLive.Show do
 
   alias Ascents.Accounts
   alias Ascents.Accounts.Scope
+  alias Ascents.Feed
+  alias Ascents.Feed.{Comment, Post}
 
   def mount(%{"username" => username}, session, socket) do
     current_scope =
@@ -12,15 +14,77 @@ defmodule AscentsWeb.ProfileLive.Show do
 
     if current_scope do
       profile_user = Accounts.get_user_by_username!(username)
+      posts = Feed.list_user_posts(profile_user)
 
       {:ok,
-       assign(socket,
+       socket
+       |> assign(
          current_scope: current_scope,
          profile_user: profile_user,
-         owner?: current_scope.user.id == profile_user.id
-       )}
+         posts_empty?: posts == [],
+         comment_form: to_form(Feed.change_comment(%Comment{}))
+       )
+       |> stream(:posts, posts)}
     else
       {:ok, redirect(socket, to: ~p"/users/log-in")}
+    end
+  end
+
+  def handle_event("comment", %{"post_id" => post_id, "comment" => comment_params}, socket) do
+    case Feed.get_user_post(socket.assigns.profile_user, post_id) do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Post not found.")}
+
+      %Post{} = post ->
+        case Feed.create_comment(socket.assigns.current_scope, post.gym, post, comment_params) do
+          {:ok, _comment} ->
+            {:noreply,
+             socket
+             |> assign(:comment_form, to_form(Feed.change_comment(%Comment{})))
+             |> stream_insert(:posts, Feed.get_user_post(socket.assigns.profile_user, post.id))}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply,
+             assign(socket, :comment_form, to_form(Map.put(changeset, :action, :validate)))}
+
+          {:error, :unauthorized} ->
+            {:noreply, put_flash(socket, :error, "Join this gym before commenting.")}
+
+          {:error, :not_found} ->
+            {:noreply, put_flash(socket, :error, "Post not found.")}
+        end
+    end
+  end
+
+  def handle_event("delete-post", %{"id" => post_id}, socket) do
+    case Feed.get_user_post(socket.assigns.profile_user, post_id) do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Post not found.")}
+
+      %Post{} = post ->
+        case Feed.delete_post(socket.assigns.current_scope, post.gym, post) do
+          {:ok, _post} ->
+            {:noreply, refresh_profile_posts(socket)}
+
+          {:error, :unauthorized} ->
+            {:noreply, put_flash(socket, :error, "You can only delete your own posts.")}
+        end
+    end
+  end
+
+  def handle_event("delete-comment", %{"post_id" => post_id, "id" => comment_id}, socket) do
+    with %Post{} = post <- Feed.get_user_post(socket.assigns.profile_user, post_id),
+         %Comment{} = comment <- find_comment(post, comment_id) do
+      case Feed.delete_comment(socket.assigns.current_scope, post.gym, post, comment) do
+        {:ok, _comment} ->
+          {:noreply,
+           stream_insert(socket, :posts, Feed.get_user_post(socket.assigns.profile_user, post.id))}
+
+        {:error, :unauthorized} ->
+          {:noreply, put_flash(socket, :error, "You can only delete your own comments.")}
+      end
+    else
+      _missing -> {:noreply, put_flash(socket, :error, "Comment not found.")}
     end
   end
 
@@ -56,15 +120,6 @@ defmodule AscentsWeb.ProfileLive.Show do
                   </h1>
                 </div>
               </div>
-
-              <.link
-                :if={@owner?}
-                id="profile-edit-link"
-                href={~p"/users/settings/profile"}
-                class="inline-flex items-center justify-center rounded-md bg-ascents-action px-4 py-2 text-sm font-bold text-ascents-action-content shadow-lg transition hover:-translate-y-0.5 hover:bg-ascents-action-hover"
-              >
-                Edit profile
-              </.link>
             </div>
           </div>
 
@@ -75,20 +130,49 @@ defmodule AscentsWeb.ProfileLive.Show do
           </div>
         </section>
 
-        <section class="grid gap-4 sm:grid-cols-3">
-          <.stat_block label="Sends" value="0" detail="No sends recorded" tone="lime" />
-          <.stat_block label="Gyms" value="0" detail="No gym memberships yet" tone="teal" />
-          <.stat_block label="Projects" value="0" detail="No active projects yet" tone="blue" />
-        </section>
+        <section id="profile-feed" class="space-y-4">
+          <div>
+            <h2 class="text-lg font-black text-ascents-chalk">Posts</h2>
+            <p class="mt-1 text-sm text-ascents-muted">
+              Recent gym posts and ascents from {profile_name(@profile_user)}.
+            </p>
+          </div>
 
-        <.empty_state
-          title="No climbing activity yet"
-          description="Gym activity, ascent posts, and progress will appear here as this climber starts logging sessions."
-          icon="hero-sparkles"
-        />
+          <div id="profile-feed-posts" phx-update="stream" class="space-y-4">
+            <.empty_state
+              :if={@posts_empty?}
+              id="profile-feed-empty"
+              title="No posts yet"
+              description="This climber's gym posts will appear here."
+              icon="hero-chat-bubble-left-right"
+            />
+
+            <.feed_post
+              :for={{id, post} <- @streams.posts}
+              id={id}
+              post={post}
+              current_scope={@current_scope}
+              comment_form={@comment_form}
+              show_gym?={true}
+              show_owner_actions={false}
+            />
+          </div>
+        </section>
       </div>
     </Layouts.app>
     """
+  end
+
+  defp refresh_profile_posts(socket) do
+    posts = Feed.list_user_posts(socket.assigns.profile_user)
+
+    socket
+    |> assign(:posts_empty?, posts == [])
+    |> stream(:posts, posts, reset: true)
+  end
+
+  defp find_comment(%Post{} = post, comment_id) do
+    Enum.find(post.comments, &(to_string(&1.id) == to_string(comment_id)))
   end
 
   defp scope_from_token(nil), do: Scope.for_user(nil)

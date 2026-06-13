@@ -15,6 +15,7 @@ defmodule Ascents.Ascents do
   alias Ascents.Repo
   alias Ascents.Routes
   alias Ascents.Routes.BoulderProblem
+  alias Ascents.Routes.GradeScales
 
   @ascent_post_types %{
     body: :string,
@@ -70,6 +71,28 @@ defmodule Ascents.Ascents do
   def get_ascent_by_post(_post), do: nil
 
   @doc """
+  Returns private ascent stats for the current user's own profile.
+  """
+  def get_user_stats(scope, user, opts \\ [])
+
+  def get_user_stats(%Scope{user: %User{id: user_id}}, %User{id: user_id} = user, opts) do
+    today = Keyword.get(opts, :today, Date.utc_today())
+    week_starts = recent_week_starts(today)
+
+    {:ok,
+     %{
+       total_ascents: count_user_ascents(user),
+       unique_gyms: count_user_unique(user, :gym_id),
+       unique_routes: count_user_unique(user, :boulder_problem_id),
+       grade_distribution: grade_distribution(user),
+       gym_distribution: gym_distribution(user),
+       timeline: timeline(user, week_starts)
+     }}
+  end
+
+  def get_user_stats(_scope, _user, _opts), do: {:error, :unauthorized}
+
+  @doc """
   Soft-deletes the ascent linked to a post.
   """
   def soft_delete_ascent_for_post(%Post{id: post_id}) do
@@ -83,6 +106,106 @@ defmodule Ascents.Ascents do
   end
 
   def soft_delete_ascent_for_post(_post), do: :ok
+
+  defp base_user_ascent_query(%User{id: user_id}) do
+    Ascent
+    |> where([ascent], ascent.user_id == ^user_id and is_nil(ascent.deleted_at))
+  end
+
+  defp count_user_ascents(%User{} = user) do
+    user
+    |> base_user_ascent_query()
+    |> select([ascent], count(ascent.id))
+    |> Repo.one()
+  end
+
+  defp count_user_unique(%User{} = user, field) do
+    user
+    |> base_user_ascent_query()
+    |> select([ascent], count(field(ascent, ^field), :distinct))
+    |> Repo.one()
+  end
+
+  defp grade_distribution(%User{} = user) do
+    user
+    |> base_user_ascent_query()
+    |> group_by([ascent], [ascent.grade_scale_snapshot, ascent.grade_snapshot])
+    |> select([ascent], %{
+      grade: ascent.grade_snapshot,
+      grade_scale: ascent.grade_scale_snapshot,
+      count: count(ascent.id)
+    })
+    |> Repo.all()
+    |> Enum.sort_by(
+      &{grade_scale_order(&1.grade_scale), grade_order(&1.grade_scale, &1.grade), &1.grade}
+    )
+    |> Enum.map(&Map.take(&1, [:grade, :count]))
+  end
+
+  defp gym_distribution(%User{} = user) do
+    user
+    |> base_user_ascent_query()
+    |> join(:inner, [ascent], gym in assoc(ascent, :gym))
+    |> group_by([ascent, gym], [gym.id, gym.name])
+    |> select([ascent, gym], %{gym_id: gym.id, gym_name: gym.name, count: count(ascent.id)})
+    |> order_by([ascent, gym], desc: count(ascent.id), asc: gym.name, asc: gym.id)
+    |> Repo.all()
+  end
+
+  defp timeline(%User{} = user, week_starts) do
+    week_counts =
+      user
+      |> timeline_query(week_starts)
+      |> Repo.all()
+      |> Map.new()
+
+    Enum.map(week_starts, fn week_start ->
+      %{
+        week_start: week_start,
+        label: format_week_label(week_start),
+        count: Map.get(week_counts, week_start, 0)
+      }
+    end)
+  end
+
+  defp timeline_query(%User{} = user, [first_week | _weeks] = week_starts) do
+    last_week = List.last(week_starts)
+    starts_at = DateTime.new!(first_week, ~T[00:00:00], "Etc/UTC")
+    ends_at = DateTime.new!(Date.add(last_week, 7), ~T[00:00:00], "Etc/UTC")
+
+    user
+    |> base_user_ascent_query()
+    |> where([ascent], ascent.climbed_at >= ^starts_at and ascent.climbed_at < ^ends_at)
+    |> group_by([ascent], fragment("date_trunc('week', ?)::date", ascent.climbed_at))
+    |> select([ascent], {
+      type(fragment("date_trunc('week', ?)::date", ascent.climbed_at), :date),
+      count(ascent.id)
+    })
+  end
+
+  defp recent_week_starts(%Date{} = today) do
+    current_week_start = Date.beginning_of_week(today)
+
+    0..11
+    |> Enum.reverse()
+    |> Enum.map(&Date.add(current_week_start, -7 * &1))
+  end
+
+  defp grade_scale_order("v_scale"), do: 0
+  defp grade_scale_order("french"), do: 1
+  defp grade_scale_order(_scale), do: 2
+
+  defp grade_order(scale, grade) do
+    scale
+    |> GradeScales.grades_for_scale()
+    |> Enum.find_index(&(&1 == grade))
+    |> case do
+      nil -> 999
+      index -> index
+    end
+  end
+
+  defp format_week_label(%Date{} = week_start), do: Calendar.strftime(week_start, "%b %-d")
 
   defp create_valid_ascent_post(%User{} = user, %Gym{} = gym, changeset) do
     problem_id = get_field(changeset, :boulder_problem_id)

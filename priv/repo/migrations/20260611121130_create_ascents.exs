@@ -11,9 +11,7 @@ defmodule Ascents.Repo.Migrations.CreateAscents do
     create index(:posts, [:post_type])
     create index(:posts, [:boulder_problem_id])
 
-    create constraint(:posts, :posts_post_type_check,
-             check: "post_type IN ('normal', 'ascent')"
-           )
+    create constraint(:posts, :posts_post_type_check, check: "post_type IN ('normal', 'ascent')")
 
     create table(:ascents) do
       add :user_id, references(:users, on_delete: :delete_all), null: false

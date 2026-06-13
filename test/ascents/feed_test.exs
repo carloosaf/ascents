@@ -58,7 +58,7 @@ defmodule Ascents.FeedTest do
     end
   end
 
-  describe "list_gym_posts/1 and list_home_posts/1" do
+  describe "list_gym_posts/1, list_home_posts/1, and list_user_posts/1" do
     test "lists visible gym posts newest first with associations" do
       gym = gym_fixture()
       other_gym = gym_fixture()
@@ -80,6 +80,31 @@ defmodule Ascents.FeedTest do
       _other_post = post_fixture(gym: other_gym, body: "Other")
 
       assert Enum.map(Feed.list_home_posts(scope), & &1.id) == [joined_post.id]
+    end
+
+    test "lists visible user posts newest first with associations" do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      other_scope = user_scope_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      first = post_fixture(scope: scope, gym: gym, body: "First profile post")
+      second = post_fixture(scope: scope, gym: gym, body: "Second profile post")
+      _other = post_fixture(scope: other_scope, gym: gym, body: "Other user's post")
+
+      assert Enum.map(Feed.list_user_posts(user), & &1.id) == [second.id, first.id]
+
+      assert [
+               %Post{
+                 user: %Ascents.Accounts.User{id: user_id},
+                 gym: ^gym,
+                 comments: [],
+                 ascent: _
+               }
+               | _
+             ] = Feed.list_user_posts(user)
+
+      assert user_id == user.id
     end
   end
 
@@ -128,6 +153,7 @@ defmodule Ascents.FeedTest do
       assert deleted_post.deleted_at
       assert Repo.get!(Post, post.id).deleted_at
       assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_user_posts(user) == []
     end
 
     test "rejects deleting someone else's post" do

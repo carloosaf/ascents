@@ -488,21 +488,27 @@
             </tr>
             <tr>
               <td>ASC-01</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Members can mark a post as an ascent.</td>
               <td>
                 Creating an ascent post requires selecting an active boulder
                 problem and creates both a post and an ascent in one transaction.
+                Task 13 added transactional ascent post creation through
+                <code>Ascents.Ascents</code>; Task 14 added the gym feed ascent
+                composer with active route selection, climbed datetime, optional
+                notes, image support, and validation feedback.
               </td>
             </tr>
             <tr>
               <td>ASC-02</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Ascents preserve historical route data.</td>
               <td>
                 Each ascent stores the current grade and grade scale as a
                 snapshot so later route or gym scale edits do not rewrite the
-                user's history.
+                user's history. Task 13 stores grade and grade scale snapshots
+                on ascent records and rejects archived routes for new ascent
+                posts.
               </td>
             </tr>
             <tr>
@@ -962,29 +968,38 @@
             </tr>
             <tr>
               <td>13</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Ascent context</td>
               <td>
-                Implement <code>Ascents.Ascents</code> with transactional ascent
-                creation from ascent posts.
+                Implemented <code>Ascents.Ascents</code> with transactional
+                ascent creation from ascent posts, linked
+                <code>posts</code>/<code>ascents</code> records, route ownership
+                checks, active-route enforcement, and soft-delete coupling when
+                deleting ascent posts.
               </td>
               <td>
                 Tests prove ascent creation creates linked post and ascent,
-                stores grade and scale snapshots, and rejects archived routes by
-                default.
+                stores grade and scale snapshots, rejects archived routes by
+                default, rejects routes from other gyms, and soft-deletes the
+                linked ascent when its post is deleted.
               </td>
             </tr>
             <tr>
               <td>14</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Ascent posting UI</td>
               <td>
-                Add an ascent mode to post creation with route selector,
-                climbed date, notes, and validation feedback.
+                Added an ascent mode to gym post creation with active route
+                selector, climbed datetime, optional notes, optional image, and
+                validation feedback. Ascent posts render in the feed as normal
+                posts with integrated ascent metadata, grade, route, hold color,
+                and climbed time.
               </td>
               <td>
                 LiveView tests cover valid ascent post, missing route validation,
-                and visibility in gym feed.
+                and visibility in gym feed. The development component gallery
+                includes the selected ascent feed treatment with and without an
+                image.
               </td>
             </tr>
             <tr>

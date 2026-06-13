@@ -262,8 +262,7 @@ defmodule AscentsWeb.Dev.ComponentGalleryLive do
           </span>
           <span>/</span>
           <span class="inline-flex items-center gap-1">
-            <span class="size-2 rounded-full bg-grade-blue"></span>
-            Blue holds
+            <span class="size-2 rounded-full bg-grade-blue"></span> Blue holds
           </span>
           <span>/</span>
           <span>Cave wall</span>
@@ -290,20 +289,20 @@ defmodule AscentsWeb.Dev.ComponentGalleryLive do
 
   defp gallery_post_actions(assigns) do
     ~H"""
-      <div class="relative z-10 mt-4 flex flex-wrap items-center gap-2 border-t border-ascents-line pt-3 text-sm text-ascents-muted">
-        <button
-          type="button"
-          class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
-        >
-          <.icon name="hero-sparkles" class="size-4 text-ascents-tape" /> 42
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
-        >
-          <.icon name="hero-chat-bubble-left-ellipsis" class="size-4" /> 9
-        </button>
-      </div>
+    <div class="relative z-10 mt-4 flex flex-wrap items-center gap-2 border-t border-ascents-line pt-3 text-sm text-ascents-muted">
+      <button
+        type="button"
+        class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+      >
+        <.icon name="hero-sparkles" class="size-4 text-ascents-tape" /> 42
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+      >
+        <.icon name="hero-chat-bubble-left-ellipsis" class="size-4" /> 9
+      </button>
+    </div>
     """
   end
 end

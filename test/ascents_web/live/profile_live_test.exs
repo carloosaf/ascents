@@ -2,10 +2,13 @@ defmodule AscentsWeb.ProfileLiveTest do
   use AscentsWeb.ConnCase
 
   import Ascents.AccountsFixtures
+  import Ascents.FeedFixtures
   import Phoenix.LiveViewTest
 
   alias Ascents.Accounts
   alias Ascents.Accounts.Scope
+  alias Ascents.Feed
+  alias Ascents.Gyms
   alias Ascents.Media.TestStorage
 
   setup do
@@ -44,12 +47,72 @@ defmodule AscentsWeb.ProfileLiveTest do
       refute LazyHTML.text(document) =~ user.email
     end
 
+    test "renders the same profile surface for owner and other logged-in users", %{conn: conn} do
+      profile_user = user_fixture()
+      profile_scope = user_scope_fixture(profile_user)
+      post = post_fixture(scope: profile_scope)
+      owner_conn = log_in_user(conn, profile_user)
+      viewer_conn = log_in_user(build_conn(), user_fixture())
+
+      {:ok, owner_view, _html} = live(owner_conn, ~p"/u/#{profile_user.username}")
+      {:ok, viewer_view, _html} = live(viewer_conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(owner_view, "#profile-show")
+      assert has_element?(viewer_view, "#profile-show")
+      refute has_element?(owner_view, "#profile-edit-link")
+      refute has_element?(viewer_view, "#profile-edit-link")
+      refute has_element?(owner_view, "#profile-stats")
+      refute has_element?(viewer_view, "#profile-stats")
+      refute has_element?(owner_view, "#profile-stats-private")
+      refute has_element?(viewer_view, "#profile-stats-private")
+      assert has_element?(owner_view, "#posts-#{post.id}")
+      assert has_element?(viewer_view, "#posts-#{post.id}")
+      refute has_element?(owner_view, "#home-post-delete-#{post.id}")
+      refute has_element?(viewer_view, "#home-post-delete-#{post.id}")
+    end
+
     test "returns not found for missing usernames", %{conn: conn} do
       conn = log_in_user(conn, user_fixture())
 
       assert_raise Ecto.NoResultsError, fn ->
         live(conn, ~p"/u/unknown_user")
       end
+    end
+
+    test "renders only the profile user's posts", %{conn: conn} do
+      profile_user = user_fixture()
+      profile_scope = user_scope_fixture(profile_user)
+      profile_post = post_fixture(scope: profile_scope, body: "Profile post")
+      other_post = post_fixture(body: "Other post")
+      conn = log_in_user(conn, user_fixture())
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-feed")
+      assert has_element?(view, "#posts-#{profile_post.id}")
+      refute has_element?(view, "#posts-#{other_post.id}")
+    end
+
+    test "allows comments on profile feed posts when viewer belongs to the gym", %{conn: conn} do
+      profile_user = user_fixture()
+      profile_scope = user_scope_fixture(profile_user)
+      post = post_fixture(scope: profile_scope)
+      viewer = user_fixture()
+      viewer_scope = user_scope_fixture(viewer)
+      {:ok, _membership} = Gyms.join_gym(viewer_scope, post.gym)
+      conn = log_in_user(conn, viewer)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      view
+      |> form("#home-comment-form-#{post.id}",
+        post_id: post.id,
+        comment: %{body: "Profile feed reply."}
+      )
+      |> render_submit()
+
+      assert [comment] = Feed.get_post(post.gym, post.id).comments
+      assert has_element?(view, "#home-comment-#{comment.id}")
     end
   end
 

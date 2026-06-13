@@ -79,7 +79,8 @@ defmodule AscentsWeb.GymLive.Show do
     {:noreply, reset_post_modal(socket)}
   end
 
-  def handle_event("select-post-mode", %{"mode" => mode}, socket) when mode in ~w(normal ascent) do
+  def handle_event("select-post-mode", %{"mode" => mode}, socket)
+      when mode in ~w(normal ascent) do
     {:noreply, assign(socket, :post_mode, mode)}
   end
 

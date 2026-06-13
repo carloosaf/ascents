@@ -135,4 +135,88 @@ defmodule Ascents.AscentsTest do
       assert Repo.get!(Ascent, ascent.id).deleted_at
     end
   end
+
+  describe "get_user_stats/3" do
+    test "returns owner-only ascent aggregates" do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      other_scope = user_scope_fixture()
+      bloc_house = gym_fixture(name: "Bloc House")
+      slab_lab = gym_fixture(name: "Slab Lab")
+      bloc_v3 = boulder_problem_fixture(gym: bloc_house, grade: "V3", title: "Blue Rail")
+      bloc_v5 = boulder_problem_fixture(gym: bloc_house, grade: "V5", title: "Pink Press")
+      slab_v3 = boulder_problem_fixture(gym: slab_lab, grade: "V3", title: "Quiet Feet")
+      {:ok, _membership} = Gyms.join_gym(scope, bloc_house)
+      {:ok, _membership} = Gyms.join_gym(scope, slab_lab)
+
+      ascent_post_fixture(
+        scope: scope,
+        gym: bloc_house,
+        problem: bloc_v3,
+        climbed_at: "2026-06-12T10:30"
+      )
+
+      ascent_post_fixture(
+        scope: scope,
+        gym: bloc_house,
+        problem: bloc_v5,
+        climbed_at: "2026-06-05T10:30"
+      )
+
+      %{post: deleted_post} =
+        ascent_post_fixture(
+          scope: scope,
+          gym: bloc_house,
+          problem: bloc_v5,
+          climbed_at: "2026-05-28T10:30"
+        )
+
+      ascent_post_fixture(
+        scope: scope,
+        gym: slab_lab,
+        problem: slab_v3,
+        climbed_at: "2026-05-23T10:30"
+      )
+
+      ascent_post_fixture(
+        scope: other_scope,
+        gym: bloc_house,
+        problem: bloc_v3,
+        climbed_at: "2026-06-12T10:30"
+      )
+
+      assert {:ok, _post} = Feed.delete_post(scope, bloc_house, deleted_post)
+
+      assert {:ok, stats} = AscentLogs.get_user_stats(scope, user, today: ~D[2026-06-13])
+
+      assert stats.total_ascents == 3
+      assert stats.unique_gyms == 2
+      assert stats.unique_routes == 3
+
+      assert stats.grade_distribution == [
+               %{grade: "V3", count: 2},
+               %{grade: "V5", count: 1}
+             ]
+
+      assert stats.gym_distribution == [
+               %{gym_id: bloc_house.id, gym_name: "Bloc House", count: 2},
+               %{gym_id: slab_lab.id, gym_name: "Slab Lab", count: 1}
+             ]
+
+      timeline_counts = Map.new(stats.timeline, &{&1.week_start, &1.count})
+
+      assert length(stats.timeline) == 12
+      assert timeline_counts[~D[2026-06-08]] == 1
+      assert timeline_counts[~D[2026-06-01]] == 1
+      assert timeline_counts[~D[2026-05-18]] == 1
+      assert timeline_counts[~D[2026-05-25]] == 0
+    end
+
+    test "rejects stats access for other users" do
+      owner = user_fixture()
+      viewer_scope = user_scope_fixture()
+
+      assert AscentLogs.get_user_stats(viewer_scope, owner) == {:error, :unauthorized}
+    end
+  end
 end

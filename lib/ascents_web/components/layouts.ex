@@ -80,6 +80,12 @@ defmodule AscentsWeb.Layouts do
               Profile
             </.link>
             <.link
+              href={~p"/users/stats"}
+              class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
+            >
+              Stats
+            </.link>
+            <.link
               href={~p"/users/settings"}
               class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
             >
