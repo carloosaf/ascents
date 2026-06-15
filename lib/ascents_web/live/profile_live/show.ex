@@ -154,7 +154,6 @@ defmodule AscentsWeb.ProfileLive.Show do
               current_scope={@current_scope}
               comment_form={@comment_form}
               show_gym?={true}
-              show_owner_actions={false}
             />
           </div>
         </section>

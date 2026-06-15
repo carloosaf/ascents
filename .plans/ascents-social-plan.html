@@ -522,11 +522,14 @@
             </tr>
             <tr>
               <td>MOD-01</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Gym admins can moderate posts in their gym.</td>
               <td>
-                Admins can hide or soft-delete posts and comments; normal users
-                cannot moderate content they do not own.
+                Gym owners/admins/moderators can soft-delete posts and comments
+                in their gym; content owners can delete their own uploads;
+                normal users cannot moderate content they do not own. Deleted
+                posts and comments disappear from visible feeds while retaining
+                timestamp-only <code>deleted_at</code> audit data.
               </td>
             </tr>
             <tr>
@@ -1004,7 +1007,7 @@
             </tr>
             <tr>
               <td>15</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>User stats</td>
               <td>
                 Add profile stats with totals, grade distribution, gym
@@ -1017,11 +1020,15 @@
             </tr>
             <tr>
               <td>16</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>Moderation pass</td>
               <td>
                 Add admin hide/soft-delete actions for gym posts and comments,
-                preserving audit-friendly timestamps.
+                preserving audit-friendly timestamps. Implemented as a single
+                delete action: content owners can delete their own posts and
+                comments, and gym owners/admins/moderators can delete gym feed
+                content. Deleted posts and comments disappear from visible feeds;
+                records retain timestamp-only <code>deleted_at</code> audit data.
               </td>
               <td>
                 Tests cover admin moderation, owner cleanup, and unauthorized

@@ -27,7 +27,7 @@ defmodule Ascents.Feed do
   end
 
   @doc """
-  Lists visible posts for a gym with authors, gym, and comments preloaded.
+  Lists visible posts for a gym with authors, gym, and visible comments preloaded.
   """
   def list_gym_posts(%Gym{} = gym) do
     Post
@@ -56,7 +56,7 @@ defmodule Ascents.Feed do
   def list_home_posts(_scope), do: []
 
   @doc """
-  Lists visible posts authored by a user with authors, gyms, and comments preloaded.
+  Lists visible posts authored by a user with authors, gyms, and visible comments preloaded.
   """
   def list_user_posts(%User{id: user_id}) do
     Post
@@ -73,7 +73,7 @@ defmodule Ascents.Feed do
   """
   def get_post(%Gym{} = gym, id) do
     Post
-    |> where([post], post.gym_id == ^gym.id and post.id == ^id)
+    |> where([post], post.gym_id == ^gym.id and post.id == ^id and is_nil(post.deleted_at))
     |> preload_for_feed()
     |> Repo.one()
   end
@@ -136,14 +136,38 @@ defmodule Ascents.Feed do
   def create_comment(_scope, _gym, _post, _attrs), do: {:error, :unauthorized}
 
   @doc """
-  Soft-deletes a post. For now, only the content owner can delete it.
+  Returns true when the current user can delete a gym-scoped post.
   """
-  def delete_post(%Scope{user: %User{} = user}, %Gym{} = gym, %Post{} = post) do
+  def can_delete_post?(%Scope{user: %User{} = user} = scope, %Gym{} = gym, %Post{} = post) do
+    post.gym_id == gym.id and (post.user_id == user.id or Gyms.can_moderate_gym?(scope, gym))
+  end
+
+  def can_delete_post?(_scope, _gym, _post), do: false
+
+  @doc """
+  Returns true when the current user can delete a gym-scoped comment.
+  """
+  def can_delete_comment?(
+        %Scope{user: %User{} = user} = scope,
+        %Gym{} = gym,
+        %Post{} = post,
+        %Comment{} = comment
+      ) do
+    post.gym_id == gym.id and comment.post_id == post.id and
+      (comment.user_id == user.id or Gyms.can_moderate_gym?(scope, gym))
+  end
+
+  def can_delete_comment?(_scope, _gym, _post, _comment), do: false
+
+  @doc """
+  Soft-deletes a post. Content owners and gym moderators can delete it.
+  """
+  def delete_post(%Scope{user: %User{}} = scope, %Gym{} = gym, %Post{} = post) do
     cond do
       post.gym_id != gym.id ->
         {:error, :not_found}
 
-      post.user_id != user.id ->
+      not can_delete_post?(scope, gym, post) ->
         {:error, :unauthorized}
 
       true ->
@@ -160,10 +184,10 @@ defmodule Ascents.Feed do
   def delete_post(_scope, _gym, _post), do: {:error, :unauthorized}
 
   @doc """
-  Soft-deletes a comment. For now, only the content owner can delete it.
+  Soft-deletes a comment. Content owners and gym moderators can delete it.
   """
   def delete_comment(
-        %Scope{user: %User{} = user},
+        %Scope{user: %User{}} = scope,
         %Gym{} = gym,
         %Post{} = post,
         %Comment{} = comment
@@ -172,7 +196,7 @@ defmodule Ascents.Feed do
       post.gym_id != gym.id or comment.post_id != post.id ->
         {:error, :not_found}
 
-      comment.user_id != user.id ->
+      not can_delete_comment?(scope, gym, post, comment) ->
         {:error, :unauthorized}
 
       true ->
@@ -195,6 +219,7 @@ defmodule Ascents.Feed do
       ascent: [],
       comments:
         ^from(comment in Comment,
+          where: is_nil(comment.deleted_at),
           order_by: [asc: comment.inserted_at, asc: comment.id],
           preload: [:user]
         )

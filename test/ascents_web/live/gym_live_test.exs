@@ -363,8 +363,9 @@ defmodule AscentsWeb.GymLiveTest do
       |> element("#home-comment-delete-#{comment.id}")
       |> render_click()
 
-      assert [deleted_comment] = Feed.get_post(gym, post.id).comments
-      assert deleted_comment.deleted_at
+      assert Ascents.Repo.get!(Ascents.Feed.Comment, comment.id).deleted_at
+      assert Feed.get_post(gym, post.id).comments == []
+      refute has_element?(view, "#home-comment-#{comment.id}")
     end
 
     test "allows content owners to delete posts", %{conn: conn} do
@@ -383,6 +384,49 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert Feed.list_gym_posts(gym) == []
       refute has_element?(view, "#posts-#{post.id}")
+    end
+
+    test "allows gym admins to delete member posts and comments", %{conn: conn} do
+      gym = gym_fixture()
+      post = post_fixture(gym: gym)
+      comment = comment_fixture(post: post, gym: gym)
+      admin = user_fixture()
+      admin_scope = user_scope_fixture(admin)
+      role_membership_fixture(gym, "admin", scope: admin_scope)
+      conn = log_in_user(conn, admin)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      assert has_element?(view, "#home-post-delete-#{post.id}")
+      assert has_element?(view, "#home-comment-delete-#{comment.id}")
+
+      view
+      |> element("#home-comment-delete-#{comment.id}")
+      |> render_click()
+
+      refute has_element?(view, "#home-comment-#{comment.id}")
+
+      view
+      |> element("#home-post-delete-#{post.id}")
+      |> render_click()
+
+      assert Feed.list_gym_posts(gym) == []
+      refute has_element?(view, "#posts-#{post.id}")
+    end
+
+    test "hides moderation controls from regular non-author members", %{conn: conn} do
+      gym = gym_fixture()
+      post = post_fixture(gym: gym)
+      comment = comment_fixture(post: post, gym: gym)
+      member = user_fixture()
+      member_scope = user_scope_fixture(member)
+      {:ok, _membership} = Gyms.join_gym(member_scope, gym)
+      conn = log_in_user(conn, member)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      refute has_element?(view, "#home-post-delete-#{post.id}")
+      refute has_element?(view, "#home-comment-delete-#{comment.id}")
     end
   end
 

@@ -67,8 +67,24 @@ defmodule AscentsWeb.ProfileLiveTest do
       refute has_element?(viewer_view, "#profile-stats-private")
       assert has_element?(owner_view, "#posts-#{post.id}")
       assert has_element?(viewer_view, "#posts-#{post.id}")
-      refute has_element?(owner_view, "#home-post-delete-#{post.id}")
+      assert has_element?(owner_view, "#home-post-delete-#{post.id}")
       refute has_element?(viewer_view, "#home-post-delete-#{post.id}")
+    end
+
+    test "allows profile owners to delete their own posts", %{conn: conn} do
+      profile_user = user_fixture()
+      profile_scope = user_scope_fixture(profile_user)
+      post = post_fixture(scope: profile_scope)
+      conn = log_in_user(conn, profile_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      view
+      |> element("#home-post-delete-#{post.id}")
+      |> render_click()
+
+      assert Feed.list_user_posts(profile_user) == []
+      refute has_element?(view, "#posts-#{post.id}")
     end
 
     test "returns not found for missing usernames", %{conn: conn} do

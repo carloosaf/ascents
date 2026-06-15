@@ -172,11 +172,10 @@ defmodule Ascents.FeedTest do
 
       assert {:ok, deleted_comment} = Feed.delete_comment(scope, post.gym, post, comment)
       assert deleted_comment.deleted_at
+      assert Repo.get!(Comment, comment.id).deleted_at
 
       reloaded_post = Feed.get_post(post.gym, post.id)
-      assert [%Comment{id: comment_id, deleted_at: deleted_at}] = reloaded_post.comments
-      assert comment_id == comment.id
-      assert deleted_at
+      assert reloaded_post.comments == []
     end
 
     test "rejects deleting someone else's comment" do
@@ -185,6 +184,39 @@ defmodule Ascents.FeedTest do
       other_scope = user_scope_fixture()
 
       assert Feed.delete_comment(other_scope, post.gym, post, comment) == {:error, :unauthorized}
+    end
+
+    test "allows gym admins to moderate posts and comments" do
+      author_scope = user_scope_fixture()
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(author_scope, gym)
+      {:ok, post} = Feed.create_post(author_scope, gym, %{body: "Admin cleanup"})
+      {:ok, comment} = Feed.create_comment(author_scope, gym, post, %{body: "Needs cleanup"})
+      admin_scope = user_scope_fixture()
+      role_membership_fixture(gym, "admin", scope: admin_scope)
+
+      assert {:ok, deleted_comment} = Feed.delete_comment(admin_scope, gym, post, comment)
+      assert deleted_comment.deleted_at
+      assert Feed.get_post(gym, post.id).comments == []
+
+      assert {:ok, deleted_post} = Feed.delete_post(admin_scope, gym, post)
+      assert deleted_post.deleted_at
+      assert Feed.list_gym_posts(gym) == []
+    end
+
+    test "allows gym owners to clean up posts and comments" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+      post = post_fixture(gym: gym)
+      comment = comment_fixture(post: post, gym: gym)
+
+      assert {:ok, deleted_comment} = Feed.delete_comment(owner_scope, gym, post, comment)
+      assert deleted_comment.deleted_at
+
+      assert {:ok, deleted_post} = Feed.delete_post(owner_scope, gym, post)
+      assert deleted_post.deleted_at
+      assert Feed.list_gym_posts(gym) == []
     end
   end
 end

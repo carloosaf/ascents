@@ -11,6 +11,7 @@ defmodule AscentsWeb.ProductComponents do
 
   import AscentsWeb.CoreComponents
 
+  alias Ascents.Feed
   alias Ascents.Media
 
   attr :user, :map, required: true
@@ -57,9 +58,21 @@ defmodule AscentsWeb.ProductComponents do
   def feed_post(assigns) do
     ~H"""
     <article id={@id} class="chalk-panel relative rounded-lg border border-ascents-line p-4">
+      <button
+        :if={@show_owner_actions && Feed.can_delete_post?(@current_scope, @post.gym, @post)}
+        id={"home-post-delete-#{@post.id}"}
+        type="button"
+        phx-click="delete-post"
+        phx-value-id={@post.id}
+        class="absolute right-3 top-3 rounded-md border border-transparent p-2 text-ascents-muted-strong opacity-70 transition hover:border-ascents-danger/30 hover:bg-ascents-danger/10 hover:text-ascents-danger-hover hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ascents-danger/40 focus:ring-offset-2 focus:ring-offset-ascents-panel"
+        aria-label="Delete post"
+      >
+        <.icon name="hero-trash" class="size-4" />
+      </button>
+
       <div class="flex items-start gap-3">
         <.profile_picture user={@post.user} />
-        <div class="min-w-0 flex-1">
+        <div class="min-w-0 flex-1 pr-10">
           <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
             <.link
               navigate={~p"/u/#{@post.user.username}"}
@@ -85,30 +98,18 @@ defmodule AscentsWeb.ProductComponents do
             <span class="text-xs text-ascents-muted-strong">{format_time(@post.inserted_at)}</span>
           </div>
         </div>
-        <div class="flex shrink-0 items-start gap-2">
-          <.grade_badge :if={ascent_post?(@post)} grade={ascent_grade(@post)} />
-          <button
-            :if={@show_owner_actions && owns?(@current_scope, @post)}
-            id={"home-post-delete-#{@post.id}"}
-            type="button"
-            phx-click="delete-post"
-            phx-value-id={@post.id}
-            class="rounded-md p-2 text-ascents-muted transition hover:bg-ascents-danger/10 hover:text-ascents-danger-hover"
-            aria-label="Delete post"
-          >
-            <.icon name="hero-trash" class="size-4" />
-          </button>
-        </div>
       </div>
 
       <div
         :if={ascent_post?(@post)}
         id={"home-post-ascent-#{@post.id}"}
-        class="mt-2 flex flex-wrap items-center gap-2 text-xs font-black uppercase text-ascents-muted"
+        class="mt-3 flex flex-wrap items-center gap-2 text-xs font-black uppercase text-ascents-muted"
       >
         <span class="inline-flex items-center gap-1 text-ascents-tape">
           <.icon name="hero-check-badge" class="size-4" /> Ascent
         </span>
+        <span>/</span>
+        <.grade_badge grade={ascent_grade(@post)} />
         <span>/</span>
         <span :if={route_hold_color(@post)} class="inline-flex items-center gap-1">
           <span class={["size-2 rounded-full", hold_color_class(route_hold_color(@post))]}></span>
@@ -143,34 +144,34 @@ defmodule AscentsWeb.ProductComponents do
         <div id={"home-post-comments-#{@post.id}"} class="space-y-2">
           <div
             :for={comment <- @post.comments}
+            :if={is_nil(comment.deleted_at)}
             id={"home-comment-#{comment.id}"}
             class="rounded-md bg-ascents-panel-deep px-3 py-2 text-sm"
           >
-            <%= if comment.deleted_at do %>
-              <p class="text-ascents-muted">Comment deleted.</p>
-            <% else %>
-              <div class="flex items-start justify-between gap-3">
-                <div class="flex min-w-0 items-start gap-2">
-                  <.profile_picture user={comment.user} size="sm" />
-                  <p class="min-w-0 text-ascents-chalk-soft">
-                    <span class="font-bold text-ascents-chalk">{profile_name(comment.user)}</span>
-                    {comment.body}
-                  </p>
-                </div>
-                <button
-                  :if={@show_owner_actions && owns?(@current_scope, comment)}
-                  id={"home-comment-delete-#{comment.id}"}
-                  type="button"
-                  phx-click="delete-comment"
-                  phx-value-post_id={@post.id}
-                  phx-value-id={comment.id}
-                  class="rounded p-1 text-ascents-muted transition hover:text-ascents-danger-hover"
-                  aria-label="Delete comment"
-                >
-                  <.icon name="hero-x-mark" class="size-4" />
-                </button>
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex min-w-0 items-start gap-2">
+                <.profile_picture user={comment.user} size="sm" />
+                <p class="min-w-0 text-ascents-chalk-soft">
+                  <span class="font-bold text-ascents-chalk">{profile_name(comment.user)}</span>
+                  {comment.body}
+                </p>
               </div>
-            <% end %>
+              <button
+                :if={
+                  @show_owner_actions &&
+                    Feed.can_delete_comment?(@current_scope, @post.gym, @post, comment)
+                }
+                id={"home-comment-delete-#{comment.id}"}
+                type="button"
+                phx-click="delete-comment"
+                phx-value-post_id={@post.id}
+                phx-value-id={comment.id}
+                class="rounded p-1 text-ascents-muted transition hover:text-ascents-danger-hover"
+                aria-label="Delete comment"
+              >
+                <.icon name="hero-x-mark" class="size-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -467,9 +468,6 @@ defmodule AscentsWeb.ProductComponents do
   defp profile_picture_size(_size), do: "size-10 text-sm"
 
   defp profile_name(user), do: user.display_name || user.username
-
-  defp owns?(%{user: %{id: user_id}}, %{user_id: user_id}), do: true
-  defp owns?(_scope, _struct), do: false
 
   defp format_time(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%b %-d, %Y")
   defp format_time(_datetime), do: ""
