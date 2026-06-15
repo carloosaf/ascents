@@ -40,18 +40,22 @@ The current direction and task breakdown live in `.plans/`, especially
 
 ## Current state
 
-Implemented or started:
+Implemented MVP areas:
 
 - Phoenix 1.8 application baseline
 - generated authentication
 - public profile fields
 - custom product components and visual direction
 - local PostgreSQL and MinIO services
-- gym and gym membership context
+- gym creation, membership, settings, and member management
+- boulder problem management with V scale and French grade support
+- private image upload and signed media delivery through object storage
+- joined-gym feed, gym feeds, posts, comments, and ascent posts
+- personal ascent stats with totals, grade distribution, gym distribution, and timeline
+- gym-level moderation through soft-deleted posts and comments
 - project health gate through `mix precommit`
 
-Planned next areas include gym LiveViews, boulder problem management, feed
-features, ascent posting, media handling, stats, and moderation.
+Task 17 adds realistic demo seeds and a manual MVP acceptance checklist.
 
 ## Tech stack
 
@@ -98,6 +102,23 @@ Install dependencies, prepare the database, and build assets:
 ```sh
 mix setup
 ```
+
+The setup task runs the demo seed script. You can rerun it after services are up:
+
+```sh
+mix run priv/repo/seeds.exs
+```
+
+Primary demo login:
+
+```text
+Email: vela@ascents.local
+Password: climbdemo123!
+```
+
+The seeded flow includes joined gyms, boulder problems, normal posts, comments,
+ascent posts, stats data, and uploaded demo images through MinIO-compatible
+object storage.
 
 Start the Phoenix server:
 
@@ -146,6 +167,8 @@ part of the experiment:
   component system.
 - `.plans/task-4-profile-extension-plan.html` covers public profile work.
 - `.plans/task-5-gym-context-plan.html` covers gyms and memberships.
+- `.plans/task-17-mvp-acceptance-checklist.md` covers the manual acceptance
+  pass and seeded demo credentials.
 
 ## Contributing
 

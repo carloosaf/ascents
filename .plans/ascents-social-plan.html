@@ -1037,16 +1037,21 @@
             </tr>
             <tr>
               <td>17</td>
-              <td><span class="status planned">Planned</span></td>
+              <td><span class="status implemented">Implemented</span></td>
               <td>MVP acceptance pass</td>
               <td>
                 Seed realistic demo data and verify the complete flow from user
                 registration to gym creation, route creation, ascent post, and
-                stats page.
+                stats page. Task 17 added idempotent demo seeds with fixed
+                credentials, uploaded demo images through the media boundary,
+                realistic gyms, routes, feed content, comments, ascent history,
+                and a manual acceptance checklist.
               </td>
               <td>
-                End-to-end manual checklist passes; automated test suite and
-                precommit alias pass.
+                End-to-end manual checklist is documented in
+                <code>.plans/task-17-mvp-acceptance-checklist.md</code>;
+                <code>mix run priv/repo/seeds.exs</code> runs repeatedly without
+                duplicating demo records; <code>mix precommit</code> passes.
               </td>
             </tr>
           </tbody>
