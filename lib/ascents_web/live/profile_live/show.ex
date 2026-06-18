@@ -2,15 +2,12 @@ defmodule AscentsWeb.ProfileLive.Show do
   use AscentsWeb, :live_view
 
   alias Ascents.Accounts
-  alias Ascents.Accounts.Scope
   alias Ascents.Feed
   alias Ascents.Feed.{Comment, Post}
+  alias AscentsWeb.UserAuth
 
   def mount(%{"username" => username}, session, socket) do
-    current_scope =
-      session
-      |> Map.get("user_token")
-      |> scope_from_token()
+    current_scope = UserAuth.current_scope_from_session(session)
 
     if current_scope do
       profile_user = Accounts.get_user_by_username!(username)
@@ -74,7 +71,7 @@ defmodule AscentsWeb.ProfileLive.Show do
 
   def handle_event("delete-comment", %{"post_id" => post_id, "id" => comment_id}, socket) do
     with %Post{} = post <- Feed.get_user_post(socket.assigns.profile_user, post_id),
-         %Comment{} = comment <- find_comment(post, comment_id) do
+         %Comment{} = comment <- Feed.get_post_comment(post, comment_id) do
       case Feed.delete_comment(socket.assigns.current_scope, post.gym, post, comment) do
         {:ok, _comment} ->
           {:noreply,
@@ -119,6 +116,19 @@ defmodule AscentsWeb.ProfileLive.Show do
                     {profile_name(@profile_user)}
                   </h1>
                 </div>
+              </div>
+
+              <div :if={own_profile?(@current_scope, @profile_user)} class="flex flex-wrap gap-2">
+                <.button
+                  id="profile-edit-link"
+                  navigate={~p"/users/settings/profile"}
+                  variant="secondary"
+                >
+                  <.icon name="hero-pencil-square" class="size-4" /> Edit profile
+                </.button>
+                <.button id="profile-account-link" navigate={~p"/users/settings"} variant="secondary">
+                  <.icon name="hero-cog-6-tooth" class="size-4" /> Account
+                </.button>
               </div>
             </div>
           </div>
@@ -170,19 +180,6 @@ defmodule AscentsWeb.ProfileLive.Show do
     |> stream(:posts, posts, reset: true)
   end
 
-  defp find_comment(%Post{} = post, comment_id) do
-    Enum.find(post.comments, &(to_string(&1.id) == to_string(comment_id)))
-  end
-
-  defp scope_from_token(nil), do: Scope.for_user(nil)
-
-  defp scope_from_token(token) do
-    case Accounts.get_user_by_session_token(token) do
-      {user, _inserted_at} -> Scope.for_user(user)
-      nil -> Scope.for_user(nil)
-    end
-  end
-
   defp profile_name(user) do
     case user.display_name do
       name when is_binary(name) and name != "" -> name
@@ -196,4 +193,7 @@ defmodule AscentsWeb.ProfileLive.Show do
       _ -> "No bio yet."
     end
   end
+
+  defp own_profile?(%{user: %{id: user_id}}, %{id: user_id}), do: true
+  defp own_profile?(_scope, _profile_user), do: false
 end

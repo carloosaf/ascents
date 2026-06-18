@@ -216,6 +216,24 @@ defmodule Ascents.Accounts do
   def update_user_profile(_scope, _attrs), do: {:error, :unauthorized}
 
   @doc """
+  Returns an `%Ecto.Changeset{}` for changing account appearance preferences.
+  """
+  def change_user_appearance(user, attrs \\ %{}) do
+    User.appearance_changeset(user, attrs)
+  end
+
+  @doc """
+  Updates appearance preferences for the user in the current scope.
+  """
+  def update_user_appearance(%Scope{user: %User{} = user}, attrs) do
+    user
+    |> User.appearance_changeset(attrs)
+    |> Repo.update()
+  end
+
+  def update_user_appearance(_scope, _attrs), do: {:error, :unauthorized}
+
+  @doc """
   Returns true when the user has the required profile fields.
   """
   def profile_complete?(%User{username: username}) when is_binary(username) do

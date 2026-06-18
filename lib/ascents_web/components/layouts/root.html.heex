@@ -9,7 +9,10 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
   </head>
-  <body class="min-h-screen bg-ascents-ink text-ascents-chalk antialiased selection:bg-ascents-tape selection:text-ascents-tape-content">
+  <body
+    data-user-theme={theme_preference(assigns[:current_scope])}
+    class="min-h-screen bg-ascents-ink text-ascents-chalk antialiased selection:bg-ascents-tape selection:text-ascents-tape-content"
+  >
     {@inner_content}
   </body>
 </html>

@@ -59,8 +59,10 @@ defmodule AscentsWeb.ProfileLiveTest do
 
       assert has_element?(owner_view, "#profile-show")
       assert has_element?(viewer_view, "#profile-show")
-      refute has_element?(owner_view, "#profile-edit-link")
+      assert has_element?(owner_view, "#profile-edit-link")
+      assert has_element?(owner_view, "#profile-account-link")
       refute has_element?(viewer_view, "#profile-edit-link")
+      refute has_element?(viewer_view, "#profile-account-link")
       refute has_element?(owner_view, "#profile-stats")
       refute has_element?(viewer_view, "#profile-stats")
       refute has_element?(owner_view, "#profile-stats-private")

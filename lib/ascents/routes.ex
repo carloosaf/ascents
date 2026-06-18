@@ -24,6 +24,23 @@ defmodule Ascents.Routes do
   def grade_options(%Gym{} = gym), do: GradeScales.options_for_scale(gym.grade_scale)
 
   @doc """
+  Gets a gym by slug when the current scope can manage its routes.
+  """
+  def get_management_gym(%Scope{} = scope, slug) when is_binary(slug) do
+    gym = Gyms.get_gym_by_slug!(slug)
+
+    if Gyms.can_manage_routes?(scope, gym) do
+      {:ok, gym}
+    else
+      {:error, :unauthorized, gym}
+    end
+  end
+
+  def get_management_gym(_scope, slug) when is_binary(slug) do
+    {:error, :unauthorized, Gyms.get_gym_by_slug!(slug)}
+  end
+
+  @doc """
   Lists boulder problems for a gym.
   """
   def list_boulder_problems(gym, opts \\ [])

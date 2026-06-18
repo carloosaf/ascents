@@ -18,7 +18,7 @@ defmodule AscentsWeb.FeedLive.Index do
   end
 
   def handle_event("comment", %{"post_id" => post_id, "comment" => comment_params}, socket) do
-    case get_home_post(socket, post_id) do
+    case Feed.get_home_post(socket.assigns.current_scope, post_id) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -41,7 +41,7 @@ defmodule AscentsWeb.FeedLive.Index do
   end
 
   def handle_event("delete-post", %{"id" => post_id}, socket) do
-    case get_home_post(socket, post_id) do
+    case Feed.get_home_post(socket.assigns.current_scope, post_id) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -57,8 +57,8 @@ defmodule AscentsWeb.FeedLive.Index do
   end
 
   def handle_event("delete-comment", %{"post_id" => post_id, "id" => comment_id}, socket) do
-    with %Post{} = post <- get_home_post(socket, post_id),
-         %Comment{} = comment <- find_comment(post, comment_id) do
+    with %Post{} = post <- Feed.get_home_post(socket.assigns.current_scope, post_id),
+         %Comment{} = comment <- Feed.get_post_comment(post, comment_id) do
       case Feed.delete_comment(socket.assigns.current_scope, post.gym, post, comment) do
         {:ok, _comment} ->
           {:noreply, stream_insert(socket, :posts, Feed.get_post(post.gym, post.id))}
@@ -113,15 +113,5 @@ defmodule AscentsWeb.FeedLive.Index do
     socket
     |> assign(:posts_empty?, posts == [])
     |> stream(:posts, posts, reset: true)
-  end
-
-  defp get_home_post(socket, post_id) do
-    socket.assigns.current_scope
-    |> Feed.list_home_posts()
-    |> Enum.find(&(to_string(&1.id) == to_string(post_id)))
-  end
-
-  defp find_comment(%Post{} = post, comment_id) do
-    Enum.find(post.comments, &(to_string(&1.id) == to_string(comment_id)))
   end
 end

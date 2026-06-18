@@ -69,6 +69,13 @@ defmodule Ascents.Media do
   def allowed_content_types, do: @allowed_content_types
   def max_file_size, do: @max_file_size
 
+  def upload_error_message(:too_large), do: "Choose an image up to 5 MB."
+  def upload_error_message(:not_accepted), do: "Choose a JPG, PNG, or WebP image."
+  def upload_error_message(:invalid_content_type), do: "Choose a JPG, PNG, or WebP image."
+  def upload_error_message(:invalid_extension), do: "Choose a JPG, PNG, or WebP image."
+  def upload_error_message(:missing_bucket), do: "Storage is not ready. Check the MinIO bucket."
+  def upload_error_message(_reason), do: "The image could not be uploaded."
+
   defp validate_image(source_path, client_name, content_type) do
     cond do
       content_type not in @allowed_content_types ->

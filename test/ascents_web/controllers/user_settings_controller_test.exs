@@ -99,6 +99,32 @@ defmodule AscentsWeb.UserSettingsControllerTest do
     end
   end
 
+  describe "PUT /users/settings (appearance form)" do
+    test "updates the user theme preference", %{conn: conn, user: user} do
+      conn =
+        put(conn, ~p"/users/settings", %{
+          "action" => "update_appearance",
+          "user" => %{"theme_preference" => "light"}
+        })
+
+      assert redirected_to(conn) == ~p"/users/settings"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Appearance updated"
+      assert Accounts.get_user!(user.id).theme_preference == "light"
+    end
+
+    test "does not update appearance with invalid data", %{conn: conn, user: user} do
+      conn =
+        put(conn, ~p"/users/settings", %{
+          "action" => "update_appearance",
+          "user" => %{"theme_preference" => "solarized"}
+        })
+
+      response = html_response(conn, 200)
+      assert response =~ "is invalid"
+      assert Accounts.get_user!(user.id).theme_preference == "dark"
+    end
+  end
+
   describe "GET /users/settings/confirm-email/:token" do
     setup %{user: user} do
       email = unique_user_email()

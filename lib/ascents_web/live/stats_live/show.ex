@@ -49,7 +49,7 @@ defmodule AscentsWeb.StatsLive.Show do
           </div>
         </section>
 
-        <section id="user-stats-summary" class="grid gap-4 sm:grid-cols-3">
+        <section id="user-stats-summary" class="ascents-stagger grid gap-4 sm:grid-cols-3">
           <.stat_block
             label="Sends"
             value={format_count(@stats.total_ascents)}
@@ -87,7 +87,7 @@ defmodule AscentsWeb.StatsLive.Show do
                 phx-hook="StatsChart"
                 phx-update="ignore"
                 data-chart={@timeline_chart_json}
-                class="relative z-10 mt-4 h-72"
+                class="ascents-chart-shell relative z-10 mt-4 h-72"
               >
                 <canvas id="user-stats-timeline-chart-canvas" aria-label="Recent ascent timeline">
                 </canvas>
@@ -104,7 +104,7 @@ defmodule AscentsWeb.StatsLive.Show do
                 phx-hook="StatsChart"
                 phx-update="ignore"
                 data-chart={@gym_chart_json}
-                class="relative z-10 mt-4 h-72"
+                class="ascents-chart-shell relative z-10 mt-4 h-72"
               >
                 <canvas id="user-stats-gym-chart-canvas" aria-label="Gym ascent distribution">
                 </canvas>
@@ -131,7 +131,7 @@ defmodule AscentsWeb.StatsLive.Show do
               phx-hook="StatsChart"
               phx-update="ignore"
               data-chart={@grade_chart_json}
-              class="relative z-10 mt-4 h-72"
+              class="ascents-chart-shell relative z-10 mt-4 h-72"
             >
               <canvas id="user-stats-grade-chart-canvas" aria-label="Grade ascent distribution">
               </canvas>

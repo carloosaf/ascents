@@ -26,20 +26,32 @@ import {hooks as colocatedHooks} from "phoenix-colocated/ascents"
 import StatsChart from "./hooks/stats_chart"
 import topbar from "../vendor/topbar"
 
-const setTheme = (theme) => {
-  const resolvedTheme = theme || "dark"
+const systemThemeQuery = window.matchMedia("(prefers-color-scheme: light)")
+const themeFromServer = document.body.dataset.userTheme
 
-  if (resolvedTheme === "system") {
-    localStorage.removeItem("phx:theme")
-    document.documentElement.removeAttribute("data-theme")
-  } else {
-    localStorage.setItem("phx:theme", resolvedTheme)
-    document.documentElement.setAttribute("data-theme", resolvedTheme)
-  }
+const applyTheme = (theme) => {
+  const preference = theme || "dark"
+  const resolvedTheme = preference === "system" ? (systemThemeQuery.matches ? "light" : "dark") : preference
+
+  document.documentElement.setAttribute("data-theme", resolvedTheme)
 }
 
-setTheme(localStorage.getItem("phx:theme") || "dark")
-window.addEventListener("storage", e => e.key === "phx:theme" && setTheme(e.newValue || "dark"))
+const setTheme = (theme) => {
+  const preference = theme || "dark"
+
+  if (!themeFromServer) {
+    localStorage.setItem("phx:theme", preference)
+  }
+
+  applyTheme(preference)
+}
+
+setTheme(themeFromServer || localStorage.getItem("phx:theme") || "dark")
+systemThemeQuery.addEventListener("change", () => {
+  const preference = themeFromServer || localStorage.getItem("phx:theme") || "dark"
+  if (preference === "system") applyTheme(preference)
+})
+window.addEventListener("storage", e => e.key === "phx:theme" && !themeFromServer && setTheme(e.newValue || "dark"))
 window.addEventListener("phx:set-theme", e => setTheme(e.target.dataset.phxTheme))
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

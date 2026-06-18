@@ -109,6 +109,7 @@ const StatsChart = {
 
       if (!canvas || !config.type) return
 
+      this.el.dataset.chartReady = "false"
       this.chart?.destroy()
       this.chart = new Chart(canvas, {
         type: config.type,
@@ -117,6 +118,9 @@ const StatsChart = {
           datasets: [datasetFor(config)],
         },
         options: optionsFor(config),
+      })
+      requestAnimationFrame(() => {
+        this.el.dataset.chartReady = "true"
       })
     }
 

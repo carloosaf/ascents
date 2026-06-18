@@ -14,6 +14,51 @@ defmodule AscentsWeb.ProductComponents do
   alias Ascents.Feed
   alias Ascents.Media
 
+  attr :upload, :map, required: true
+  attr :label, :string, required: true
+  attr :help, :string, default: "JPG, PNG, or WebP up to 5 MB."
+
+  def image_upload_input(assigns) do
+    ~H"""
+    <div class="mb-4">
+      <label for={@upload.ref} class="block">
+        <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
+          {@label}
+        </span>
+        <.live_file_input
+          upload={@upload}
+          class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
+        />
+      </label>
+      <p class="mt-1.5 text-xs text-ascents-muted">
+        {@help}
+      </p>
+      <p
+        :for={entry <- @upload.entries}
+        class="mt-2 text-xs font-bold text-ascents-action"
+      >
+        <span class="flex items-center justify-between gap-3">
+          <span class="truncate">Uploading {entry.client_name}</span>
+          <span>{entry.progress}%</span>
+        </span>
+        <span class="mt-1 block h-1.5 overflow-hidden rounded-full bg-ascents-panel-deep">
+          <span
+            class="ascents-upload-progress block h-full rounded-full transition-[width] duration-200 ease-out"
+            style={"width: #{entry.progress}%"}
+          >
+          </span>
+        </span>
+      </p>
+      <p
+        :for={err <- upload_errors(@upload)}
+        class="mt-1.5 text-sm text-ascents-danger-hover"
+      >
+        {Media.upload_error_message(err)}
+      </p>
+    </div>
+    """
+  end
+
   attr :user, :map, required: true
   attr :size, :string, default: "md", values: ~w(sm md lg xl)
   attr :id, :string, default: nil
@@ -49,6 +94,144 @@ defmodule AscentsWeb.ProductComponents do
   end
 
   attr :id, :string, required: true
+  attr :gym, :map, required: true
+
+  def gym_card(assigns) do
+    ~H"""
+    <.link
+      id={@id}
+      navigate={~p"/gyms/#{@gym.slug}"}
+      class="ascents-reveal chalk-panel group relative flex flex-col overflow-hidden rounded-lg border border-ascents-line p-4 transition hover:-translate-y-1 hover:border-ascents-action/60"
+    >
+      <div class="relative mb-5 aspect-square overflow-hidden rounded-md border border-ascents-line bg-ascents-panel-deep">
+        <img
+          :if={@gym.image_object_key}
+          src={Media.signed_url(@gym.image_object_key)}
+          alt=""
+          class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+        />
+        <div
+          :if={!@gym.image_object_key}
+          class="route-hold-field relative flex h-full items-center justify-center overflow-hidden"
+        >
+          <span class="hold left-[18%] top-[18%] size-9 rotate-[-18deg] bg-ascents-tape"></span>
+          <span class="hold right-[16%] top-[24%] size-12 rotate-[24deg] bg-grade-blue"></span>
+          <span class="hold bottom-[18%] left-[28%] size-11 rotate-[12deg] bg-grade-pink"></span>
+          <span class="route-title-plate relative z-10 rounded-md px-4 py-3 text-2xl font-black uppercase text-ascents-route-title backdrop-blur">
+            {initials(@gym.name)}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <p class="text-xs font-bold uppercase text-ascents-route-subtitle">
+            {@gym.location || "Location TBD"}
+          </p>
+          <h2 class="mt-2 truncate text-xl font-black text-ascents-chalk">
+            {@gym.name}
+          </h2>
+        </div>
+        <span class="shrink-0 rounded-md border border-ascents-line bg-ascents-panel-deep px-2.5 py-1 text-xs font-bold text-ascents-muted">
+          {grade_scale_label(@gym.grade_scale)}
+        </span>
+      </div>
+      <p class="mt-4 line-clamp-3 flex-1 text-sm leading-6 text-ascents-chalk-soft">
+        {@gym.description || "No description yet."}
+      </p>
+      <p class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-ascents-action transition group-hover:text-ascents-action-hover">
+        Open community <.icon name="hero-arrow-right" class="size-4" />
+      </p>
+    </.link>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :problem, :map, required: true
+  attr :gym, :map, required: true
+
+  def route_admin_card(assigns) do
+    ~H"""
+    <article
+      id={@id}
+      class="ascents-stream-item chalk-panel relative grid overflow-hidden rounded-lg border border-ascents-line sm:grid-cols-[10rem_minmax(0,1fr)]"
+    >
+      <div class="route-hold-field relative aspect-[3/4] overflow-hidden border-b border-ascents-line bg-ascents-panel-deep sm:aspect-auto sm:h-full sm:min-h-64 sm:border-b-0 sm:border-r">
+        <img
+          :if={@problem.image_object_key}
+          src={Media.signed_url(@problem.image_object_key)}
+          alt=""
+          class="h-full w-full object-cover"
+        />
+        <div
+          :if={!@problem.image_object_key}
+          class="relative flex h-full items-center justify-center overflow-hidden"
+        >
+          <span class="hold left-[24%] top-[14%] size-8 rotate-[-18deg] bg-ascents-tape"></span>
+          <span class="hold right-[18%] top-[34%] size-10 rotate-[24deg] bg-grade-blue"></span>
+          <span class="hold bottom-[22%] left-[32%] size-9 rotate-[12deg] bg-grade-pink"></span>
+          <span class="hold bottom-[12%] right-[24%] size-7 rotate-[-28deg] bg-grade-yellow"></span>
+          <div class="route-title-plate relative z-10 rounded-md px-3 py-2 text-xs font-black uppercase text-ascents-route-title backdrop-blur">
+            route photo
+          </div>
+        </div>
+        <div class="absolute left-3 top-3">
+          <.grade_badge grade={@problem.grade} />
+        </div>
+      </div>
+
+      <div class="flex min-w-0 flex-col p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h2 class="text-lg font-black text-ascents-chalk">{@problem.title}</h2>
+            <p class="mt-1 text-sm text-ascents-muted">{@problem.color}</p>
+          </div>
+          <span class={[
+            "shrink-0 rounded-md px-2.5 py-1 text-xs font-black uppercase",
+            @problem.active && "bg-ascents-tape text-ascents-tape-content",
+            !@problem.active && "bg-ascents-panel-hover text-ascents-muted"
+          ]}>
+            {if(@problem.active, do: "Active", else: "Archived")}
+          </span>
+        </div>
+
+        <p class="mt-4 min-h-12 flex-1 text-sm leading-6 text-ascents-chalk-soft">
+          {@problem.description || "No route notes yet."}
+        </p>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <.button
+            id={"problem-edit-link-#{@problem.id}"}
+            navigate={~p"/gyms/#{@gym.slug}/problems/#{@problem.id}/edit"}
+            variant="secondary"
+          >
+            <.icon name="hero-pencil-square" class="size-4" /> Edit
+          </.button>
+          <.button
+            :if={@problem.active}
+            id={"problem-archive-button-#{@problem.id}"}
+            phx-click="archive"
+            phx-value-id={@problem.id}
+            variant="danger"
+          >
+            <.icon name="hero-archive-box" class="size-4" /> Archive
+          </.button>
+          <.button
+            :if={!@problem.active}
+            id={"problem-reactivate-button-#{@problem.id}"}
+            phx-click="reactivate"
+            phx-value-id={@problem.id}
+            variant="secondary"
+          >
+            <.icon name="hero-arrow-path" class="size-4" /> Reactivate
+          </.button>
+        </div>
+      </div>
+    </article>
+    """
+  end
+
+  attr :id, :string, required: true
   attr :post, :map, required: true
   attr :current_scope, :map, required: true
   attr :comment_form, Phoenix.HTML.Form, required: true
@@ -57,7 +240,10 @@ defmodule AscentsWeb.ProductComponents do
 
   def feed_post(assigns) do
     ~H"""
-    <article id={@id} class="chalk-panel relative rounded-lg border border-ascents-line p-4">
+    <article
+      id={@id}
+      class="ascents-stream-item chalk-panel relative rounded-lg border border-ascents-line p-4"
+    >
       <button
         :if={@show_owner_actions && Feed.can_delete_post?(@current_scope, @post.gym, @post)}
         id={"home-post-delete-#{@post.id}"}
@@ -238,18 +424,18 @@ defmodule AscentsWeb.ProductComponents do
     <article
       id={@id}
       data-component="route-card"
-      class="chalk-panel relative overflow-hidden rounded-lg border border-ascents-line transition hover:-translate-y-1 hover:border-ascents-tape/70"
+      class="ascents-reveal chalk-panel relative grid overflow-hidden rounded-lg border border-ascents-line transition hover:-translate-y-1 hover:border-ascents-tape/70 sm:grid-cols-[minmax(8rem,38%)_minmax(0,1fr)]"
     >
-      <div class="relative aspect-[4/3] bg-ascents-ink">
+      <div class="route-hold-field relative aspect-[3/4] overflow-hidden border-b border-ascents-line bg-ascents-ink sm:aspect-auto sm:h-full sm:min-h-64 sm:border-b-0 sm:border-r">
         <img :if={@image_url} src={@image_url} alt="" class="h-full w-full object-cover" />
         <div
           :if={!@image_url}
-          class="route-hold-field relative flex h-full items-center justify-center overflow-hidden"
+          class="relative flex h-full items-center justify-center overflow-hidden"
         >
-          <span class="hold left-[18%] top-[22%] size-8 rotate-[-18deg] bg-ascents-tape"></span>
-          <span class="hold right-[18%] top-[18%] size-11 rotate-[24deg] bg-grade-blue"></span>
-          <span class="hold bottom-[22%] left-[32%] size-10 rotate-[12deg] bg-grade-pink"></span>
-          <span class="hold bottom-[28%] right-[24%] size-7 rotate-[-28deg] bg-grade-yellow"></span>
+          <span class="hold left-[24%] top-[14%] size-8 rotate-[-18deg] bg-ascents-tape"></span>
+          <span class="hold right-[18%] top-[34%] size-10 rotate-[24deg] bg-grade-blue"></span>
+          <span class="hold bottom-[22%] left-[32%] size-9 rotate-[12deg] bg-grade-pink"></span>
+          <span class="hold bottom-[12%] right-[24%] size-7 rotate-[-28deg] bg-grade-yellow"></span>
           <div class="route-title-plate relative z-10 rounded-md px-3 py-2 text-xs font-black uppercase text-ascents-route-title backdrop-blur">
             route photo
           </div>
@@ -264,7 +450,7 @@ defmodule AscentsWeb.ProductComponents do
           {@status}
         </span>
       </div>
-      <div class="space-y-3 p-4">
+      <div class="flex min-w-0 flex-col space-y-3 p-4">
         <div>
           <h3 class="text-base font-bold leading-6 text-ascents-chalk">{@title}</h3>
           <p class="mt-1 text-sm text-ascents-muted">{@gym}</p>
@@ -290,7 +476,7 @@ defmodule AscentsWeb.ProductComponents do
     <article
       id={@id}
       data-component="feed-item"
-      class="chalk-panel relative rounded-lg border border-ascents-line p-4 transition hover:border-ascents-action/55"
+      class="ascents-reveal chalk-panel relative rounded-lg border border-ascents-line p-4 transition hover:border-ascents-action/55"
     >
       <div class="relative z-10 flex items-start gap-3">
         <div class="flex size-10 shrink-0 items-center justify-center rounded-md bg-ascents-tape text-sm font-black text-ascents-tape-content tape-label">
@@ -349,7 +535,7 @@ defmodule AscentsWeb.ProductComponents do
     ~H"""
     <section
       data-component="stat-block"
-      class="chalk-panel relative rounded-lg border border-ascents-line p-4"
+      class="ascents-reveal chalk-panel relative rounded-lg border border-ascents-line p-4"
     >
       <p class="relative z-10 text-sm font-semibold text-ascents-muted">{@label}</p>
       <p class={["ascents-display relative z-10 mt-2 text-4xl", @tone_class]}>{@value}</p>
@@ -367,7 +553,7 @@ defmodule AscentsWeb.ProductComponents do
     ~H"""
     <section
       data-component="empty-state"
-      class="rounded-lg border border-dashed border-ascents-line bg-ascents-panel-deep/80 p-8 text-center"
+      class="ascents-reveal rounded-lg border border-dashed border-ascents-line bg-ascents-panel-deep/80 p-8 text-center"
       {@rest}
     >
       <div class="mx-auto flex size-12 items-center justify-center rounded-lg bg-ascents-panel-hover text-ascents-tape">
@@ -450,6 +636,9 @@ defmodule AscentsWeb.ProductComponents do
       _color -> "bg-ascents-tape text-ascents-tape-content"
     end
   end
+
+  defp grade_scale_label("french"), do: "French bouldering"
+  defp grade_scale_label(_grade_scale), do: "V scale"
 
   defp stat_tone_class("lime"), do: "text-ascents-tape"
   defp stat_tone_class("clay"), do: "text-ascents-clay"

@@ -56,6 +56,21 @@ defmodule Ascents.Feed do
   def list_home_posts(_scope), do: []
 
   @doc """
+  Gets a visible home-feed post for the current user.
+  """
+  def get_home_post(%Scope{user: %User{} = user}, id) do
+    Post
+    |> preload_for_feed()
+    |> join(:inner, [post, _user, _gym], membership in GymMembership,
+      on: membership.gym_id == post.gym_id and membership.user_id == ^user.id
+    )
+    |> where([post, _user, _gym, _membership], post.id == ^id and is_nil(post.deleted_at))
+    |> Repo.one()
+  end
+
+  def get_home_post(_scope, _id), do: nil
+
+  @doc """
   Lists visible posts authored by a user with authors, gyms, and visible comments preloaded.
   """
   def list_user_posts(%User{id: user_id}) do
@@ -91,6 +106,15 @@ defmodule Ascents.Feed do
   end
 
   def get_user_post(_user, _id), do: nil
+
+  @doc """
+  Finds a preloaded comment on a visible feed post.
+  """
+  def get_post_comment(%Post{} = post, comment_id) do
+    Enum.find(post.comments, &(to_string(&1.id) == to_string(comment_id)))
+  end
+
+  def get_post_comment(_post, _comment_id), do: nil
 
   @doc """
   Creates a normal post inside a gym. Posting requires community membership.

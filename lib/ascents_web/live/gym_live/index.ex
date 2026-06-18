@@ -2,7 +2,6 @@ defmodule AscentsWeb.GymLive.Index do
   use AscentsWeb, :live_view
 
   alias Ascents.Gyms
-  alias Ascents.Media
   alias AscentsWeb.UserAuth
 
   def mount(_params, session, socket) do
@@ -42,39 +41,12 @@ defmodule AscentsWeb.GymLive.Index do
           </div>
         </section>
 
-        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <.link
+        <section class="ascents-stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <.gym_card
             :for={gym <- @gyms}
             id={"gym-card-#{gym.id}"}
-            navigate={~p"/gyms/#{gym.slug}"}
-            class="chalk-panel group relative overflow-hidden rounded-lg border border-ascents-line p-5 transition hover:-translate-y-1 hover:border-ascents-action/60"
-          >
-            <img
-              :if={gym.image_object_key}
-              src={Media.signed_url(gym.image_object_key)}
-              alt=""
-              class="-mx-5 -mt-5 mb-5 aspect-video w-[calc(100%+2.5rem)] object-cover"
-            />
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <p class="text-xs font-bold uppercase text-ascents-route-subtitle">
-                  {gym.location || "Location TBD"}
-                </p>
-                <h2 class="mt-2 truncate text-xl font-black text-ascents-chalk">
-                  {gym.name}
-                </h2>
-              </div>
-              <span class="rounded-md border border-ascents-line bg-ascents-panel-deep px-2.5 py-1 text-xs font-bold text-ascents-muted">
-                {grade_scale_label(gym.grade_scale)}
-              </span>
-            </div>
-            <p class="mt-4 line-clamp-3 text-sm leading-6 text-ascents-chalk-soft">
-              {gym.description || "No description yet."}
-            </p>
-            <p class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-ascents-action transition group-hover:text-ascents-action-hover">
-              Open community <.icon name="hero-arrow-right" class="size-4" />
-            </p>
-          </.link>
+            gym={gym}
+          />
         </section>
 
         <.empty_state
@@ -87,7 +59,4 @@ defmodule AscentsWeb.GymLive.Index do
     </Layouts.app>
     """
   end
-
-  defp grade_scale_label("french"), do: "French bouldering"
-  defp grade_scale_label(_grade_scale), do: "V scale"
 end

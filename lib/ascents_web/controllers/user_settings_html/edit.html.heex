@@ -1,13 +1,13 @@
 <Layouts.app flash={@flash} current_scope={@current_scope}>
-  <div class="mx-auto max-w-2xl rounded-lg border border-ascents-line bg-ascents-panel p-6 shadow-2xl shadow-black/20">
-    <div class="text-center">
+  <div class="mx-auto max-w-3xl space-y-4">
+    <div class="rounded-lg border border-ascents-line bg-ascents-panel p-6 text-center shadow-2xl shadow-black/20">
       <.header>
-        Account Settings
-        <:subtitle>Manage your account email address and password settings</:subtitle>
+        Account
+        <:subtitle>Manage profile access, appearance, email, and password settings.</:subtitle>
       </.header>
     </div>
 
-    <div class="mb-8 rounded-lg border border-ascents-line bg-ascents-panel-deep p-4">
+    <div class="rounded-lg border border-ascents-line bg-ascents-panel p-5 shadow-2xl shadow-black/20">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 class="text-base font-bold text-ascents-chalk">Member profile</h2>
@@ -24,45 +24,76 @@
       </div>
     </div>
 
-    <.form for={@email_form} action={~p"/users/settings"} id="update_email">
-      <input type="hidden" name="action" value="update_email" />
+    <div class="rounded-lg border border-ascents-line bg-ascents-panel p-5 shadow-2xl shadow-black/20">
+      <h2 class="text-base font-bold text-ascents-chalk">Appearance</h2>
+      <p class="mt-1 text-sm text-ascents-muted">
+        Choose the wall lighting that feels best for browsing sessions.
+      </p>
 
-      <.input
-        field={@email_form[:email]}
-        type="email"
-        label="Email"
-        autocomplete="username"
-        spellcheck="false"
-        required
-      />
+      <.form
+        for={@appearance_form}
+        action={~p"/users/settings"}
+        id="update_appearance"
+        class="mt-4"
+      >
+        <input type="hidden" name="action" value="update_appearance" />
 
-      <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
-    </.form>
+        <.input
+          field={@appearance_form[:theme_preference]}
+          type="select"
+          label="Theme"
+          options={[{"System", "system"}, {"Light", "light"}, {"Dark", "dark"}]}
+        />
 
-    <div class="my-8 h-px bg-ascents-line"></div>
+        <.button variant="primary" phx-disable-with="Saving...">Save Appearance</.button>
+      </.form>
+    </div>
 
-    <.form for={@password_form} action={~p"/users/settings"} id="update_password">
-      <input type="hidden" name="action" value="update_password" />
+    <div class="rounded-lg border border-ascents-line bg-ascents-panel p-5 shadow-2xl shadow-black/20">
+      <h2 class="text-base font-bold text-ascents-chalk">Email</h2>
 
-      <.input
-        field={@password_form[:password]}
-        type="password"
-        label="New password"
-        autocomplete="new-password"
-        spellcheck="false"
-        required
-      />
-      <.input
-        field={@password_form[:password_confirmation]}
-        type="password"
-        label="Confirm new password"
-        autocomplete="new-password"
-        spellcheck="false"
-        required
-      />
-      <.button variant="primary" phx-disable-with="Changing...">
-        Save Password
-      </.button>
-    </.form>
+      <.form for={@email_form} action={~p"/users/settings"} id="update_email" class="mt-4">
+        <input type="hidden" name="action" value="update_email" />
+
+        <.input
+          field={@email_form[:email]}
+          type="email"
+          label="Email"
+          autocomplete="username"
+          spellcheck="false"
+          required
+        />
+
+        <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
+      </.form>
+    </div>
+
+    <div class="rounded-lg border border-ascents-line bg-ascents-panel p-5 shadow-2xl shadow-black/20">
+      <h2 class="text-base font-bold text-ascents-chalk">Password</h2>
+
+      <.form for={@password_form} action={~p"/users/settings"} id="update_password" class="mt-4">
+        <input type="hidden" name="action" value="update_password" />
+
+        <.input
+          field={@password_form[:password]}
+          type="password"
+          label="New password"
+          autocomplete="new-password"
+          spellcheck="false"
+          required
+        />
+        <.input
+          field={@password_form[:password_confirmation]}
+          type="password"
+          label="Confirm new password"
+          autocomplete="new-password"
+          spellcheck="false"
+          required
+        />
+        <.button variant="primary" phx-disable-with="Changing...">
+          Save Password
+        </.button>
+      </.form>
+    </div>
   </div>
 </Layouts.app>

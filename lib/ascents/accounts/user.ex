@@ -11,6 +11,7 @@ defmodule Ascents.Accounts.User do
     field :display_name, :string
     field :bio, :string
     field :avatar_object_key, :string
+    field :theme_preference, :string, default: "dark"
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
@@ -60,6 +61,17 @@ defmodule Ascents.Accounts.User do
     |> validate_length(:display_name, max: 80)
     |> validate_length(:bio, max: 280)
     |> validate_length(:avatar_object_key, max: 512)
+  end
+
+  @doc """
+  A user changeset for changing account appearance preferences.
+  """
+  def appearance_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:theme_preference])
+    |> validate_required([:theme_preference])
+    |> validate_inclusion(:theme_preference, ["system", "light", "dark"])
+    |> check_constraint(:theme_preference, name: :users_theme_preference_check)
   end
 
   defp validate_email(changeset, opts) do

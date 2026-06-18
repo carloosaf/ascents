@@ -1,34 +1,35 @@
 defmodule AscentsWeb.ProblemLive.Edit do
   use AscentsWeb, :live_view
 
-  alias Ascents.Gyms
   alias Ascents.Media
   alias Ascents.Routes, as: ClimbingRoutes
   alias AscentsWeb.UserAuth
 
   def mount(%{"slug" => slug, "id" => id}, session, socket) do
     current_scope = UserAuth.current_scope_from_session(session)
-    gym = Gyms.get_gym_by_slug!(slug)
-    problem = ClimbingRoutes.get_boulder_problem!(gym, id)
 
-    if Gyms.can_manage_routes?(current_scope, gym) do
-      {:ok,
-       socket
-       |> assign(:current_scope, current_scope)
-       |> assign(:gym, gym)
-       |> assign(:problem, problem)
-       |> allow_upload(:image,
-         accept: ~w(.jpg .jpeg .png .webp),
-         max_entries: 1,
-         max_file_size: Media.max_file_size()
-       )
-       |> assign_form(ClimbingRoutes.change_boulder_problem(gym, problem))}
-    else
-      {:ok,
-       socket
-       |> assign(:current_scope, current_scope)
-       |> put_flash(:error, "You are not allowed to edit routes for this gym.")
-       |> push_navigate(to: ~p"/gyms/#{gym.slug}")}
+    case ClimbingRoutes.get_management_gym(current_scope, slug) do
+      {:ok, gym} ->
+        problem = ClimbingRoutes.get_boulder_problem!(gym, id)
+
+        {:ok,
+         socket
+         |> assign(:current_scope, current_scope)
+         |> assign(:gym, gym)
+         |> assign(:problem, problem)
+         |> allow_upload(:image,
+           accept: ~w(.jpg .jpeg .png .webp),
+           max_entries: 1,
+           max_file_size: Media.max_file_size()
+         )
+         |> assign_form(ClimbingRoutes.change_boulder_problem(gym, problem))}
+
+      {:error, :unauthorized, gym} ->
+        {:ok,
+         socket
+         |> assign(:current_scope, current_scope)
+         |> put_flash(:error, "You are not allowed to edit routes for this gym.")
+         |> push_navigate(to: ~p"/gyms/#{gym.slug}")}
     end
   end
 
@@ -96,26 +97,7 @@ defmodule AscentsWeb.ProblemLive.Edit do
               name="boulder_problem[image_object_key]"
               value={@form[:image_object_key].value}
             />
-            <div class="mb-4">
-              <label for={@uploads.image.ref} class="block">
-                <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
-                  Route image
-                </span>
-                <.live_file_input
-                  upload={@uploads.image}
-                  class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
-                />
-              </label>
-              <p class="mt-1.5 text-xs text-ascents-muted">
-                JPG, PNG, or WebP up to 5 MB.
-              </p>
-              <p
-                :for={err <- upload_errors(@uploads.image)}
-                class="mt-1.5 text-sm text-ascents-danger-hover"
-              >
-                {upload_error_message(err)}
-              </p>
-            </div>
+            <.image_upload_input upload={@uploads.image} label="Route image" />
 
             <div class="flex flex-wrap gap-3">
               <.button variant="primary" phx-disable-with="Saving...">
@@ -141,14 +123,7 @@ defmodule AscentsWeb.ProblemLive.Edit do
          end) do
       [] -> {:ok, attrs}
       [{:ok, key}] -> {:ok, Map.put(attrs, "image_object_key", key)}
-      [{:error, reason}] -> {:error, upload_error_message(reason)}
+      [{:error, reason}] -> {:error, Media.upload_error_message(reason)}
     end
   end
-
-  defp upload_error_message(:too_large), do: "Choose an image up to 5 MB."
-  defp upload_error_message(:not_accepted), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:invalid_content_type), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:invalid_extension), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:missing_bucket), do: "Storage is not ready. Check the MinIO bucket."
-  defp upload_error_message(_reason), do: "The image could not be uploaded."
 end

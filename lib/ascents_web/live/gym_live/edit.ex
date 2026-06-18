@@ -84,26 +84,7 @@ defmodule AscentsWeb.GymLive.Edit do
             />
             <.input field={@form[:description]} type="textarea" label="Description" />
             <input type="hidden" name="gym[image_object_key]" value={@form[:image_object_key].value} />
-            <div class="mb-4">
-              <label for={@uploads.image.ref} class="block">
-                <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
-                  Gym image
-                </span>
-                <.live_file_input
-                  upload={@uploads.image}
-                  class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
-                />
-              </label>
-              <p class="mt-1.5 text-xs text-ascents-muted">
-                JPG, PNG, or WebP up to 5 MB.
-              </p>
-              <p
-                :for={err <- upload_errors(@uploads.image)}
-                class="mt-1.5 text-sm text-ascents-danger-hover"
-              >
-                {upload_error_message(err)}
-              </p>
-            </div>
+            <.image_upload_input upload={@uploads.image} label="Gym image" />
 
             <div class="flex flex-wrap gap-3">
               <.button variant="primary" phx-disable-with="Saving...">
@@ -127,16 +108,9 @@ defmodule AscentsWeb.GymLive.Edit do
          end) do
       [] -> {:ok, attrs}
       [{:ok, key}] -> {:ok, Map.put(attrs, "image_object_key", key)}
-      [{:error, reason}] -> {:error, upload_error_message(reason)}
+      [{:error, reason}] -> {:error, Media.upload_error_message(reason)}
     end
   end
-
-  defp upload_error_message(:too_large), do: "Choose an image up to 5 MB."
-  defp upload_error_message(:not_accepted), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:invalid_content_type), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:invalid_extension), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:missing_bucket), do: "Storage is not ready. Check the MinIO bucket."
-  defp upload_error_message(_reason), do: "The image could not be uploaded."
 
   defp grade_scale_options do
     [{"V scale", "v_scale"}, {"French bouldering", "french"}]

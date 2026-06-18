@@ -60,11 +60,11 @@ defmodule AscentsWeb.CoreComponents do
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="fixed right-4 top-4 z-50 w-[min(calc(100vw-2rem),24rem)]"
+      class="ascents-flash fixed right-4 top-4 z-50 w-[min(calc(100vw-2rem),24rem)]"
       {@rest}
     >
       <div class={[
-        "flex items-start gap-3 rounded-lg border p-4 text-sm shadow-2xl shadow-black/30 backdrop-blur",
+        "flex items-center gap-3 rounded-lg border p-4 text-sm shadow-2xl shadow-black/30 backdrop-blur",
         @kind == :info &&
           "border-ascents-action/40 bg-ascents-info-soft/95 text-ascents-info-text",
         @kind == :error &&
@@ -79,7 +79,7 @@ defmodule AscentsWeb.CoreComponents do
         <div class="flex-1" />
         <button
           type="button"
-          class="group self-start cursor-pointer rounded p-1 transition hover:bg-white/10"
+          class="group cursor-pointer rounded p-1 transition hover:bg-white/10"
           aria-label={gettext("close")}
         >
           <.icon name="hero-x-mark" class="size-5 opacity-60 group-hover:opacity-100" />

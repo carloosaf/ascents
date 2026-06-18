@@ -203,7 +203,7 @@ defmodule AscentsWeb.GymLive.Show do
 
   def handle_event("delete-comment", %{"post_id" => post_id, "id" => comment_id}, socket) do
     with %Post{} = post <- Feed.get_post(socket.assigns.gym, post_id),
-         %Comment{} = comment <- find_comment(post, comment_id) do
+         %Comment{} = comment <- Feed.get_post_comment(post, comment_id) do
       case Feed.delete_comment(socket.assigns.current_scope, socket.assigns.gym, post, comment) do
         {:ok, _comment} ->
           {:noreply, stream_insert(socket, :posts, Feed.get_post(socket.assigns.gym, post.id))}
@@ -368,7 +368,7 @@ defmodule AscentsWeb.GymLive.Show do
           <div
             :if={@active_problems != []}
             id="gym-active-route-list"
-            class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+            class="ascents-stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3"
           >
             <.route_card
               :for={problem <- @active_problems}
@@ -463,7 +463,11 @@ defmodule AscentsWeb.GymLive.Show do
                 label="Post"
                 placeholder="Share beta, session notes, or gym updates"
               />
-              <.post_image_input upload={@uploads.image} />
+              <.image_upload_input
+                upload={@uploads.image}
+                label="Image"
+                help="Optional JPG, PNG, or WebP up to 5 MB."
+              />
               <.button id="gym-post-submit" variant="primary" phx-disable-with="Posting...">
                 <.icon name="hero-paper-airplane" class="size-4" /> Post
               </.button>
@@ -494,7 +498,11 @@ defmodule AscentsWeb.GymLive.Show do
                 label="Notes"
                 placeholder="Optional beta, attempts, or session notes"
               />
-              <.post_image_input upload={@uploads.image} />
+              <.image_upload_input
+                upload={@uploads.image}
+                label="Image"
+                help="Optional JPG, PNG, or WebP up to 5 MB."
+              />
               <div class="flex flex-wrap items-center gap-3">
                 <.button id="gym-ascent-post-submit" variant="primary" phx-disable-with="Posting...">
                   <.icon name="hero-sparkles" class="size-4" /> Post ascent
@@ -555,12 +563,8 @@ defmodule AscentsWeb.GymLive.Show do
          end) do
       [] -> {:ok, attrs}
       [{:ok, key}] -> {:ok, Map.put(attrs, "image_object_key", key)}
-      [{:error, reason}] -> {:error, upload_error_message(reason)}
+      [{:error, reason}] -> {:error, Media.upload_error_message(reason)}
     end
-  end
-
-  defp find_comment(%Post{} = post, comment_id) do
-    Enum.find(post.comments, &(to_string(&1.id) == to_string(comment_id)))
   end
 
   defp post_for_form(socket) do
@@ -602,38 +606,4 @@ defmodule AscentsWeb.GymLive.Show do
     |> NaiveDateTime.to_iso8601()
     |> String.slice(0, 16)
   end
-
-  attr :upload, :map, required: true
-
-  defp post_image_input(assigns) do
-    ~H"""
-    <div class="mb-4">
-      <label for={@upload.ref} class="block">
-        <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
-          Image
-        </span>
-        <.live_file_input
-          upload={@upload}
-          class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
-        />
-      </label>
-      <p class="mt-1.5 text-xs text-ascents-muted">
-        Optional JPG, PNG, or WebP up to 5 MB.
-      </p>
-      <p
-        :for={err <- upload_errors(@upload)}
-        class="mt-1.5 text-sm text-ascents-danger-hover"
-      >
-        {upload_error_message(err)}
-      </p>
-    </div>
-    """
-  end
-
-  defp upload_error_message(:too_large), do: "Choose an image up to 5 MB."
-  defp upload_error_message(:not_accepted), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:invalid_content_type), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:invalid_extension), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:missing_bucket), do: "Storage is not ready. Check the MinIO bucket."
-  defp upload_error_message(_reason), do: "The image could not be uploaded."
 end

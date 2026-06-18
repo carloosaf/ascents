@@ -230,6 +230,63 @@ body {
   animation: ascents-modal-rise 220ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
+.ascents-flash {
+  animation: ascents-toast-in 220ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.ascents-reveal {
+  animation: ascents-reveal 320ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.ascents-stream-item {
+  animation: ascents-stream-in 240ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.ascents-stagger > :nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.ascents-stagger > :nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.ascents-stagger > :nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.ascents-stagger > :nth-child(4) {
+  animation-delay: 135ms;
+}
+
+.ascents-menu {
+  transform-origin: bottom center;
+}
+
+.ascents-chart-shell canvas {
+  opacity: 0;
+  transform: translateY(0.35rem);
+  transition:
+    opacity 220ms ease-out,
+    transform 220ms ease-out;
+}
+
+.ascents-chart-shell[data-chart-ready="true"] canvas {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ascents-upload-progress {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18), transparent 45%, rgba(255, 255, 255, 0.16)),
+    var(--ascents-action);
+  background-size: 180% 100%;
+  animation: ascents-progress-sheen 1.1s ease-in-out infinite;
+}
+
+.route-status-badge::before {
+  animation: ascents-status-pulse 1.9s ease-out infinite;
+}
+
 @keyframes ascents-modal-fade {
   from {
     opacity: 0;
@@ -249,6 +306,90 @@ body {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ascents-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ascents-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ascents-stream-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45rem) scale(0.995);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ascents-progress-sheen {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -80% 0;
+  }
+}
+
+@keyframes ascents-status-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, var(--ascents-status-dot) 38%, transparent),
+      0 0 0 2px rgba(255, 255, 255, 0.08);
+  }
+
+  70% {
+    box-shadow:
+      0 0 0 0.45rem transparent,
+      0 0 0 2px rgba(255, 255, 255, 0.08);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 0 transparent,
+      0 0 0 2px rgba(255, 255, 255, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ascents-flash,
+  .ascents-reveal,
+  .ascents-stream-item,
+  .ascents-modal-overlay,
+  .ascents-modal-panel,
+  .ascents-upload-progress,
+  .route-status-badge::before {
+    animation: none;
+  }
+
+  .ascents-chart-shell canvas {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 
@@ -293,19 +434,19 @@ body {
   display: inline-flex;
   gap: 0.35rem;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  --ascents-status-dot: var(--ascents-action);
 }
 
 .route-status-badge::before {
-  background: var(--ascents-action);
+  background: var(--ascents-status-dot);
   border-radius: 999px;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
   content: "";
   height: 0.38rem;
   width: 0.38rem;
 }
 
 .route-status-badge[data-status="project"]::before {
-  background: var(--grade-yellow);
+  --ascents-status-dot: var(--grade-yellow);
 }
 
 .hold {

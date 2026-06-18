@@ -2,14 +2,11 @@ defmodule AscentsWeb.ProfileLive.Edit do
   use AscentsWeb, :live_view
 
   alias Ascents.Accounts
-  alias Ascents.Accounts.Scope
   alias Ascents.Media
+  alias AscentsWeb.UserAuth
 
   def mount(_params, session, socket) do
-    current_scope =
-      session
-      |> Map.get("user_token")
-      |> scope_from_token()
+    current_scope = UserAuth.current_scope_from_session(session)
 
     if current_scope do
       {:ok,
@@ -95,26 +92,7 @@ defmodule AscentsWeb.ProfileLive.Edit do
             name="user[avatar_object_key]"
             value={@profile_form[:avatar_object_key].value}
           />
-          <div class="mb-4">
-            <label for={@uploads.avatar.ref} class="block">
-              <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
-                Avatar
-              </span>
-              <.live_file_input
-                upload={@uploads.avatar}
-                class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
-              />
-            </label>
-            <p class="mt-1.5 text-xs text-ascents-muted">
-              JPG, PNG, or WebP up to 5 MB.
-            </p>
-            <p
-              :for={err <- upload_errors(@uploads.avatar)}
-              class="mt-1.5 text-sm text-ascents-danger-hover"
-            >
-              {upload_error_message(err)}
-            </p>
-          </div>
+          <.image_upload_input upload={@uploads.avatar} label="Avatar" />
 
           <div class="flex flex-wrap gap-3">
             <.button variant="primary" phx-disable-with="Saving...">Save Profile</.button>
@@ -150,23 +128,7 @@ defmodule AscentsWeb.ProfileLive.Edit do
          end) do
       [] -> {:ok, attrs}
       [{:ok, key}] -> {:ok, Map.put(attrs, "avatar_object_key", key)}
-      [{:error, reason}] -> {:error, upload_error_message(reason)}
-    end
-  end
-
-  defp upload_error_message(:too_large), do: "Choose an image up to 5 MB."
-  defp upload_error_message(:not_accepted), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:invalid_content_type), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:invalid_extension), do: "Choose a JPG, PNG, or WebP image."
-  defp upload_error_message(:missing_bucket), do: "Storage is not ready. Check the MinIO bucket."
-  defp upload_error_message(_reason), do: "The image could not be uploaded."
-
-  defp scope_from_token(nil), do: Scope.for_user(nil)
-
-  defp scope_from_token(token) do
-    case Accounts.get_user_by_session_token(token) do
-      {user, _inserted_at} -> Scope.for_user(user)
-      nil -> Scope.for_user(nil)
+      [{:error, reason}] -> {:error, Media.upload_error_message(reason)}
     end
   end
 end

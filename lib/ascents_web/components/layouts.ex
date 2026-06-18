@@ -35,96 +35,207 @@ defmodule AscentsWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="sticky top-0 z-40 border-b border-ascents-line/80 bg-ascents-ink/90 backdrop-blur-xl">
-      <nav
-        id="app-navigation"
-        class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
-        aria-label="Main navigation"
+    <div id="app-shell" class="min-h-screen bg-ascents-ink md:pl-64">
+      <aside
+        id="app-sidebar"
+        class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-ascents-line bg-ascents-ink px-4 py-5 md:flex"
+        aria-label="Primary navigation"
       >
-        <.link navigate={~p"/"} class="group flex min-w-0 items-center gap-3">
-          <span class="tape-label flex size-9 items-center justify-center bg-ascents-tape text-ascents-tape-content shadow-lg transition group-hover:scale-105">
-            <.icon name="hero-bolt-solid" class="size-5" />
+        <.link navigate={~p"/"} class="group mb-8 flex items-center gap-3 px-2">
+          <span class="tape-label flex size-10 shrink-0 items-center justify-center bg-ascents-tape text-ascents-tape-content shadow-lg transition group-hover:scale-105">
+            <.icon name="hero-bolt-solid" class="size-6" />
           </span>
           <span class="min-w-0">
-            <span class="ascents-display block text-base leading-none text-ascents-chalk">
+            <span class="ascents-display block text-lg leading-none text-ascents-chalk">
               Ascents
             </span>
-            <span class="block truncate text-xs text-ascents-muted">spray wall social</span>
+            <span class="block truncate text-xs text-ascents-muted">climbing community</span>
           </span>
         </.link>
 
-        <div class="flex items-center gap-2 sm:gap-3">
-          <.link
-            href={~p"/gyms"}
-            class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
-          >
-            Gyms
-          </.link>
+        <nav class="space-y-1" aria-label="Main navigation">
+          <.nav_item
+            :if={@current_scope}
+            href={~p"/feed"}
+            icon="hero-home"
+            label="Home"
+          />
+          <.nav_item href={~p"/gyms"} icon="hero-building-storefront" label="Gyms" />
+          <.nav_item
+            :if={@current_scope}
+            href={~p"/users/stats"}
+            icon="hero-chart-bar-square"
+            label="Progress"
+          />
+        </nav>
 
-          <.theme_toggle />
-
+        <div class="mt-auto space-y-3 border-t border-ascents-line pt-4">
           <%= if @current_scope do %>
-            <.link
-              href={~p"/feed"}
-              class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
-            >
-              Feed
-            </.link>
-            <span class="hidden max-w-[14rem] truncate text-sm text-ascents-muted md:block">
-              /u/{@current_scope.user.username}
-            </span>
-            <.link
-              href={~p"/u/#{@current_scope.user.username}"}
-              class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
-            >
-              Profile
-            </.link>
-            <.link
-              href={~p"/users/stats"}
-              class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
-            >
-              Stats
-            </.link>
-            <.link
-              href={~p"/users/settings"}
-              class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
-            >
-              Settings
-            </.link>
-            <.link
-              href={~p"/users/log-out"}
-              method="delete"
-              class="rounded-md border border-ascents-line px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:border-ascents-clay hover:text-ascents-clay"
-            >
-              Log out
-            </.link>
+            <div class="relative">
+              <div class="flex items-center gap-1 rounded-lg p-1 transition hover:bg-ascents-panel">
+                <.link
+                  id="sidebar-profile-link"
+                  href={~p"/u/#{@current_scope.user.username}"}
+                  class="group flex min-w-0 flex-1 items-center gap-3 rounded-md p-1"
+                >
+                  <.profile_picture user={@current_scope.user} size="md" />
+                  <span class="min-w-0">
+                    <span class="block truncate text-sm font-bold text-ascents-chalk">
+                      {display_name(@current_scope.user)}
+                    </span>
+                    <span class="block truncate text-xs text-ascents-muted">
+                      @{@current_scope.user.username}
+                    </span>
+                  </span>
+                </.link>
+                <button
+                  id="sidebar-account-menu-button"
+                  type="button"
+                  class="flex size-9 shrink-0 items-center justify-center rounded-md text-ascents-muted transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+                  aria-label="Open account menu"
+                  aria-controls="sidebar-account-menu"
+                  phx-click={
+                    JS.toggle(
+                      to: "#sidebar-account-menu",
+                      time: 180,
+                      in:
+                        {"transition ease-out duration-200", "opacity-0 translate-y-1 scale-95",
+                         "opacity-100 translate-y-0 scale-100"},
+                      out:
+                        {"transition ease-in duration-150", "opacity-100 translate-y-0 scale-100",
+                         "opacity-0 translate-y-1 scale-95"}
+                    )
+                  }
+                >
+                  <.icon name="hero-chevron-up" class="size-5" />
+                </button>
+              </div>
+
+              <div
+                id="sidebar-account-menu"
+                class="ascents-menu chalk-panel absolute inset-x-0 bottom-full z-50 mb-2 hidden rounded-lg border border-ascents-line p-2 shadow-2xl shadow-black/40"
+              >
+                <.link
+                  href={~p"/users/settings"}
+                  class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-bold text-ascents-chalk transition hover:bg-ascents-panel-hover"
+                >
+                  <.icon name="hero-cog-6-tooth" class="size-5 text-ascents-muted" /> Settings
+                </.link>
+                <.link
+                  href={~p"/users/log-out"}
+                  method="delete"
+                  class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-bold text-ascents-chalk transition hover:bg-ascents-panel-hover hover:text-ascents-clay"
+                >
+                  <.icon name="hero-arrow-left-on-rectangle" class="size-5 text-ascents-muted" />
+                  Log out
+                </.link>
+              </div>
+            </div>
           <% else %>
             <.link
               href={~p"/users/log-in"}
-              class="rounded-md px-3 py-2 text-sm font-semibold text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
+              class="flex min-h-11 items-center justify-center rounded-lg border border-ascents-line px-4 py-3 text-sm font-bold text-ascents-chalk transition hover:bg-ascents-panel"
             >
               Log in
             </.link>
             <.link
               href={~p"/users/register"}
-              class="rounded-md bg-ascents-action px-3 py-2 text-sm font-bold text-ascents-action-content shadow-lg transition hover:-translate-y-0.5 hover:bg-ascents-action-hover"
+              class="flex min-h-11 items-center justify-center rounded-lg bg-ascents-action px-4 py-3 text-sm font-black text-ascents-action-content shadow-lg transition hover:-translate-y-0.5 hover:bg-ascents-action-hover"
             >
-              Join
+              Join Ascents
             </.link>
           <% end %>
         </div>
-      </nav>
-    </header>
+      </aside>
 
-    <main class="ascents-wall min-h-[calc(100vh-4rem)] bg-ascents-ink px-4 py-10 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-7xl">
-        {render_slot(@inner_block)}
-      </div>
-    </main>
+      <header class="sticky top-0 z-30 border-b border-ascents-line/80 bg-ascents-ink/95 px-4 py-3 backdrop-blur-xl md:hidden">
+        <.link navigate={~p"/"} class="inline-flex items-center gap-3">
+          <span class="tape-label flex size-9 items-center justify-center bg-ascents-tape text-ascents-tape-content shadow-lg">
+            <.icon name="hero-bolt-solid" class="size-5" />
+          </span>
+          <span class="ascents-display text-base leading-none text-ascents-chalk">Ascents</span>
+        </.link>
+      </header>
+
+      <main class="ascents-wall min-h-screen bg-ascents-ink px-4 py-6 pb-28 sm:px-6 md:px-8 md:py-10">
+        <div class="mx-auto max-w-7xl">
+          {render_slot(@inner_block)}
+        </div>
+      </main>
+
+      <nav
+        id="app-mobile-tabbar"
+        class="fixed inset-x-0 bottom-0 z-40 border-t border-ascents-line bg-ascents-ink/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden"
+        aria-label="Primary navigation"
+      >
+        <div class="mx-auto grid max-w-md grid-cols-4 gap-1">
+          <%= if @current_scope do %>
+            <.mobile_nav_item href={~p"/feed"} icon="hero-home" label="Home" />
+            <.mobile_nav_item href={~p"/gyms"} icon="hero-building-storefront" label="Gyms" />
+            <.mobile_nav_item href={~p"/users/stats"} icon="hero-chart-bar-square" label="Progress" />
+            <.link
+              id="mobile-profile-link"
+              href={~p"/u/#{@current_scope.user.username}"}
+              class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-[0.68rem] font-bold text-ascents-muted transition hover:bg-ascents-panel hover:text-ascents-chalk"
+            >
+              <.profile_picture user={@current_scope.user} size="sm" /> Profile
+            </.link>
+          <% else %>
+            <.mobile_nav_item href={~p"/"} icon="hero-home" label="Start" />
+            <.mobile_nav_item href={~p"/gyms"} icon="hero-building-storefront" label="Gyms" />
+            <.mobile_nav_item
+              href={~p"/users/log-in"}
+              icon="hero-arrow-right-on-rectangle"
+              label="Log in"
+            />
+            <.mobile_nav_item href={~p"/users/register"} icon="hero-user-plus" label="Join" />
+          <% end %>
+        </div>
+      </nav>
+    </div>
 
     <.flash_group flash={@flash} />
     """
   end
+
+  attr :href, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+
+  def nav_item(assigns) do
+    ~H"""
+    <.link
+      href={@href}
+      class="flex items-center gap-3 rounded-lg px-3 py-3 text-base font-black text-ascents-chalk transition hover:bg-ascents-panel hover:text-white"
+    >
+      <.icon name={@icon} class="size-6 text-ascents-muted" />
+      {@label}
+    </.link>
+    """
+  end
+
+  attr :href, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+
+  def mobile_nav_item(assigns) do
+    ~H"""
+    <.link
+      href={@href}
+      class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-[0.68rem] font-bold text-ascents-muted transition hover:bg-ascents-panel hover:text-ascents-chalk"
+    >
+      <.icon name={@icon} class="size-5" />
+      {@label}
+    </.link>
+    """
+  end
+
+  defp display_name(user) do
+    user.display_name || user.username || user.email
+  end
+
+  defp theme_preference(%{user: %{theme_preference: theme_preference}}), do: theme_preference
+  defp theme_preference(_scope), do: nil
 
   @doc """
   Shows the flash group with standard titles and content.
