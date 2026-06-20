@@ -49,10 +49,14 @@ defmodule Ascents.AccountsTest do
   end
 
   describe "register_user/1" do
-    test "requires email and username to be set" do
+    test "requires email, username, and password to be set" do
       {:error, changeset} = Accounts.register_user(%{})
 
-      assert %{email: ["can't be blank"], username: ["can't be blank"]} = errors_on(changeset)
+      assert %{
+               email: ["can't be blank"],
+               username: ["can't be blank"],
+               password: ["can't be blank"]
+             } = errors_on(changeset)
     end
 
     test "validates email when given" do
@@ -95,7 +99,7 @@ defmodule Ascents.AccountsTest do
       assert "has already been taken" in errors_on(changeset).username
     end
 
-    test "registers users without password" do
+    test "registers confirmed users with a hashed password" do
       email = unique_user_email()
       username = unique_user_username()
 
@@ -104,8 +108,8 @@ defmodule Ascents.AccountsTest do
 
       assert user.email == email
       assert user.username == username
-      assert is_nil(user.hashed_password)
-      assert is_nil(user.confirmed_at)
+      assert is_binary(user.hashed_password)
+      assert user.confirmed_at
       assert is_nil(user.password)
     end
   end
@@ -140,17 +144,17 @@ defmodule Ascents.AccountsTest do
     end
   end
 
+  describe "change_user_registration/3" do
+    test "returns a registration changeset" do
+      assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
+      assert Enum.sort(changeset.required) == [:email, :password, :username]
+    end
+  end
+
   describe "change_user_email/3" do
     test "returns a user changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_email(%User{})
       assert changeset.required == [:email]
-    end
-  end
-
-  describe "change_user_registration/3" do
-    test "returns a registration changeset" do
-      assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
-      assert Enum.sort(changeset.required) == [:email, :username]
     end
   end
 
@@ -175,7 +179,7 @@ defmodule Ascents.AccountsTest do
 
   describe "update_user_email/2" do
     setup do
-      user = unconfirmed_user_fixture()
+      user = user_fixture()
       email = unique_user_email()
 
       token =
@@ -421,18 +425,16 @@ defmodule Ascents.AccountsTest do
       assert user.confirmed_at
     end
 
-    test "returns user and (deleted) token for confirmed user" do
+    test "returns user and deletes token for confirmed user" do
       user = user_fixture()
       assert user.confirmed_at
       {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
       assert {:ok, {^user, []}} = Accounts.login_user_by_magic_link(encoded_token)
-      # one time use only
       assert {:error, :not_found} = Accounts.login_user_by_magic_link(encoded_token)
     end
 
     test "raises when unconfirmed user has password set" do
-      user = unconfirmed_user_fixture()
-      {1, nil} = Repo.update_all(User, set: [hashed_password: "hashed"])
+      user = unconfirmed_user_fixture() |> set_password()
       {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
 
       assert_raise RuntimeError, ~r/magic link log in is not allowed/, fn ->
@@ -452,7 +454,7 @@ defmodule Ascents.AccountsTest do
 
   describe "deliver_login_instructions/2" do
     setup do
-      %{user: unconfirmed_user_fixture()}
+      %{user: user_fixture()}
     end
 
     test "sends token through notification", %{user: user} do

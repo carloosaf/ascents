@@ -1,8 +1,8 @@
 defmodule Ascents.Accounts.UserNotifier do
   import Swoosh.Email
 
-  alias Ascents.Mailer
   alias Ascents.Accounts.User
+  alias Ascents.Mailer
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do

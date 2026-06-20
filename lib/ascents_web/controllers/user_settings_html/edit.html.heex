@@ -50,25 +50,6 @@
     </div>
 
     <div class="rounded-lg border border-ascents-line bg-ascents-panel p-5 shadow-2xl shadow-black/20">
-      <h2 class="text-base font-bold text-ascents-chalk">Email</h2>
-
-      <.form for={@email_form} action={~p"/users/settings"} id="update_email" class="mt-4">
-        <input type="hidden" name="action" value="update_email" />
-
-        <.input
-          field={@email_form[:email]}
-          type="email"
-          label="Email"
-          autocomplete="username"
-          spellcheck="false"
-          required
-        />
-
-        <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
-      </.form>
-    </div>
-
-    <div class="rounded-lg border border-ascents-line bg-ascents-panel p-5 shadow-2xl shadow-black/20">
       <h2 class="text-base font-bold text-ascents-chalk">Password</h2>
 
       <.form for={@password_form} action={~p"/users/settings"} id="update_password" class="mt-4">

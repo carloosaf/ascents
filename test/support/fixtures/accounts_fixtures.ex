@@ -16,11 +16,13 @@ defmodule Ascents.AccountsFixtures do
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
       email: unique_user_email(),
-      username: unique_user_username()
+      username: unique_user_username(),
+      password: valid_user_password(),
+      password_confirmation: valid_user_password()
     })
   end
 
-  def unconfirmed_user_fixture(attrs \\ %{}) do
+  def user_fixture(attrs \\ %{}) do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
@@ -29,18 +31,12 @@ defmodule Ascents.AccountsFixtures do
     user
   end
 
-  def user_fixture(attrs \\ %{}) do
-    user = unconfirmed_user_fixture(attrs)
-
-    token =
-      extract_user_token(fn url ->
-        Accounts.deliver_login_instructions(user, url)
-      end)
-
-    {:ok, {user, _expired_tokens}} =
-      Accounts.login_user_by_magic_link(token)
+  def unconfirmed_user_fixture(attrs \\ %{}) do
+    user = user_fixture(attrs)
 
     user
+    |> Ecto.Changeset.change(confirmed_at: nil, hashed_password: nil)
+    |> Ascents.Repo.update!()
   end
 
   def user_scope_fixture do
@@ -74,12 +70,6 @@ defmodule Ascents.AccountsFixtures do
     )
   end
 
-  def generate_user_magic_link_token(user) do
-    {encoded_token, user_token} = Accounts.UserToken.build_email_token(user, "login")
-    Ascents.Repo.insert!(user_token)
-    {encoded_token, user_token.token}
-  end
-
   def offset_user_token(token, amount_to_add, unit) do
     dt = DateTime.add(DateTime.utc_now(:second), amount_to_add, unit)
 
@@ -87,5 +77,11 @@ defmodule Ascents.AccountsFixtures do
       from(ut in Accounts.UserToken, where: ut.token == ^token),
       set: [inserted_at: dt, authenticated_at: dt]
     )
+  end
+
+  def generate_user_magic_link_token(user) do
+    {encoded_token, user_token} = Accounts.UserToken.build_email_token(user, "login")
+    Ascents.Repo.insert!(user_token)
+    {encoded_token, user_token.token}
   end
 end

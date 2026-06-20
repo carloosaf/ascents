@@ -10,6 +10,7 @@ defmodule AscentsWeb.UserRegistrationControllerTest do
 
       assert document |> LazyHTML.query("#registration-form") |> Enum.any?()
       assert document |> LazyHTML.query("input[name='user[username]']") |> Enum.any?()
+      assert document |> LazyHTML.query("input[name='user[password]']") |> Enum.any?()
       assert LazyHTML.text(document) =~ "Join Ascents"
       assert document |> LazyHTML.query("a[href='/users/log-in']") |> Enum.any?()
       assert document |> LazyHTML.query("a[href='/users/register']") |> Enum.any?()
@@ -23,8 +24,7 @@ defmodule AscentsWeb.UserRegistrationControllerTest do
   end
 
   describe "POST /users/register" do
-    @tag :capture_log
-    test "creates account but does not log in", %{conn: conn} do
+    test "creates account and logs in", %{conn: conn} do
       email = unique_user_email()
       username = unique_user_username()
 
@@ -33,12 +33,14 @@ defmodule AscentsWeb.UserRegistrationControllerTest do
           "user" => valid_user_attributes(email: email, username: username)
         })
 
-      refute get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/users/log-in"
-      assert Ascents.Accounts.get_user_by_username(username)
+      assert get_session(conn, :user_token)
+      assert redirected_to(conn) == ~p"/"
 
-      assert conn.assigns.flash["info"] =~
-               ~r/An email was sent to .*, please access it to confirm your account/
+      user = Ascents.Accounts.get_user_by_username(username)
+
+      assert user.email == email
+      assert user.confirmed_at
+      assert conn.assigns.flash["info"] =~ "Account created successfully"
     end
 
     test "render errors for invalid data", %{conn: conn} do

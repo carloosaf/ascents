@@ -29,21 +29,17 @@ defmodule Ascents.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :username])
+    |> cast(attrs, [:email, :username, :password])
     |> validate_email(opts)
     |> validate_username(opts)
+    |> validate_password(opts)
+    |> confirm_on_registration()
   end
 
   @doc """
   A user changeset for registering or changing the email.
 
   It requires the email to change otherwise an error is added.
-
-  ## Options
-
-    * `:validate_unique` - Set to false if you don't want to validate the
-      uniqueness of the email, useful when displaying live validations.
-      Defaults to `true`.
   """
   def email_changeset(user, attrs, opts \\ []) do
     user
@@ -173,6 +169,14 @@ defmodule Ascents.Accounts.User do
       # would keep the database transaction open longer and hurt performance.
       |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
       |> delete_change(:password)
+    else
+      changeset
+    end
+  end
+
+  defp confirm_on_registration(changeset) do
+    if changeset.valid? do
+      put_change(changeset, :confirmed_at, DateTime.utc_now(:second))
     else
       changeset
     end

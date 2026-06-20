@@ -68,15 +68,9 @@ defmodule Ascents.Accounts.UserToken do
   @doc """
   Builds a token and its hash to be delivered to the user's email.
 
-  The non-hashed token is sent to the user email while the
-  hashed part is stored in the database. The original token cannot be reconstructed,
-  which means anyone with read-only access to the database cannot directly use
-  the token in the application to gain access. Furthermore, if the user changes
-  their email in the system, the tokens sent to the previous email are no longer
-  valid.
-
-  Users can easily adapt the existing code to provide other types of delivery methods,
-  for example, by phone numbers.
+  The non-hashed token is sent to the user email while the hashed part is stored
+  in the database. The original token cannot be reconstructed from the stored
+  hash, so read-only database access is not enough to use the token.
   """
   def build_email_token(user, context) do
     build_hashed_token(user, context, user.email)
@@ -99,10 +93,6 @@ defmodule Ascents.Accounts.UserToken do
   Checks if the token is valid and returns its underlying lookup query.
 
   If found, the query returns a tuple of the form `{user, token}`.
-
-  The given token is valid if it matches its hashed counterpart in the
-  database. This function also checks whether the token has expired. The context
-  of a magic link token is always "login".
   """
   def verify_magic_link_token_query(token) do
     case Base.url_decode64(token, padding: false) do
@@ -124,15 +114,7 @@ defmodule Ascents.Accounts.UserToken do
   end
 
   @doc """
-  Checks if the token is valid and returns its underlying lookup query.
-
-  The query returns the user_token found by the token, if any.
-
-  This is used to validate requests to change the user
-  email.
-  The given token is valid if it matches its hashed counterpart in the
-  database and if it has not expired (after @change_email_validity_in_days).
-  The context must always start with "change:".
+  Checks if the change-email token is valid and returns its lookup query.
   """
   def verify_change_email_token_query(token, "change:" <> _ = context) do
     case Base.url_decode64(token, padding: false) do
