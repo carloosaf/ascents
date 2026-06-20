@@ -22,6 +22,7 @@ config :ascents, AscentsWeb.Endpoint,
 # Disable Swoosh local memory storage in production. No production mail adapter
 # is configured for the MVP.
 config :swoosh, local: false
+config :swoosh, :api_client, false
 
 # Do not print debug messages in production
 config :logger, level: :info
