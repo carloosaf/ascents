@@ -76,13 +76,22 @@ Review or edit local values in `.env` before starting services:
 
 ```sh
 POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+POSTGRES_PORT=55432
 POSTGRES_DB=ascents_dev
 POSTGRES_TEST_DB=ascents_test
+DATABASE_URL=postgres://postgres:postgres@localhost:55432/ascents_dev
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:55432/ascents_test
 MINIO_API_PORT=9000
 MINIO_CONSOLE_PORT=9001
 S3_ENDPOINT=http://localhost:9000
 S3_BUCKET=ascents-dev
+```
+
+When using a hosted database provider such as Neon, keep the SSL query parameter
+in the URL:
+
+```sh
+DATABASE_URL=postgres://USER:PASSWORD@HOST/DATABASE?sslmode=require
 ```
 
 Validate the compose file:

@@ -8,12 +8,17 @@ config :bcrypt_elixir, :log_rounds, 1
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
+test_database_url =
+  System.fetch_env!("TEST_DATABASE_URL")
+  |> URI.parse()
+  |> Map.update!(:path, &"#{&1}#{System.get_env("MIX_TEST_PARTITION")}")
+  |> URI.to_string()
+
+test_database_params = URI.decode_query(URI.parse(test_database_url).query || "")
+
 config :ascents, Ascents.Repo,
-  username: System.fetch_env!("POSTGRES_USER"),
-  password: System.fetch_env!("POSTGRES_PASSWORD"),
-  hostname: System.fetch_env!("POSTGRES_HOST"),
-  port: String.to_integer(System.fetch_env!("POSTGRES_PORT")),
-  database: "#{System.fetch_env!("POSTGRES_TEST_DB")}#{System.get_env("MIX_TEST_PARTITION")}",
+  url: test_database_url,
+  ssl: test_database_params["sslmode"] in ~w(require verify-ca verify-full),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
@@ -24,7 +29,6 @@ config :ascents, AscentsWeb.Endpoint,
   secret_key_base: "gDARj6d0RYHdPIPyjCc21SVxmTA1xbBpOM0xrLO0ZrgVg/W3erKN8bMS4bvXbQeZ",
   server: false
 
-# In test we don't send emails
 config :ascents, Ascents.Mailer, adapter: Swoosh.Adapters.Test
 
 config :ascents, Ascents.Media,
@@ -35,7 +39,6 @@ config :ascents, Ascents.Media,
   secret_access_key: "test",
   region: "us-east-1"
 
-# Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 
 # Print only warnings and errors during test

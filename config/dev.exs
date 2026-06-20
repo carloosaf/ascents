@@ -1,12 +1,18 @@
 import Config
 
 # Configure your database
+database_url =
+  System.get_env("DATABASE_URL") ||
+    raise """
+    environment variable DATABASE_URL is missing.
+    For example: postgres://USER:PASS@HOST/DATABASE
+    """
+
+database_params = URI.decode_query(URI.parse(database_url).query || "")
+
 config :ascents, Ascents.Repo,
-  username: System.fetch_env!("POSTGRES_USER"),
-  password: System.fetch_env!("POSTGRES_PASSWORD"),
-  hostname: System.fetch_env!("POSTGRES_HOST"),
-  port: String.to_integer(System.fetch_env!("POSTGRES_PORT")),
-  database: System.fetch_env!("POSTGRES_DB"),
+  url: database_url,
+  ssl: database_params["sslmode"] in ~w(require verify-ca verify-full),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -68,7 +74,7 @@ config :ascents, AscentsWeb.Endpoint,
     ]
   ]
 
-# Enable dev routes for dashboard and mailbox
+# Enable dev routes for dashboard
 config :ascents, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
@@ -89,5 +95,4 @@ config :phoenix_live_view,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
 
-# Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
