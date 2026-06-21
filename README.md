@@ -3,6 +3,8 @@
 Ascents is a free-time project exploring what a climbing-focused social media
 MVP could look like.
 
+**Live app:** [ascents.fly.dev](https://ascents.fly.dev)
+
 The product idea is simple: give climbing gyms and their communities a place to
 exist online, with member profiles, gym communities, posts, boulder problems,
 ascent logging, media, comments, moderation, and personal stats growing in that
