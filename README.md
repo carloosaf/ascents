@@ -23,6 +23,10 @@ testing, design iteration, debugging, documentation, and the handoff between
 human judgment and machine-generated output. The repository is public partly so
 that process, tradeoff, and code quality can be inspected.
 
+**Agentic programming results:** read [RESULTS.md](RESULTS.md) for the running
+notes on how the AI-assisted workflow is performing, where it works well, and
+where it still needs careful human review.
+
 ## Product direction
 
 Ascents is planned around gym-centered climbing communities:
