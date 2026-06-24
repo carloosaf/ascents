@@ -326,7 +326,7 @@ defmodule AscentsWeb.GymLiveTest do
       assert post.gym_id == gym.id
       assert has_element?(view, "#home-post-ascent-#{post.id}")
 
-      ascent = AscentLogs.get_ascent_by_post(post)
+      ascent = AscentLogs.get_ascent_by_post(scope, post)
       assert ascent.grade_snapshot == problem.grade
       assert ascent.climbed_at == ~U[2026-06-11 10:30:00Z]
     end

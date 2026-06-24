@@ -9,6 +9,7 @@ defmodule Ascents.Ascents do
   alias Ecto.Multi
   alias Ascents.Accounts.{Scope, User}
   alias Ascents.Ascents.Ascent
+  alias Ascents.Feed
   alias Ascents.Feed.Post
   alias Ascents.Gyms
   alias Ascents.Gyms.Gym
@@ -64,13 +65,17 @@ defmodule Ascents.Ascents do
   def create_ascent_post(_scope, _gym, _attrs), do: {:error, :unauthorized}
 
   @doc """
-  Gets a single ascent by post.
+  Gets a single ascent through the feed post visibility policy.
   """
-  def get_ascent_by_post(%Post{id: post_id}) do
-    Repo.get_by(Ascent, post_id: post_id)
+  def get_ascent_by_post(scope, %Post{id: post_id} = post) do
+    if Feed.can_view_post?(scope, post) do
+      Ascent
+      |> where([ascent], ascent.post_id == ^post_id and is_nil(ascent.deleted_at))
+      |> Repo.one()
+    end
   end
 
-  def get_ascent_by_post(_post), do: nil
+  def get_ascent_by_post(_scope, _post), do: nil
 
   @doc """
   Returns private ascent stats for the current user's own profile.
