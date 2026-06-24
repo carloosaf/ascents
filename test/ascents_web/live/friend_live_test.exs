@@ -178,5 +178,29 @@ defmodule AscentsWeb.FriendLiveTest do
       assert Friends.list_outgoing_requests(scope) == []
       assert Friends.relationship_state(scope, current_user) == :self
     end
+
+    test "rejects a forged valid user ID that was not in the current search results", %{
+      conn: conn
+    } do
+      current_user = user_fixture(username: "forged_request_owner")
+      searched_user = user_fixture(username: "searched_request_target")
+      unsearched_user = user_fixture(username: "forged_hidden_target")
+      scope = user_scope_fixture(current_user)
+      conn = log_in_user(conn, current_user)
+      {:ok, view, _html} = live(conn, ~p"/friends")
+
+      view
+      |> form("#friend-search-form", search: %{query: searched_user.username})
+      |> render_change()
+
+      assert has_element?(view, "#friend-search-send-#{searched_user.id}")
+      refute has_element?(view, "#friend-search-profile-#{unsearched_user.id}")
+
+      render_click(view, "send-request", %{"user-id" => Integer.to_string(unsearched_user.id)})
+
+      assert has_element?(view, "#flash-error")
+      assert Friends.list_outgoing_requests(scope) == []
+      assert Friends.relationship_state(scope, unsearched_user) == :none
+    end
   end
 end

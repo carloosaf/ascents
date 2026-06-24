@@ -17,7 +17,8 @@ defmodule AscentsWeb.FriendLive.Index do
            search_form: to_form(%{"query" => ""}, as: :search),
            search_query: "",
            search_started?: false,
-           search_results_empty?: true
+           search_results_empty?: true,
+           search_result_ids: MapSet.new()
          )
          |> stream(:search_results, [])
          |> refresh_relationship_lists()}
@@ -42,6 +43,7 @@ defmodule AscentsWeb.FriendLive.Index do
 
   def handle_event("send-request", %{"user-id" => user_id}, socket) do
     with {:ok, recipient_id} <- parse_user_id(user_id),
+         true <- MapSet.member?(socket.assigns.search_result_ids, recipient_id),
          %{} = recipient <- Accounts.get_user(recipient_id) do
       case Friends.send_request(socket.assigns.current_scope, recipient) do
         {:ok, _friendship} ->
@@ -68,8 +70,8 @@ defmodule AscentsWeb.FriendLive.Index do
           {:noreply, put_flash(socket, :error, "Friend request could not be sent.")}
       end
     else
-      _invalid_user ->
-        {:noreply, put_flash(socket, :error, "That climber could not be found.")}
+      _invalid_or_unsearched_user ->
+        {:noreply, put_flash(socket, :error, "Friend request could not be sent.")}
     end
   end
 
@@ -353,19 +355,26 @@ defmodule AscentsWeb.FriendLive.Index do
   end
 
   defp refresh_search_results(socket) do
-    results =
+    users =
       socket.assigns.current_scope
       |> Accounts.search_profiles(socket.assigns.search_query, limit: @search_limit)
-      |> Enum.map(fn user ->
+
+    relationship_states = Friends.relationship_states(socket.assigns.current_scope, users)
+
+    results =
+      Enum.map(users, fn user ->
         %{
           id: user.id,
           user: user,
-          relationship_state: Friends.relationship_state(socket.assigns.current_scope, user)
+          relationship_state: Map.fetch!(relationship_states, user.id)
         }
       end)
 
     socket
-    |> assign(:search_results_empty?, results == [])
+    |> assign(
+      search_results_empty?: results == [],
+      search_result_ids: MapSet.new(users, & &1.id)
+    )
     |> stream(:search_results, results, reset: true)
   end
 
