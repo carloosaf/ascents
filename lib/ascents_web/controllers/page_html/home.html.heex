@@ -1,102 +1,313 @@
 <Layouts.app flash={@flash} current_scope={@current_scope}>
-  <div id="home-page" class="space-y-8">
-    <section class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-      <div class="chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-6 sm:p-8">
-        <div class="absolute right-6 top-8 hidden rotate-3 gap-2 sm:grid">
-          <span class="tape-label h-8 w-28 bg-grade-blue"></span>
-          <span class="tape-label ml-12 h-8 w-20 bg-grade-pink"></span>
-          <span class="tape-label h-8 w-32 bg-grade-yellow"></span>
-        </div>
-        <div class="relative z-10 flex flex-wrap items-center gap-3">
-          <span class="tape-label bg-ascents-tape px-3 py-1 text-xs font-black uppercase text-ascents-tape-content">
-            Spray wall social
+  <div id="home-page" class="space-y-10 sm:space-y-14">
+    <section
+      id="home-hero"
+      class="grid min-h-[calc(100dvh-10rem)] items-center gap-6 py-2 lg:min-h-[calc(100dvh-5rem)] lg:grid-cols-[minmax(0,1.12fr)_minmax(20rem,0.88fr)] lg:gap-8"
+    >
+      <div class="relative z-10 py-4 sm:py-8">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="tape-label bg-ascents-tape px-3 py-1.5 text-xs font-black uppercase tracking-wide text-ascents-tape-content">
+            Climb together
           </span>
-          <span class="text-sm font-semibold text-ascents-muted">
-            dark mode · bold grades · gym chatter
+          <span class="text-sm font-bold text-ascents-muted">
+            From fresh set to finished send
           </span>
         </div>
-        <h1 class="ascents-display relative z-10 mt-6 max-w-4xl text-5xl leading-none text-ascents-chalk sm:text-7xl">
-          Share sends like post-session chalk marks.
+
+        <h1
+          id="home-purpose"
+          class="ascents-display mt-7 max-w-4xl text-5xl leading-[0.92] text-ascents-chalk sm:text-7xl xl:text-8xl"
+        >
+          Your climbing life, <span class="text-ascents-tape">all on one wall.</span>
         </h1>
-        <p class="relative z-10 mt-6 max-w-2xl text-base leading-7 text-ascents-chalk-soft">
-          Ascents is a community feed for bouldering gyms. Members post session
-          updates, mark ascents, comment on beta, and discover fresh routes
-          from the gyms they care about.
+
+        <p class="mt-6 max-w-2xl text-base leading-7 text-ascents-chalk-soft sm:text-lg sm:leading-8">
+          Ascents connects climbers with their gyms. Find your community, follow
+          new route updates, log each session, and share the progress with friends
+          who understand the project.
         </p>
-        <div class="relative z-10 mt-8 flex flex-wrap gap-3">
-          <.button navigate={~p"/users/register"}>Join the community</.button>
-          <.button navigate={~p"/users/log-in"} variant="secondary">Log in</.button>
+
+        <div
+          id="home-journey-summary"
+          class="mt-7 grid max-w-2xl grid-cols-2 gap-x-5 gap-y-3 border-y border-ascents-line py-5 sm:grid-cols-4"
+        >
+          <div class="flex items-center gap-2 text-sm font-bold text-ascents-chalk">
+            <span class="size-2 rounded-full bg-ascents-action"></span> Find a gym
+          </div>
+          <div class="flex items-center gap-2 text-sm font-bold text-ascents-chalk">
+            <span class="size-2 rounded-full bg-grade-blue"></span> See updates
+          </div>
+          <div class="flex items-center gap-2 text-sm font-bold text-ascents-chalk">
+            <span class="size-2 rounded-full bg-grade-yellow"></span> Log sessions
+          </div>
+          <div class="flex items-center gap-2 text-sm font-bold text-ascents-chalk">
+            <span class="size-2 rounded-full bg-grade-pink"></span> Share progress
+          </div>
+        </div>
+
+        <div :if={!@current_scope} id="home-anonymous-actions" class="mt-8 flex flex-wrap gap-3">
+          <.button id="home-register-cta" navigate={~p"/users/register"} class="min-h-12 px-5">
+            Create your account <.icon name="hero-arrow-right" class="size-4" />
+          </.button>
+          <.button
+            id="home-browse-gyms-cta"
+            navigate={~p"/gyms"}
+            variant="secondary"
+            class="min-h-12 px-5"
+          >
+            Browse gyms
+          </.button>
+          <.button
+            id="home-login-cta"
+            navigate={~p"/users/log-in"}
+            variant="ghost"
+            class="min-h-12"
+          >
+            Log in
+          </.button>
+        </div>
+
+        <div :if={@current_scope} id="home-authenticated-intro" class="mt-8">
+          <p class="text-sm font-bold text-ascents-muted">
+            Welcome back, <span class="text-ascents-chalk">@{@current_scope.user.username}</span>.
+            Pick up where you left off.
+          </p>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <.button id="home-feed-cta" navigate={~p"/feed"} class="min-h-12 px-5">
+              Open your feed <.icon name="hero-arrow-right" class="size-4" />
+            </.button>
+            <.button
+              id="home-auth-gyms-cta"
+              navigate={~p"/gyms"}
+              variant="secondary"
+              class="min-h-12 px-5"
+            >
+              Find a gym
+            </.button>
+          </div>
         </div>
       </div>
 
-      <.gym_header
-        name="Bloc District"
-        location="Madrid, Spain"
-        members="1,284"
-        active_routes="72"
-      />
-    </section>
+      <aside
+        id="home-action-panel"
+        class="chalk-panel relative overflow-hidden rounded-xl border border-ascents-line p-5 sm:p-7"
+        aria-label={if(@current_scope, do: "Your Ascents shortcuts", else: "How Ascents works")}
+      >
+        <span class="hold -right-3 top-8 size-16 rotate-12 bg-grade-blue opacity-75"></span>
+        <span class="hold right-20 -top-4 size-11 -rotate-12 bg-grade-pink opacity-70"></span>
+        <span class="hold -bottom-5 left-12 size-14 rotate-45 bg-ascents-tape opacity-75"></span>
 
-    <section class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-      <div class="space-y-4">
-        <.header>
-          Live Feed Preview
-          <:subtitle>Balanced media and text, built around the gym community loop.</:subtitle>
-        </.header>
-
-        <.feed_item
-          id="home-feed-1"
-          author="Mara Silva"
-          gym="Bloc District"
-          time="12 min ago"
-          grade="V5"
-          body="Sent Blue Circuit #18 after a lot of heel-hook negotiations. The last move is all commitment."
-          comments={9}
-          reaction_count={42}
-        />
-
-        <.feed_item
-          id="home-feed-2"
-          author="Joel Chen"
-          gym="North Cave"
-          time="38 min ago"
-          body="Anyone around for a mellow slab session tonight? I want to trade beta on the new yellow set."
-          comments={4}
-          reaction_count={17}
-        />
-      </div>
-
-      <aside class="space-y-4">
-        <.header>
-          Fresh Problems
-          <:subtitle>Bold grades stay scannable before the title.</:subtitle>
-        </.header>
-
-        <.route_card
-          id="home-route-1"
-          title="Static Fever"
-          gym="Bloc District"
-          grade="V5"
-          status="Active"
-          meta="Cave wall · blue tape · reset yesterday"
-        />
-
-        <.route_card
-          id="home-route-2"
-          title="Tiny Feet Club"
-          gym="North Cave"
-          grade="V7"
-          status="Project"
-          meta="Slab wall · pink tape · technical finish"
-        />
+        <div class="relative z-10">
+          <%= if @current_scope do %>
+            <p class="text-xs font-black uppercase tracking-[0.18em] text-ascents-tape">
+              Your next move
+            </p>
+            <h2 class="ascents-display mt-3 text-3xl leading-none text-ascents-chalk sm:text-4xl">
+              Back to the wall.
+            </h2>
+            <div
+              id="home-member-actions"
+              class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
+            >
+              <.link
+                id="home-member-feed-link"
+                navigate={~p"/feed"}
+                class="group rounded-lg border border-ascents-line bg-ascents-panel-deep p-4 transition duration-200 hover:-translate-y-0.5 hover:border-ascents-action/70 hover:bg-ascents-panel-strong"
+              >
+                <.icon name="hero-home" class="size-5 text-ascents-action" />
+                <span class="mt-3 block font-black text-ascents-chalk">Route updates</span>
+                <span class="mt-1 block text-xs leading-5 text-ascents-muted">
+                  Catch up with your joined gyms.
+                </span>
+              </.link>
+              <.link
+                id="home-member-gyms-link"
+                navigate={~p"/gyms"}
+                class="group rounded-lg border border-ascents-line bg-ascents-panel-deep p-4 transition duration-200 hover:-translate-y-0.5 hover:border-grade-blue/70 hover:bg-ascents-panel-strong"
+              >
+                <.icon name="hero-building-storefront" class="size-5 text-grade-blue" />
+                <span class="mt-3 block font-black text-ascents-chalk">Your gyms</span>
+                <span class="mt-1 block text-xs leading-5 text-ascents-muted">
+                  Find and join climbing communities.
+                </span>
+              </.link>
+              <.link
+                id="home-member-stats-link"
+                navigate={~p"/users/stats"}
+                class="group rounded-lg border border-ascents-line bg-ascents-panel-deep p-4 transition duration-200 hover:-translate-y-0.5 hover:border-grade-yellow/70 hover:bg-ascents-panel-strong"
+              >
+                <.icon name="hero-chart-bar-square" class="size-5 text-grade-yellow" />
+                <span class="mt-3 block font-black text-ascents-chalk">Your progress</span>
+                <span class="mt-1 block text-xs leading-5 text-ascents-muted">
+                  Review sends, grades, and momentum.
+                </span>
+              </.link>
+              <.link
+                id="home-member-profile-link"
+                navigate={~p"/u/#{@current_scope.user.username}"}
+                class="group rounded-lg border border-ascents-line bg-ascents-panel-deep p-4 transition duration-200 hover:-translate-y-0.5 hover:border-grade-pink/70 hover:bg-ascents-panel-strong"
+              >
+                <.icon name="hero-user-circle" class="size-5 text-grade-pink" />
+                <span class="mt-3 block font-black text-ascents-chalk">Your profile</span>
+                <span class="mt-1 block text-xs leading-5 text-ascents-muted">
+                  See the story your climbs tell.
+                </span>
+              </.link>
+            </div>
+          <% else %>
+            <p class="text-xs font-black uppercase tracking-[0.18em] text-ascents-tape">
+              One simple loop
+            </p>
+            <h2 class="ascents-display mt-3 text-3xl leading-none text-ascents-chalk sm:text-4xl">
+              Gym life, without the noise.
+            </h2>
+            <ol id="home-first-steps" class="mt-7 space-y-5">
+              <li class="flex gap-4">
+                <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-ascents-action font-black text-ascents-action-content">
+                  1
+                </span>
+                <div>
+                  <h3 class="font-black text-ascents-chalk">Find and join your gym</h3>
+                  <p class="mt-1 text-sm leading-6 text-ascents-muted">
+                    Make the places you climb the center of your feed.
+                  </p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-grade-blue font-black text-grade-blue-content">
+                  2
+                </span>
+                <div>
+                  <h3 class="font-black text-ascents-chalk">Follow what is new</h3>
+                  <p class="mt-1 text-sm leading-6 text-ascents-muted">
+                    See route updates and community beta in context.
+                  </p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-grade-yellow font-black text-grade-yellow-content">
+                  3
+                </span>
+                <div>
+                  <h3 class="font-black text-ascents-chalk">Keep your climbing history</h3>
+                  <p class="mt-1 text-sm leading-6 text-ascents-muted">
+                    Log sessions and watch consistency turn into progress.
+                  </p>
+                </div>
+              </li>
+            </ol>
+          <% end %>
+        </div>
       </aside>
     </section>
 
-    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <.stat_block label="Sends this week" value="128" detail="+18% from last week" tone="lime" />
-      <.stat_block label="Fresh problems" value="14" detail="Across 4 walls" tone="teal" />
-      <.stat_block label="Most active grade" value="V4" detail="Community sweet spot" tone="clay" />
-      <.stat_block label="New members" value="36" detail="Joined this month" tone="blue" />
+    <section id="home-product-loop" aria-labelledby="home-product-loop-title">
+      <div class="max-w-2xl">
+        <p class="text-xs font-black uppercase tracking-[0.18em] text-ascents-action">
+          The Ascents loop
+        </p>
+        <h2
+          id="home-product-loop-title"
+          class="ascents-display mt-3 text-4xl leading-none text-ascents-chalk sm:text-5xl"
+        >
+          Everything starts at your gym.
+        </h2>
+        <p class="mt-4 text-base leading-7 text-ascents-chalk-soft">
+          Ascents keeps discovery, climbing, progress, and community connected
+          instead of scattered across group chats and notes.
+        </p>
+      </div>
+
+      <div class="ascents-stagger mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article
+          id="home-step-gym"
+          class="ascents-reveal chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-5 transition duration-200 hover:-translate-y-1 hover:border-ascents-action/60"
+        >
+          <span class="text-xs font-black uppercase tracking-[0.18em] text-ascents-action">
+            01
+          </span>
+          <.icon name="hero-building-storefront" class="mt-8 size-7 text-ascents-action" />
+          <h3 class="mt-4 text-lg font-black text-ascents-chalk">Find your people</h3>
+          <p class="mt-2 text-sm leading-6 text-ascents-muted">
+            Browse local gyms, join the communities you climb with, and keep each wall close.
+          </p>
+        </article>
+
+        <article
+          id="home-step-routes"
+          class="ascents-reveal chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-5 transition duration-200 hover:-translate-y-1 hover:border-grade-blue/60"
+        >
+          <span class="text-xs font-black uppercase tracking-[0.18em] text-grade-blue">02</span>
+          <.icon name="hero-sparkles" class="mt-8 size-7 text-grade-blue" />
+          <h3 class="mt-4 text-lg font-black text-ascents-chalk">Know what changed</h3>
+          <p class="mt-2 text-sm leading-6 text-ascents-muted">
+            Follow fresh problems, route activity, and useful beta from your gym feed.
+          </p>
+        </article>
+
+        <article
+          id="home-step-sessions"
+          class="ascents-reveal chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-5 transition duration-200 hover:-translate-y-1 hover:border-grade-yellow/60"
+        >
+          <span class="text-xs font-black uppercase tracking-[0.18em] text-grade-yellow">03</span>
+          <.icon name="hero-check-badge" class="mt-8 size-7 text-grade-yellow" />
+          <h3 class="mt-4 text-lg font-black text-ascents-chalk">Remember the session</h3>
+          <p class="mt-2 text-sm leading-6 text-ascents-muted">
+            Log what you climbed and build a useful record of sends, grades, and momentum.
+          </p>
+        </article>
+
+        <article
+          id="home-step-friends"
+          class="ascents-reveal chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-5 transition duration-200 hover:-translate-y-1 hover:border-grade-pink/60"
+        >
+          <span class="text-xs font-black uppercase tracking-[0.18em] text-grade-pink">04</span>
+          <.icon name="hero-user-group" class="mt-8 size-7 text-grade-pink" />
+          <h3 class="mt-4 text-lg font-black text-ascents-chalk">Share the stoke</h3>
+          <p class="mt-2 text-sm leading-6 text-ascents-muted">
+            Celebrate progress, swap beta, and stay connected with climbing friends.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section
+      id="home-closing-cta"
+      class="chalk-panel relative overflow-hidden rounded-xl border border-ascents-line p-6 sm:p-8"
+    >
+      <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div class="max-w-2xl">
+          <h2 class="ascents-display text-3xl leading-none text-ascents-chalk sm:text-4xl">
+            <%= if @current_scope do %>
+              Your next send starts here.
+            <% else %>
+              Ready to make every session count?
+            <% end %>
+          </h2>
+          <p class="mt-3 text-sm leading-6 text-ascents-chalk-soft">
+            <%= if @current_scope do %>
+              Check the latest from your gyms or review the progress you have already made.
+            <% else %>
+              Join Ascents, find your gym community, and start building your climbing story.
+            <% end %>
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <%= if @current_scope do %>
+            <.button id="home-closing-feed-cta" navigate={~p"/feed"}>Go to feed</.button>
+            <.button id="home-closing-stats-cta" navigate={~p"/users/stats"} variant="secondary">
+              View stats
+            </.button>
+          <% else %>
+            <.button id="home-closing-register-cta" navigate={~p"/users/register"}>
+              Join Ascents
+            </.button>
+            <.button id="home-closing-gyms-cta" navigate={~p"/gyms"} variant="secondary">
+              Explore gyms
+            </.button>
+          <% end %>
+        </div>
+      </div>
     </section>
   </div>
 </Layouts.app>

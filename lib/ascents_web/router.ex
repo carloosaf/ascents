@@ -20,6 +20,7 @@ defmodule AscentsWeb.Router do
   scope "/", AscentsWeb do
     pipe_through :browser
 
+    # Public for discovery, while the browser pipeline supplies current_scope for member actions.
     get "/", PageController, :home
     get "/media/:token", MediaController, :show
     live "/gyms", GymLive.Index
