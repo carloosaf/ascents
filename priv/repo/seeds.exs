@@ -316,7 +316,7 @@ defmodule DemoSeed do
       nil ->
         create_attrs = attrs |> Map.take([:body]) |> maybe_put_image_key(image_object_key)
         {:ok, post} = Feed.create_post(scope, gym, create_attrs)
-        Feed.get_post(gym, post.id)
+        Feed.get_post(scope, gym, post.id)
     end
   end
 

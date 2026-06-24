@@ -155,7 +155,7 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("comment", %{"post_id" => post_id, "comment" => comment_params}, socket) do
-    case Feed.get_post(socket.assigns.gym, post_id, socket.assigns.current_scope) do
+    case Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post_id) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -172,7 +172,7 @@ defmodule AscentsWeb.GymLive.Show do
              |> assign(:comment_form, to_form(Feed.change_comment(%Comment{})))
              |> stream_insert(
                :posts,
-               Feed.get_post(socket.assigns.gym, post.id, socket.assigns.current_scope)
+               Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post.id)
              )}
 
           {:error, %Ecto.Changeset{} = changeset} ->
@@ -189,7 +189,7 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("delete-post", %{"id" => post_id}, socket) do
-    case Feed.get_post(socket.assigns.gym, post_id, socket.assigns.current_scope) do
+    case Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post_id) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -206,15 +206,16 @@ defmodule AscentsWeb.GymLive.Show do
 
   def handle_event("delete-comment", %{"post_id" => post_id, "id" => comment_id}, socket) do
     with %Post{} = post <-
-           Feed.get_post(socket.assigns.gym, post_id, socket.assigns.current_scope),
-         %Comment{} = comment <- Feed.get_post_comment(post, comment_id) do
+           Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post_id),
+         %Comment{} = comment <-
+           Feed.get_post_comment(socket.assigns.current_scope, post, comment_id) do
       case Feed.delete_comment(socket.assigns.current_scope, socket.assigns.gym, post, comment) do
         {:ok, _comment} ->
           {:noreply,
            stream_insert(
              socket,
              :posts,
-             Feed.get_post(socket.assigns.gym, post.id, socket.assigns.current_scope)
+             Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post.id)
            )}
 
         {:error, :unauthorized} ->
@@ -613,7 +614,7 @@ defmodule AscentsWeb.GymLive.Show do
   defp assign_gym_state(socket, gym) do
     gym = Gyms.get_gym!(gym.id)
     current_scope = socket.assigns.current_scope
-    posts = Feed.list_gym_posts(gym, current_scope)
+    posts = Feed.list_gym_posts(current_scope, gym)
 
     socket
     |> assign(

@@ -12,7 +12,7 @@ defmodule AscentsWeb.ProfileLive.Show do
 
     if current_scope do
       profile_user = Accounts.get_user_by_username!(username)
-      posts = Feed.list_user_posts(profile_user, current_scope)
+      posts = Feed.list_user_posts(current_scope, profile_user)
 
       {:ok,
        socket
@@ -30,7 +30,7 @@ defmodule AscentsWeb.ProfileLive.Show do
   end
 
   def handle_event("comment", %{"post_id" => post_id, "comment" => comment_params}, socket) do
-    case Feed.get_user_post(socket.assigns.profile_user, post_id, socket.assigns.current_scope) do
+    case Feed.get_user_post(socket.assigns.current_scope, socket.assigns.profile_user, post_id) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -43,9 +43,9 @@ defmodule AscentsWeb.ProfileLive.Show do
              |> stream_insert(
                :posts,
                Feed.get_user_post(
+                 socket.assigns.current_scope,
                  socket.assigns.profile_user,
-                 post.id,
-                 socket.assigns.current_scope
+                 post.id
                )
              )}
 
@@ -63,7 +63,7 @@ defmodule AscentsWeb.ProfileLive.Show do
   end
 
   def handle_event("delete-post", %{"id" => post_id}, socket) do
-    case Feed.get_user_post(socket.assigns.profile_user, post_id, socket.assigns.current_scope) do
+    case Feed.get_user_post(socket.assigns.current_scope, socket.assigns.profile_user, post_id) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -80,8 +80,13 @@ defmodule AscentsWeb.ProfileLive.Show do
 
   def handle_event("delete-comment", %{"post_id" => post_id, "id" => comment_id}, socket) do
     with %Post{} = post <-
-           Feed.get_user_post(socket.assigns.profile_user, post_id, socket.assigns.current_scope),
-         %Comment{} = comment <- Feed.get_post_comment(post, comment_id) do
+           Feed.get_user_post(
+             socket.assigns.current_scope,
+             socket.assigns.profile_user,
+             post_id
+           ),
+         %Comment{} = comment <-
+           Feed.get_post_comment(socket.assigns.current_scope, post, comment_id) do
       case Feed.delete_comment(socket.assigns.current_scope, post.gym, post, comment) do
         {:ok, _comment} ->
           {:noreply,
@@ -89,9 +94,9 @@ defmodule AscentsWeb.ProfileLive.Show do
              socket,
              :posts,
              Feed.get_user_post(
+               socket.assigns.current_scope,
                socket.assigns.profile_user,
-               post.id,
-               socket.assigns.current_scope
+               post.id
              )
            )}
 
@@ -306,7 +311,7 @@ defmodule AscentsWeb.ProfileLive.Show do
   end
 
   defp refresh_profile_posts(socket) do
-    posts = Feed.list_user_posts(socket.assigns.profile_user, socket.assigns.current_scope)
+    posts = Feed.list_user_posts(socket.assigns.current_scope, socket.assigns.profile_user)
 
     socket
     |> assign(:posts_empty?, posts == [])
