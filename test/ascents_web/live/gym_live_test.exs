@@ -461,6 +461,23 @@ defmodule AscentsWeb.GymLiveTest do
   end
 
   describe "verification" do
+    setup do
+      previous_platform_admin_emails =
+        Application.get_env(:ascents, :platform_admin_emails, :not_configured)
+
+      Application.put_env(:ascents, :platform_admin_emails, ["platform-admin@example.com"])
+
+      on_exit(fn ->
+        case previous_platform_admin_emails do
+          :not_configured ->
+            Application.delete_env(:ascents, :platform_admin_emails)
+
+          emails ->
+            Application.put_env(:ascents, :platform_admin_emails, emails)
+        end
+      end)
+    end
+
     test "redirects anonymous users before the LiveView mounts", %{conn: conn} do
       gym = gym_fixture()
 
@@ -544,6 +561,35 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert Gyms.get_gym!(gym.id).verification_status == "pending"
       refute has_element?(view, "#gym-verification-approved-details")
+    end
+
+    test "gym-local admins cannot forge the privileged revoke event", %{conn: conn} do
+      owner_scope = user_scope_fixture()
+      gym = gym_fixture(scope: owner_scope)
+      platform_admin_scope = user_scope_fixture(user_fixture(email: "platform-admin@example.com"))
+
+      {:ok, pending_gym} =
+        Gyms.request_verification(owner_scope, gym, %{
+          note: "I operate this gym and can confirm through our official website."
+        })
+
+      {:ok, verified_gym} =
+        Gyms.approve_verification(platform_admin_scope, pending_gym, %{
+          note: "Verified through the gym's published business contact."
+        })
+
+      local_admin = user_fixture()
+      local_admin_scope = user_scope_fixture(local_admin)
+      role_membership_fixture(gym, "admin", scope: local_admin_scope)
+      conn = log_in_user(conn, local_admin)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{verified_gym.slug}/verification")
+
+      refute has_element?(view, "#gym-verification-revoke-button")
+      render_hook(view, "revoke-verification", %{})
+
+      assert Gyms.get_gym!(gym.id).verification_status == "verified"
+      assert has_element?(view, "#gym-verification-approved-details")
     end
 
     test "platform administrators can approve and revoke through server-authorized controls", %{

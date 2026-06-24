@@ -139,24 +139,24 @@ defmodule Ascents.Gyms do
   """
   def request_verification(%Scope{user: %User{} = user} = scope, %Gym{} = gym, attrs)
       when is_map(attrs) do
-    gym = Repo.get!(Gym, gym.id)
+    verification_transaction(gym, fn locked_gym ->
+      cond do
+        not admin?(scope, locked_gym) ->
+          {:error, :unauthorized}
 
-    cond do
-      not admin?(scope, gym) ->
-        {:error, :unauthorized}
+        locked_gym.verification_status != "community" ->
+          {:error, :invalid_transition}
 
-      gym.verification_status != "community" ->
-        {:error, :invalid_transition}
-
-      true ->
-        gym
-        |> Gym.verification_request_changeset(
-          user,
-          fetch_attr(attrs, :verification_request_note, fetch_attr(attrs, :note, "")),
-          DateTime.utc_now(:second)
-        )
-        |> Repo.update()
-    end
+        true ->
+          locked_gym
+          |> Gym.verification_request_changeset(
+            user,
+            fetch_attr(attrs, :verification_request_note, fetch_attr(attrs, :note, "")),
+            DateTime.utc_now(:second)
+          )
+          |> Repo.update()
+      end
+    end)
   end
 
   def request_verification(_scope, _gym, _attrs), do: {:error, :unauthorized}
@@ -169,24 +169,24 @@ defmodule Ascents.Gyms do
   """
   def approve_verification(%Scope{user: %User{} = user} = scope, %Gym{} = gym, attrs)
       when is_map(attrs) do
-    gym = Repo.get!(Gym, gym.id)
+    verification_transaction(gym, fn locked_gym ->
+      cond do
+        not Accounts.platform_admin?(scope) ->
+          {:error, :unauthorized}
 
-    cond do
-      not Accounts.platform_admin?(scope) ->
-        {:error, :unauthorized}
+        locked_gym.verification_status != "pending" ->
+          {:error, :invalid_transition}
 
-      gym.verification_status != "pending" ->
-        {:error, :invalid_transition}
-
-      true ->
-        gym
-        |> Gym.verification_approval_changeset(
-          user,
-          fetch_attr(attrs, :verification_note, fetch_attr(attrs, :note, "")),
-          DateTime.utc_now(:second)
-        )
-        |> Repo.update()
-    end
+        true ->
+          locked_gym
+          |> Gym.verification_approval_changeset(
+            user,
+            fetch_attr(attrs, :verification_note, fetch_attr(attrs, :note, "")),
+            DateTime.utc_now(:second)
+          )
+          |> Repo.update()
+      end
+    end)
   end
 
   def approve_verification(_scope, _gym, _attrs), do: {:error, :unauthorized}
@@ -195,20 +195,20 @@ defmodule Ascents.Gyms do
   Revokes an official gym badge and returns the page to community-owned state.
   """
   def revoke_verification(%Scope{} = scope, %Gym{} = gym) do
-    gym = Repo.get!(Gym, gym.id)
+    verification_transaction(gym, fn locked_gym ->
+      cond do
+        not Accounts.platform_admin?(scope) ->
+          {:error, :unauthorized}
 
-    cond do
-      not Accounts.platform_admin?(scope) ->
-        {:error, :unauthorized}
+        locked_gym.verification_status != "verified" ->
+          {:error, :invalid_transition}
 
-      gym.verification_status != "verified" ->
-        {:error, :invalid_transition}
-
-      true ->
-        gym
-        |> Gym.verification_revoke_changeset()
-        |> Repo.update()
-    end
+        true ->
+          locked_gym
+          |> Gym.verification_revoke_changeset()
+          |> Repo.update()
+      end
+    end)
   end
 
   def revoke_verification(_scope, _gym), do: {:error, :unauthorized}
@@ -406,6 +406,18 @@ defmodule Ascents.Gyms do
   """
   def can_access_verification_workflow?(scope, gym) do
     admin?(scope, gym) or can_review_verification?(scope)
+  end
+
+  defp verification_transaction(%Gym{id: gym_id}, transition) do
+    Repo.transact(fn ->
+      locked_gym =
+        Gym
+        |> where([gym], gym.id == ^gym_id)
+        |> lock("FOR UPDATE")
+        |> Repo.one!()
+
+      transition.(locked_gym)
+    end)
   end
 
   defp membership_changeset(%User{} = user, %Gym{} = gym, role, joined_at) do

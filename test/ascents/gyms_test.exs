@@ -168,6 +168,23 @@ defmodule Ascents.GymsTest do
   end
 
   describe "gym ownership verification" do
+    setup do
+      previous_platform_admin_emails =
+        Application.get_env(:ascents, :platform_admin_emails, :not_configured)
+
+      Application.put_env(:ascents, :platform_admin_emails, ["platform-admin@example.com"])
+
+      on_exit(fn ->
+        case previous_platform_admin_emails do
+          :not_configured ->
+            Application.delete_env(:ascents, :platform_admin_emails)
+
+          emails ->
+            Application.put_env(:ascents, :platform_admin_emails, emails)
+        end
+      end)
+    end
+
     test "new gyms default to community-managed without verification metadata" do
       gym = gym_fixture()
 
@@ -226,6 +243,60 @@ defmodule Ascents.GymsTest do
                "Verified through the gym's published business contact."
     end
 
+    test "only one concurrent platform administrator can approve a pending request" do
+      owner_scope = user_scope_fixture()
+      gym = gym_fixture(scope: owner_scope)
+
+      assert {:ok, pending_gym} =
+               Gyms.request_verification(owner_scope, gym, %{
+                 note: "I operate this gym and can confirm through our official website."
+               })
+
+      admin_scopes =
+        for email <- ["platform-admin@example.com", "second-platform-admin@example.com"] do
+          user_scope_fixture(user_fixture(email: email))
+        end
+
+      Application.put_env(
+        :ascents,
+        :platform_admin_emails,
+        Enum.map(admin_scopes, & &1.user.email)
+      )
+
+      parent = self()
+      task_supervisor = start_supervised!(Task.Supervisor)
+
+      tasks =
+        Enum.map(admin_scopes, fn admin_scope ->
+          Task.Supervisor.async_nolink(task_supervisor, fn ->
+            send(parent, {:approval_ready, self()})
+
+            receive do
+              :approve ->
+                Gyms.approve_verification(admin_scope, pending_gym, %{
+                  note: "Concurrent review by #{admin_scope.user.email}"
+                })
+            end
+          end)
+        end)
+
+      task_pids =
+        for _admin_scope <- admin_scopes do
+          assert_receive {:approval_ready, task_pid}
+          task_pid
+        end
+
+      Enum.each(task_pids, &send(&1, :approve))
+      results = Enum.map(tasks, &Task.await/1)
+
+      assert Enum.count(results, &match?({:ok, %Gym{}}, &1)) == 1
+      assert Enum.count(results, &(&1 == {:error, :invalid_transition})) == 1
+
+      verified_gym = Gyms.get_gym!(gym.id)
+      assert verified_gym.verification_status == "verified"
+      assert verified_gym.verified_by_user_id in Enum.map(admin_scopes, & &1.user.id)
+    end
+
     test "ordinary users and gym-local admins cannot approve requests" do
       owner = user_fixture()
       owner_scope = user_scope_fixture(owner)
@@ -276,6 +347,37 @@ defmodule Ascents.GymsTest do
       assert community_gym.verified_at == nil
       assert community_gym.verified_by_user_id == nil
       assert community_gym.verification_note == nil
+    end
+
+    test "owners, gym-local admins, and ordinary users cannot revoke verified gyms" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+      platform_admin_scope = user_scope_fixture(user_fixture(email: "platform-admin@example.com"))
+
+      local_admin_scope = user_scope_fixture()
+      role_membership_fixture(gym, "admin", scope: local_admin_scope)
+      ordinary_user_scope = user_scope_fixture()
+
+      {:ok, pending_gym} =
+        Gyms.request_verification(owner_scope, gym, %{
+          note: "I operate this gym and can confirm through our official website."
+        })
+
+      {:ok, verified_gym} =
+        Gyms.approve_verification(platform_admin_scope, pending_gym, %{
+          note: "Verified through the gym's published business contact."
+        })
+
+      assert Gyms.revoke_verification(owner_scope, verified_gym) == {:error, :unauthorized}
+
+      assert Gyms.revoke_verification(local_admin_scope, verified_gym) ==
+               {:error, :unauthorized}
+
+      assert Gyms.revoke_verification(ordinary_user_scope, verified_gym) ==
+               {:error, :unauthorized}
+
+      assert Gyms.get_gym!(gym.id).verification_status == "verified"
     end
 
     test "rejects verification requests from non-admin gym members" do
