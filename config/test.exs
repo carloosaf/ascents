@@ -30,6 +30,7 @@ config :ascents, AscentsWeb.Endpoint,
   server: false
 
 config :ascents, Ascents.Mailer, adapter: Swoosh.Adapters.Test
+config :ascents, platform_admin_emails: ["platform-admin@example.com"]
 
 config :ascents, Ascents.Media,
   storage: Ascents.Media.TestStorage,

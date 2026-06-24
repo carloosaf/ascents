@@ -38,6 +38,17 @@ config :ascents, Ascents.Media,
       if(config_env() == :prod, do: "false", else: "true")
     ) in ~w(true 1 yes)
 
+if platform_admin_emails = System.get_env("PLATFORM_ADMIN_EMAILS") do
+  platform_admin_emails =
+    platform_admin_emails
+    |> String.split(",", trim: true)
+    |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+
+  config :ascents, platform_admin_emails: platform_admin_emails
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

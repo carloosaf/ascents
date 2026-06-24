@@ -117,9 +117,11 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert has_element?(view, "#gym-show")
       assert has_element?(view, "#gym-description")
+      assert has_element?(view, "#gym-verification-community-badge")
       refute has_element?(view, "#gym-join-button")
       refute has_element?(view, "#gym-leave-button")
       refute has_element?(view, "#gym-settings-link")
+      refute has_element?(view, "#gym-verification-link")
     end
 
     test "allows authenticated non-members to join", %{conn: conn} do
@@ -184,6 +186,34 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert has_element?(view, "#gym-settings-link")
       assert has_element?(view, "#gym-members-link")
+      assert has_element?(view, "#gym-verification-link")
+    end
+
+    test "renders pending and verified ownership badges", %{conn: conn} do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+
+      {:ok, pending_gym} =
+        Gyms.request_verification(owner_scope, gym, %{
+          note: "I operate this gym and can confirm through our official website."
+        })
+
+      {:ok, pending_view, _html} = live(conn, ~p"/gyms/#{pending_gym.slug}")
+      assert has_element?(pending_view, "#gym-verification-pending-badge")
+
+      platform_admin_scope =
+        user_fixture(email: "platform-admin@example.com")
+        |> user_scope_fixture()
+
+      {:ok, verified_gym} =
+        Gyms.approve_verification(platform_admin_scope, pending_gym, %{
+          note: "Verified through the gym's published business contact."
+        })
+
+      {:ok, verified_view, _html} = live(conn, ~p"/gyms/#{verified_gym.slug}")
+      assert has_element?(verified_view, "#gym-verification-verified-badge")
+      assert has_element?(verified_view, "#gym-verification-note")
     end
 
     test "renders gym feed posts on the gym root", %{conn: conn} do
@@ -427,6 +457,133 @@ defmodule AscentsWeb.GymLiveTest do
 
       refute has_element?(view, "#home-post-delete-#{post.id}")
       refute has_element?(view, "#home-comment-delete-#{comment.id}")
+    end
+  end
+
+  describe "verification" do
+    test "redirects anonymous users before the LiveView mounts", %{conn: conn} do
+      gym = gym_fixture()
+
+      assert {:error, {:redirect, %{to: "/users/log-in"}}} =
+               live(conn, ~p"/gyms/#{gym.slug}/verification")
+    end
+
+    test "redirects authenticated users without gym admin or platform privileges", %{conn: conn} do
+      gym = gym_fixture()
+      conn = log_in_user(conn, user_fixture())
+      gym_path = ~p"/gyms/#{gym.slug}"
+
+      assert {:error, {:live_redirect, %{to: ^gym_path}}} =
+               live(conn, ~p"/gyms/#{gym.slug}/verification")
+    end
+
+    test "gym owners can submit a verification request", %{conn: conn} do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+      conn = log_in_user(conn, owner)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}/verification")
+
+      assert has_element?(view, "#gym-verification-request-form")
+
+      view
+      |> form("#gym-verification-request-form",
+        verification_request: %{verification_request_note: "Too short"}
+      )
+      |> render_submit()
+
+      assert has_element?(
+               view,
+               "#verification_request_verification_request_note.border-ascents-danger"
+             )
+
+      assert Gyms.get_gym!(gym.id).verification_status == "community"
+
+      view
+      |> form("#gym-verification-request-form",
+        verification_request: %{
+          verification_request_note:
+            "I operate this gym and can confirm through our official website."
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#gym-verification-pending-details")
+      refute has_element?(view, "#gym-verification-request-form")
+
+      pending_gym = Gyms.get_gym!(gym.id)
+      assert pending_gym.verification_status == "pending"
+      assert pending_gym.verification_requested_by_user_id == owner.id
+    end
+
+    test "gym-local admins cannot invoke the privileged approval event", %{conn: conn} do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+
+      {:ok, pending_gym} =
+        Gyms.request_verification(owner_scope, gym, %{
+          note: "I operate this gym and can confirm through our official website."
+        })
+
+      local_admin = user_fixture()
+      local_admin_scope = user_scope_fixture(local_admin)
+      role_membership_fixture(gym, "admin", scope: local_admin_scope)
+      conn = log_in_user(conn, local_admin)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{pending_gym.slug}/verification")
+
+      refute has_element?(view, "#gym-verification-approval-form")
+
+      render_hook(view, "approve-verification", %{
+        "verification_approval" => %{
+          "verification_note" => "Attempted approval by a gym-local admin."
+        }
+      })
+
+      assert Gyms.get_gym!(gym.id).verification_status == "pending"
+      refute has_element?(view, "#gym-verification-approved-details")
+    end
+
+    test "platform administrators can approve and revoke through server-authorized controls", %{
+      conn: conn
+    } do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+
+      {:ok, pending_gym} =
+        Gyms.request_verification(owner_scope, gym, %{
+          note: "I operate this gym and can confirm through our official website."
+        })
+
+      platform_admin = user_fixture(email: "platform-admin@example.com")
+      conn = log_in_user(conn, platform_admin)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{pending_gym.slug}/verification")
+
+      assert has_element?(view, "#gym-verification-approval-form")
+
+      view
+      |> form("#gym-verification-approval-form",
+        verification_approval: %{
+          verification_note: "Verified through the gym's published business contact."
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#gym-verification-approved-details")
+      assert has_element?(view, "#gym-verification-revoke-button")
+      assert Gyms.get_gym!(gym.id).verification_status == "verified"
+
+      view
+      |> element("#gym-verification-revoke-button")
+      |> render_click()
+
+      assert has_element?(view, "#gym-verification-current-state")
+      refute has_element?(view, "#gym-verification-approved-details")
+      assert Gyms.get_gym!(gym.id).verification_status == "community"
     end
   end
 

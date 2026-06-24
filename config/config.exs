@@ -40,7 +40,8 @@ config :ascents, :scopes,
 
 config :ascents,
   ecto_repos: [Ascents.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  platform_admin_emails: []
 
 # Configure the endpoint
 config :ascents, AscentsWeb.Endpoint,
