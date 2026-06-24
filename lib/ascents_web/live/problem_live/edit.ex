@@ -18,7 +18,7 @@ defmodule AscentsWeb.ProblemLive.Edit do
          |> assign(:gym, gym)
          |> assign(:problem, problem)
          |> allow_upload(:image,
-           accept: ~w(.jpg .jpeg .png .webp),
+           accept: ~w(.jpg .jpeg .png .webp image/jpeg image/png image/webp),
            max_entries: 1,
            max_file_size: Media.max_file_size()
          )
