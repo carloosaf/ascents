@@ -348,4 +348,75 @@ defmodule Ascents.SessionsTest do
       end
     end
   end
+
+  describe "session post deletion" do
+    test "atomically removes a session from feeds and ascent stats with one timestamp" do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+
+      problems = [
+        boulder_problem_fixture(gym: gym, title: "Delete one"),
+        boulder_problem_fixture(gym: gym, title: "Delete two")
+      ]
+
+      %{session: session, post: post, ascents: ascents} =
+        session_fixture(scope: scope, gym: gym, problems: problems)
+
+      assert {:ok, deleted_post} = Feed.delete_post(scope, gym, post)
+      deleted_session = Repo.get!(Session, session.id)
+      deleted_ascents = Repo.all(from(ascent in Ascent, where: ascent.session_id == ^session.id))
+
+      assert deleted_post.deleted_at
+      assert deleted_session.deleted_at == deleted_post.deleted_at
+
+      assert Enum.map(deleted_ascents, & &1.deleted_at) ==
+               List.duplicate(deleted_post.deleted_at, length(ascents))
+
+      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_user_posts(user) == []
+
+      assert {:ok, stats} = AscentLogs.get_user_stats(scope, user, today: ~D[2026-06-24])
+      assert stats.total_ascents == 0
+      assert stats.unique_gyms == 0
+      assert stats.unique_routes == 0
+    end
+
+    test "rolls back post and session deletion when grouped ascent deletion fails" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+
+      %{session: session, post: post, ascents: [ascent]} =
+        session_fixture(scope: scope, gym: gym)
+
+      Repo.query!("""
+      CREATE FUNCTION reject_session_ascent_soft_delete()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+        RAISE EXCEPTION 'forced grouped ascent failure';
+      END;
+      $$
+      """)
+
+      Repo.query!("""
+      CREATE TRIGGER reject_session_ascent_soft_delete
+      BEFORE UPDATE OF deleted_at ON ascents
+      FOR EACH ROW
+      WHEN (OLD.session_id IS NOT NULL AND NEW.deleted_at IS NOT NULL)
+      EXECUTE FUNCTION reject_session_ascent_soft_delete()
+      """)
+
+      assert_raise Postgrex.Error, ~r/forced grouped ascent failure/, fn ->
+        Feed.delete_post(scope, gym, post)
+      end
+
+      assert Repo.get!(Post, post.id).deleted_at == nil
+      assert Repo.get!(Session, session.id).deleted_at == nil
+      assert Repo.get!(Ascent, ascent.id).deleted_at == nil
+      assert [visible_post] = Feed.list_gym_posts(gym)
+      assert visible_post.id == post.id
+    end
+  end
 end

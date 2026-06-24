@@ -10,10 +10,8 @@ defmodule Ascents.Sessions do
   alias Ascents.Accounts.{Scope, User}
   alias Ascents.Ascents.Ascent
   alias Ascents.Feed.Post
-  alias Ascents.Gyms
-  alias Ascents.Gyms.Gym
+  alias Ascents.Gyms.{Gym, GymMembership}
   alias Ascents.Repo
-  alias Ascents.Routes
   alias Ascents.Routes.BoulderProblem
   alias Ascents.Sessions.Session
 
@@ -59,27 +57,31 @@ defmodule Ascents.Sessions do
   """
   def create_session(%Scope{user: %User{} = user} = scope, %Gym{} = gym, attrs)
       when is_map(attrs) do
-    gym = Gyms.get_gym!(gym.id)
     changeset = change_session(attrs)
 
-    cond do
-      not Gyms.can_post_in_gym?(scope, gym) ->
-        {:error, :unauthorized}
-
-      not changeset.valid? ->
-        {:error, changeset}
-
-      true ->
-        case resolve_problems(gym, changeset) do
-          {:ok, problems} -> insert_session(user, gym, changeset, problems)
-          {:error, message} -> {:error, add_error(changeset, :ascents, message)}
-        end
+    if changeset.valid? do
+      insert_session(scope, user, gym, changeset)
+    else
+      {:error, changeset}
     end
   end
 
   def create_session(_scope, _gym, _attrs), do: {:error, :unauthorized}
 
-  defp resolve_problems(%Gym{} = gym, changeset) do
+  defp lock_membership(repo, %Scope{user: %User{id: user_id}}, %Gym{id: gym_id}) do
+    membership =
+      GymMembership
+      |> where(
+        [membership],
+        membership.user_id == ^user_id and membership.gym_id == ^gym_id
+      )
+      |> lock("FOR SHARE")
+      |> repo.one()
+
+    if membership, do: {:ok, membership}, else: {:error, :unauthorized}
+  end
+
+  defp resolve_problems(repo, %Gym{} = gym, changeset) do
     changeset
     |> get_field(:ascents)
     |> Enum.with_index(1)
@@ -87,7 +89,13 @@ defmodule Ascents.Sessions do
       row_changeset = ascent_row_changeset(attrs)
       problem_id = get_field(row_changeset, :boulder_problem_id)
 
-      case Routes.get_boulder_problem(gym, problem_id) do
+      problem =
+        BoulderProblem
+        |> where([problem], problem.id == ^problem_id and problem.gym_id == ^gym.id)
+        |> lock("FOR SHARE")
+        |> repo.one()
+
+      case problem do
         %BoulderProblem{active: true} = problem ->
           {:cont, {:ok, [problem | problems]}}
 
@@ -104,14 +112,35 @@ defmodule Ascents.Sessions do
     end
   end
 
-  defp insert_session(%User{} = user, %Gym{} = gym, changeset, problems) do
+  defp insert_session(%Scope{} = scope, %User{} = user, %Gym{} = gym, changeset) do
     session_attrs = apply_changes(changeset)
 
     multi =
       Multi.new()
-      |> Multi.insert(:post, fn _changes ->
+      |> Multi.run(:gym, fn repo, _changes ->
+        locked_gym =
+          Gym
+          |> where([candidate], candidate.id == ^gym.id)
+          |> lock("FOR SHARE")
+          |> repo.one!()
+
+        {:ok, locked_gym}
+      end)
+      |> Multi.run(:membership, fn repo, %{gym: locked_gym} ->
+        lock_membership(repo, scope, locked_gym)
+      end)
+      |> Multi.run(:problems, fn repo, %{gym: locked_gym} ->
+        case resolve_problems(repo, locked_gym, changeset) do
+          {:ok, problems} ->
+            {:ok, problems}
+
+          {:error, message} ->
+            {:error, add_error(changeset, :ascents, message)}
+        end
+      end)
+      |> Multi.insert(:post, fn %{gym: locked_gym} ->
         %Post{
-          gym_id: gym.id,
+          gym_id: locked_gym.id,
           user_id: user.id,
           post_type: "session"
         }
@@ -121,10 +150,10 @@ defmodule Ascents.Sessions do
           visibility: session_attrs.visibility
         })
       end)
-      |> Multi.insert(:session, fn %{post: post} ->
+      |> Multi.insert(:session, fn %{gym: locked_gym, post: post} ->
         %Session{
           user_id: user.id,
-          gym_id: gym.id,
+          gym_id: locked_gym.id,
           post_id: post.id
         }
         |> Session.changeset(
@@ -139,23 +168,30 @@ defmodule Ascents.Sessions do
       end)
 
     multi =
-      problems
+      get_field(changeset, :ascents)
       |> Enum.with_index()
-      |> Enum.reduce(multi, fn {problem, index}, multi ->
-        Multi.insert(multi, {:ascent, index}, fn %{post: post, session: session} ->
-          %Ascent{
-            user_id: user.id,
-            gym_id: gym.id,
-            boulder_problem_id: problem.id,
-            post_id: post.id,
-            session_id: session.id
-          }
-          |> Ascent.changeset(%{
-            climbed_at: session_attrs.started_at,
-            grade_snapshot: problem.grade,
-            grade_scale_snapshot: gym.grade_scale
-          })
-        end)
+      |> Enum.reduce(multi, fn {_row, index}, multi ->
+        Multi.insert(
+          multi,
+          {:ascent, index},
+          fn %{gym: locked_gym, post: post, session: session, problems: problems} ->
+            problem = Enum.at(problems, index)
+
+            %Ascent{
+              user_id: user.id,
+              gym_id: locked_gym.id,
+              boulder_problem_id: problem.id,
+              post_id: post.id,
+              post_type: "session",
+              session_id: session.id
+            }
+            |> Ascent.changeset(%{
+              climbed_at: session_attrs.started_at,
+              grade_snapshot: problem.grade,
+              grade_scale_snapshot: locked_gym.grade_scale
+            })
+          end
+        )
       end)
 
     multi

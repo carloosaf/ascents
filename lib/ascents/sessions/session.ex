@@ -13,6 +13,7 @@ defmodule Ascents.Sessions.Session do
     field :started_at, :utc_datetime
     field :image_object_key, :string
     field :visibility, :string, default: "public"
+    field :post_type, :string, default: "session"
     field :deleted_at, :utc_datetime
 
     belongs_to :user, User
@@ -32,7 +33,16 @@ defmodule Ascents.Sessions.Session do
     |> update_change(:title, &trim_string/1)
     |> update_change(:notes, &blank_to_nil/1)
     |> update_change(:image_object_key, &blank_to_nil/1)
-    |> validate_required([:user_id, :gym_id, :post_id, :title, :started_at, :visibility])
+    |> validate_required([
+      :user_id,
+      :gym_id,
+      :post_id,
+      :post_type,
+      :title,
+      :started_at,
+      :visibility
+    ])
+    |> validate_inclusion(:post_type, ["session"])
     |> validate_length(:title, min: 1, max: 120)
     |> validate_length(:notes, max: 2_000)
     |> validate_length(:image_object_key, max: 1_024)
@@ -41,6 +51,7 @@ defmodule Ascents.Sessions.Session do
     |> foreign_key_constraint(:gym_id)
     |> foreign_key_constraint(:post_id)
     |> unique_constraint(:post_id)
+    |> check_constraint(:post_type, name: :sessions_post_type_check)
     |> check_constraint(:visibility, name: :sessions_visibility_check)
   end
 

@@ -12,6 +12,7 @@ defmodule Ascents.Ascents.Ascent do
     field :climbed_at, :utc_datetime
     field :grade_snapshot, :string
     field :grade_scale_snapshot, :string
+    field :post_type, :string, default: "ascent"
     field :deleted_at, :utc_datetime
 
     belongs_to :user, User
@@ -34,6 +35,7 @@ defmodule Ascents.Ascents.Ascent do
       :gym_id,
       :boulder_problem_id,
       :post_id,
+      :post_type,
       :climbed_at,
       :grade_snapshot,
       :grade_scale_snapshot
@@ -45,6 +47,7 @@ defmodule Ascents.Ascents.Ascent do
     |> foreign_key_constraint(:boulder_problem_id)
     |> foreign_key_constraint(:post_id)
     |> foreign_key_constraint(:session_id)
+    |> check_constraint(:post_type, name: :ascents_post_type_check)
     |> unique_constraint(:post_id, name: :ascents_post_id_index)
   end
 end
