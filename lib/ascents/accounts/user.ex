@@ -4,6 +4,7 @@ defmodule Ascents.Accounts.User do
 
   alias Ascents.Ascents.Ascent
   alias Ascents.Feed.{Comment, Post}
+  alias Ascents.Sessions.Session
 
   schema "users" do
     field :email, :string
@@ -20,6 +21,7 @@ defmodule Ascents.Accounts.User do
     has_many :posts, Post
     has_many :comments, Comment
     has_many :ascents, Ascent
+    has_many :sessions, Session
 
     timestamps(type: :utc_datetime)
   end

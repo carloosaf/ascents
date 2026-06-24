@@ -6,6 +6,7 @@ defmodule Ascents.Ascents.Ascent do
   alias Ascents.Feed.Post
   alias Ascents.Gyms.Gym
   alias Ascents.Routes.BoulderProblem
+  alias Ascents.Sessions.Session
 
   schema "ascents" do
     field :climbed_at, :utc_datetime
@@ -17,6 +18,7 @@ defmodule Ascents.Ascents.Ascent do
     belongs_to :gym, Gym
     belongs_to :boulder_problem, BoulderProblem
     belongs_to :post, Post
+    belongs_to :session, Session
 
     timestamps(type: :utc_datetime)
   end
@@ -42,6 +44,7 @@ defmodule Ascents.Ascents.Ascent do
     |> foreign_key_constraint(:gym_id)
     |> foreign_key_constraint(:boulder_problem_id)
     |> foreign_key_constraint(:post_id)
-    |> unique_constraint(:post_id)
+    |> foreign_key_constraint(:session_id)
+    |> unique_constraint(:post_id, name: :ascents_post_id_index)
   end
 end
