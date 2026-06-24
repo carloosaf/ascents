@@ -89,7 +89,12 @@ defmodule AscentsWeb.ProblemLive.New do
             />
             <.input field={@form[:color]} type="text" label="Hold color" required />
             <.input field={@form[:description]} type="textarea" label="Description" />
-            <.image_upload_input upload={@uploads.image} label="Route image" />
+            <.image_upload_input
+              id="route-new-image-upload"
+              upload={@uploads.image}
+              label="Route image"
+              capture="environment"
+            />
 
             <div class="flex flex-wrap gap-3">
               <.button variant="primary" phx-disable-with="Creating...">

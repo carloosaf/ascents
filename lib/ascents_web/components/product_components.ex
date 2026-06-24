@@ -17,16 +17,19 @@ defmodule AscentsWeb.ProductComponents do
   attr :upload, :map, required: true
   attr :label, :string, required: true
   attr :help, :string, default: "JPG, PNG, or WebP up to 5 MB."
+  attr :id, :string, default: nil
+  attr :capture, :string, default: nil
 
   def image_upload_input(assigns) do
     ~H"""
-    <div class="mb-4">
+    <div id={@id} class="mb-4">
       <label for={@upload.ref} class="block">
         <span class="mb-1.5 block text-sm font-semibold text-ascents-chalk">
           {@label}
         </span>
         <.live_file_input
           upload={@upload}
+          capture={@capture}
           class="block w-full rounded-md border border-ascents-line bg-ascents-panel-deep px-3 py-2.5 text-sm text-ascents-chalk file:mr-3 file:rounded-md file:border-0 file:bg-ascents-action file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-ascents-action-content hover:file:bg-ascents-action-hover"
         />
       </label>

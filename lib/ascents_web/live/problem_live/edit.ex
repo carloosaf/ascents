@@ -97,7 +97,12 @@ defmodule AscentsWeb.ProblemLive.Edit do
               name="boulder_problem[image_object_key]"
               value={@form[:image_object_key].value}
             />
-            <.image_upload_input upload={@uploads.image} label="Route image" />
+            <.image_upload_input
+              id="route-edit-image-upload"
+              upload={@uploads.image}
+              label="Route image"
+              capture="environment"
+            />
 
             <div class="flex flex-wrap gap-3">
               <.button variant="primary" phx-disable-with="Saving...">

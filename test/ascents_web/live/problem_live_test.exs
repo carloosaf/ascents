@@ -110,6 +110,20 @@ defmodule AscentsWeb.ProblemLiveTest do
   end
 
   describe "new" do
+    test "offers camera capture with the existing image formats", %{conn: conn} do
+      owner = user_fixture()
+      scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: scope)
+      conn = log_in_user(conn, owner)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}/problems/new")
+
+      assert has_element?(
+               view,
+               "#route-new-image-upload input[type='file'][name='image'][accept='.jpg,.jpeg,.png,.webp'][capture='environment']"
+             )
+    end
+
     test "creates a boulder problem", %{conn: conn} do
       owner = user_fixture()
       scope = user_scope_fixture(owner)
@@ -185,6 +199,21 @@ defmodule AscentsWeb.ProblemLiveTest do
   end
 
   describe "edit" do
+    test "offers camera capture with the existing image formats", %{conn: conn} do
+      owner = user_fixture()
+      scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: scope)
+      problem = boulder_problem_fixture(gym: gym, scope: scope)
+      conn = log_in_user(conn, owner)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}/problems/#{problem.id}/edit")
+
+      assert has_element?(
+               view,
+               "#route-edit-image-upload input[type='file'][name='image'][accept='.jpg,.jpeg,.png,.webp'][capture='environment']"
+             )
+    end
+
     test "updates a boulder problem", %{conn: conn} do
       owner = user_fixture()
       scope = user_scope_fixture(owner)
