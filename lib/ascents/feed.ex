@@ -6,11 +6,13 @@ defmodule Ascents.Feed do
   import Ecto.Query, warn: false
 
   alias Ascents.Ascents, as: AscentLogs
+  alias Ascents.Ascents.Ascent
   alias Ascents.Accounts.{Scope, User}
   alias Ascents.Feed.{Comment, Post}
   alias Ascents.Gyms
   alias Ascents.Gyms.{Gym, GymMembership}
   alias Ascents.Repo
+  alias Ascents.Sessions.Session
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking post changes.
@@ -233,6 +235,13 @@ defmodule Ascents.Feed do
   def delete_comment(_scope, _gym, _post, _comment), do: {:error, :unauthorized}
 
   defp preload_for_feed(query) do
+    session_ascents =
+      from(ascent in Ascent,
+        where: is_nil(ascent.deleted_at),
+        order_by: [asc: ascent.id],
+        preload: [:boulder_problem]
+      )
+
     query
     |> join(:inner, [post], user in assoc(post, :user))
     |> join(:inner, [post, _user], gym in assoc(post, :gym))
@@ -241,6 +250,11 @@ defmodule Ascents.Feed do
       gym: gym,
       boulder_problem: [],
       ascent: [],
+      session:
+        ^from(session in Session,
+          where: is_nil(session.deleted_at),
+          preload: [ascents: ^session_ascents]
+        ),
       comments:
         ^from(comment in Comment,
           where: is_nil(comment.deleted_at),

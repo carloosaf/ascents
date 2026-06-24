@@ -7,8 +7,9 @@ defmodule Ascents.Feed.Post do
   alias Ascents.Feed.Comment
   alias Ascents.Gyms.Gym
   alias Ascents.Routes.BoulderProblem
+  alias Ascents.Sessions.Session
 
-  @post_types ~w(normal ascent)
+  @post_types ~w(normal ascent session)
   @visibilities ~w(public friends)
 
   schema "posts" do
@@ -22,7 +23,8 @@ defmodule Ascents.Feed.Post do
     belongs_to :user, User
     belongs_to :boulder_problem, BoulderProblem
     has_many :comments, Comment
-    has_one :ascent, Ascent
+    has_one :ascent, Ascent, where: [session_id: nil]
+    has_one :session, Session
 
     timestamps(type: :utc_datetime)
   end
@@ -49,6 +51,7 @@ defmodule Ascents.Feed.Post do
   end
 
   def visibilities, do: @visibilities
+  def post_types, do: @post_types
 
   defp validate_body(changeset) do
     changeset =

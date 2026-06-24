@@ -6,6 +6,7 @@ defmodule Ascents.Gyms.Gym do
   alias Ascents.Ascents.Ascent
   alias Ascents.Feed.Post
   alias Ascents.Routes.BoulderProblem
+  alias Ascents.Sessions.Session
 
   @grade_scales ~w(v_scale french)
 
@@ -22,6 +23,7 @@ defmodule Ascents.Gyms.Gym do
     has_many :boulder_problems, BoulderProblem
     has_many :posts, Post
     has_many :ascents, Ascent
+    has_many :sessions, Session
 
     timestamps(type: :utc_datetime)
   end
