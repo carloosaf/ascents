@@ -7,6 +7,8 @@ defmodule Ascents.FriendsTest do
   import Ascents.AccountsFixtures
   import Ascents.FriendsFixtures
 
+  @relationship_list_limit 20
+
   describe "Friendship.changeset/2" do
     test "does not cast requester or recipient IDs" do
       requester = user_fixture()
@@ -241,6 +243,25 @@ defmodule Ascents.FriendsTest do
 
       assert Friends.list_friends(nil) == []
     end
+
+    test "caps incoming, outgoing, and accepted lists at the context query layer" do
+      current_user = user_fixture()
+      scope = user_scope_fixture(current_user)
+
+      for index <- 1..(@relationship_list_limit + 1) do
+        incoming_user = user_fixture(username: "incoming_cap_#{index}")
+        outgoing_user = user_fixture(username: "outgoing_cap_#{index}")
+        friend = user_fixture(username: "friend_cap_#{index}")
+
+        friendship_fixture(requester: incoming_user, recipient: current_user)
+        friendship_fixture(requester: current_user, recipient: outgoing_user)
+        accepted_friendship_fixture(requester: current_user, recipient: friend)
+      end
+
+      assert length(Friends.list_incoming_requests(scope)) == @relationship_list_limit
+      assert length(Friends.list_outgoing_requests(scope)) == @relationship_list_limit
+      assert length(Friends.list_friends(scope)) == @relationship_list_limit
+    end
   end
 
   describe "relationship_state/2 and friends?/2" do
@@ -274,6 +295,45 @@ defmodule Ascents.FriendsTest do
       assert Friends.friends?(recipient_scope, requester)
       refute Friends.friends?(requester_scope, requester)
       refute Friends.friends?(nil, recipient)
+    end
+
+    test "loads relationship states for a search page with one bounded query" do
+      current_user = user_fixture()
+      incoming_user = user_fixture()
+      outgoing_user = user_fixture()
+      accepted_user = user_fixture()
+      stranger = user_fixture()
+      scope = user_scope_fixture(current_user)
+
+      friendship_fixture(requester: incoming_user, recipient: current_user)
+      friendship_fixture(requester: current_user, recipient: outgoing_user)
+      accepted_friendship_fixture(requester: accepted_user, recipient: current_user)
+
+      handler_id = "friends-relationship-states-#{System.unique_integer([:positive])}"
+      test_pid = self()
+
+      :ok =
+        :telemetry.attach(
+          handler_id,
+          [:ascents, :repo, :query],
+          fn _event, _measurements, _metadata, pid -> send(pid, :relationship_states_query) end,
+          test_pid
+        )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert Friends.relationship_states(
+               scope,
+               [incoming_user, outgoing_user, accepted_user, stranger]
+             ) == %{
+               incoming_user.id => :incoming_pending,
+               outgoing_user.id => :outgoing_pending,
+               accepted_user.id => :friends,
+               stranger.id => :none
+             }
+
+      assert_receive :relationship_states_query
+      refute_receive :relationship_states_query, 0
     end
   end
 end

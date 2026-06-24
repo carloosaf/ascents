@@ -9,6 +9,9 @@ defmodule Ascents.Friends do
   alias Ascents.Friends.Friendship
   alias Ascents.Repo
 
+  @relationship_list_limit 20
+  @relationship_state_limit 20
+
   @doc """
   Sends a friend request to another user.
 
@@ -94,6 +97,7 @@ defmodule Ascents.Friends do
              (friendship.recipient_id == ^user.id and friendship.requester_id == friend.id))
     )
     |> order_by([friend], asc: friend.username, asc: friend.id)
+    |> limit(@relationship_list_limit)
     |> Repo.all()
   end
 
@@ -106,6 +110,7 @@ defmodule Ascents.Friends do
     Friendship
     |> where([friendship], friendship.recipient_id == ^user.id and friendship.status == "pending")
     |> order_by([friendship], desc: friendship.inserted_at, desc: friendship.id)
+    |> limit(@relationship_list_limit)
     |> preload([:requester, :recipient])
     |> Repo.all()
   end
@@ -119,11 +124,53 @@ defmodule Ascents.Friends do
     Friendship
     |> where([friendship], friendship.requester_id == ^user.id and friendship.status == "pending")
     |> order_by([friendship], desc: friendship.inserted_at, desc: friendship.id)
+    |> limit(@relationship_list_limit)
     |> preload([:requester, :recipient])
     |> Repo.all()
   end
 
   def list_outgoing_requests(_scope), do: []
+
+  @doc """
+  Returns relationship states for a bounded collection of users in one query.
+  """
+  def relationship_states(%Scope{user: %User{} = user}, users) when is_list(users) do
+    users =
+      users
+      |> Enum.filter(&match?(%User{}, &1))
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.take(@relationship_state_limit)
+
+    user_ids = Enum.map(users, & &1.id)
+
+    initial_states =
+      Map.new(users, fn other_user ->
+        state = if other_user.id == user.id, do: :self, else: :none
+        {other_user.id, state}
+      end)
+
+    other_user_ids = Enum.reject(user_ids, &(&1 == user.id))
+
+    if other_user_ids == [] do
+      initial_states
+    else
+      Friendship
+      |> where(
+        [friendship],
+        (friendship.requester_id == ^user.id and
+           friendship.recipient_id in ^other_user_ids) or
+          (friendship.recipient_id == ^user.id and
+             friendship.requester_id in ^other_user_ids)
+      )
+      |> Repo.all()
+      |> Enum.reduce(initial_states, fn friendship, states ->
+        other_user_id = other_user_id(friendship, user.id)
+        Map.put(states, other_user_id, relationship_state_for(friendship, user.id))
+      end)
+    end
+  end
+
+  def relationship_states(_scope, _users), do: %{}
 
   @doc """
   Returns the current user's relationship state with another user.
@@ -138,18 +185,8 @@ defmodule Ascents.Friends do
           nil ->
             :none
 
-          %Friendship{status: "accepted"} ->
-            :friends
-
-          %Friendship{status: "declined"} ->
-            :declined
-
-          %Friendship{status: "pending", requester_id: requester_id}
-          when requester_id == user.id ->
-            :outgoing_pending
-
-          %Friendship{status: "pending"} ->
-            :incoming_pending
+          friendship ->
+            relationship_state_for(friendship, user.id)
         end
     end
   end
@@ -164,6 +201,22 @@ defmodule Ascents.Friends do
   end
 
   def friends?(_scope, _other_user), do: false
+
+  defp relationship_state_for(%Friendship{status: "accepted"}, _user_id), do: :friends
+  defp relationship_state_for(%Friendship{status: "declined"}, _user_id), do: :declined
+
+  defp relationship_state_for(
+         %Friendship{status: "pending", requester_id: requester_id},
+         requester_id
+       ),
+       do: :outgoing_pending
+
+  defp relationship_state_for(%Friendship{status: "pending"}, _user_id), do: :incoming_pending
+
+  defp other_user_id(%Friendship{requester_id: user_id, recipient_id: other_user_id}, user_id),
+    do: other_user_id
+
+  defp other_user_id(%Friendship{requester_id: other_user_id}, _user_id), do: other_user_id
 
   defp transition_request(user, friendship, owner, status) do
     transact(fn ->
