@@ -60,6 +60,12 @@ defmodule AscentsWeb.Layouts do
             icon="hero-home"
             label="Home"
           />
+          <.nav_item
+            :if={@current_scope}
+            href={~p"/friends"}
+            icon="hero-user-group"
+            label="Friends"
+          />
           <.nav_item href={~p"/gyms"} icon="hero-building-storefront" label="Gyms" />
           <.nav_item
             :if={@current_scope}
@@ -168,9 +174,13 @@ defmodule AscentsWeb.Layouts do
         class="fixed inset-x-0 bottom-0 z-40 border-t border-ascents-line bg-ascents-ink/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden"
         aria-label="Primary navigation"
       >
-        <div class="mx-auto grid max-w-md grid-cols-4 gap-1">
+        <div class={[
+          "mx-auto grid max-w-lg gap-1",
+          if(@current_scope, do: "grid-cols-5", else: "grid-cols-4")
+        ]}>
           <%= if @current_scope do %>
             <.mobile_nav_item href={~p"/feed"} icon="hero-home" label="Home" />
+            <.mobile_nav_item href={~p"/friends"} icon="hero-user-group" label="Friends" />
             <.mobile_nav_item href={~p"/gyms"} icon="hero-building-storefront" label="Gyms" />
             <.mobile_nav_item href={~p"/users/stats"} icon="hero-chart-bar-square" label="Progress" />
             <.link
