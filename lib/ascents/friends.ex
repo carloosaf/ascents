@@ -126,6 +126,22 @@ defmodule Ascents.Friends do
   def list_outgoing_requests(_scope), do: []
 
   @doc """
+  Returns the relationship record between the current user and another user.
+
+  The lookup is scoped to the authenticated pair so callers cannot use it to
+  inspect unrelated relationships.
+  """
+  def get_relationship(%Scope{user: %User{} = user}, %User{} = other_user)
+      when user.id != other_user.id do
+    case get_pair(user.id, other_user.id) do
+      nil -> nil
+      friendship -> Repo.preload(friendship, [:requester, :recipient])
+    end
+  end
+
+  def get_relationship(_scope, _other_user), do: nil
+
+  @doc """
   Returns the current user's relationship state with another user.
   """
   def relationship_state(%Scope{user: %User{} = user}, %User{} = other_user) do

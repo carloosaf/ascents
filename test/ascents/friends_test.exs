@@ -276,4 +276,19 @@ defmodule Ascents.FriendsTest do
       refute Friends.friends?(nil, recipient)
     end
   end
+
+  describe "get_relationship/2" do
+    test "returns only the authenticated user's relationship with the supplied user" do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      unrelated = friendship_fixture()
+      friendship = friendship_fixture(requester: current_user, recipient: profile_user)
+      scope = user_scope_fixture(current_user)
+
+      assert Friends.get_relationship(scope, profile_user).id == friendship.id
+      refute Friends.get_relationship(scope, profile_user).id == unrelated.id
+      assert Friends.get_relationship(scope, current_user) == nil
+      assert Friends.get_relationship(nil, profile_user) == nil
+    end
+  end
 end

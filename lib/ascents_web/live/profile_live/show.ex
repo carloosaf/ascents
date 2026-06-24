@@ -4,6 +4,7 @@ defmodule AscentsWeb.ProfileLive.Show do
   alias Ascents.Accounts
   alias Ascents.Feed
   alias Ascents.Feed.{Comment, Post}
+  alias Ascents.Friends
   alias AscentsWeb.UserAuth
 
   def mount(%{"username" => username}, session, socket) do
@@ -18,6 +19,7 @@ defmodule AscentsWeb.ProfileLive.Show do
        |> assign(
          current_scope: current_scope,
          profile_user: profile_user,
+         relationship_state: Friends.relationship_state(current_scope, profile_user),
          posts_empty?: posts == [],
          comment_form: to_form(Feed.change_comment(%Comment{}))
        )
@@ -85,6 +87,50 @@ defmodule AscentsWeb.ProfileLive.Show do
     end
   end
 
+  def handle_event("send-friend-request", _params, socket) do
+    with state when state in [:none, :declined] <- current_relationship_state(socket),
+         {:ok, _friendship} <-
+           Friends.send_request(socket.assigns.current_scope, socket.assigns.profile_user) do
+      {:noreply,
+       socket
+       |> refresh_relationship_state()
+       |> put_flash(:info, "Friend request sent.")}
+    else
+      _error -> friendship_action_error(socket)
+    end
+  end
+
+  def handle_event("cancel-friend-request", _params, socket) do
+    update_friendship(
+      socket,
+      :outgoing_pending,
+      &Friends.cancel_request/2,
+      "Friend request canceled."
+    )
+  end
+
+  def handle_event("accept-friend-request", _params, socket) do
+    update_friendship(
+      socket,
+      :incoming_pending,
+      &Friends.accept_request/2,
+      "Friend request accepted."
+    )
+  end
+
+  def handle_event("decline-friend-request", _params, socket) do
+    update_friendship(
+      socket,
+      :incoming_pending,
+      &Friends.decline_request/2,
+      "Friend request declined."
+    )
+  end
+
+  def handle_event("remove-friend", _params, socket) do
+    update_friendship(socket, :friends, &Friends.remove_friend/2, "Friend removed.")
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
@@ -118,17 +164,88 @@ defmodule AscentsWeb.ProfileLive.Show do
                 </div>
               </div>
 
-              <div :if={own_profile?(@current_scope, @profile_user)} class="flex flex-wrap gap-2">
-                <.button
-                  id="profile-edit-link"
-                  navigate={~p"/users/settings/profile"}
-                  variant="secondary"
+              <div class="flex flex-wrap justify-end gap-2">
+                <div
+                  :if={own_profile?(@current_scope, @profile_user)}
+                  id="profile-owner-actions"
+                  class="flex flex-wrap gap-2"
                 >
-                  <.icon name="hero-pencil-square" class="size-4" /> Edit profile
-                </.button>
-                <.button id="profile-account-link" navigate={~p"/users/settings"} variant="secondary">
-                  <.icon name="hero-cog-6-tooth" class="size-4" /> Account
-                </.button>
+                  <.button
+                    id="profile-edit-link"
+                    navigate={~p"/users/settings/profile"}
+                    variant="secondary"
+                  >
+                    <.icon name="hero-pencil-square" class="size-4" /> Edit profile
+                  </.button>
+                  <.button
+                    id="profile-account-link"
+                    navigate={~p"/users/settings"}
+                    variant="secondary"
+                  >
+                    <.icon name="hero-cog-6-tooth" class="size-4" /> Account
+                  </.button>
+                </div>
+
+                <div
+                  :if={!own_profile?(@current_scope, @profile_user)}
+                  id="profile-friend-controls"
+                  data-state={@relationship_state}
+                  class="flex flex-wrap items-center justify-end gap-2"
+                >
+                  <%= case @relationship_state do %>
+                    <% state when state in [:none, :declined] -> %>
+                      <.button id="profile-add-friend" phx-click="send-friend-request">
+                        <.icon name="hero-user-plus" class="size-4" /> Add friend
+                      </.button>
+                    <% :outgoing_pending -> %>
+                      <span
+                        id="profile-friend-state"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-md border border-ascents-line bg-ascents-panel px-4 py-2 text-sm font-bold text-ascents-chalk-soft"
+                      >
+                        <.icon name="hero-clock" class="size-4 text-ascents-tape" /> Request pending
+                      </span>
+                      <.button
+                        id="profile-cancel-friend-request"
+                        phx-click="cancel-friend-request"
+                        variant="secondary"
+                      >
+                        <.icon name="hero-x-mark" class="size-4" /> Cancel
+                      </.button>
+                    <% :incoming_pending -> %>
+                      <span
+                        id="profile-friend-state"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-md border border-ascents-line bg-ascents-panel px-4 py-2 text-sm font-bold text-ascents-chalk-soft"
+                      >
+                        <.icon name="hero-user-plus" class="size-4 text-ascents-tape" />
+                        Wants to connect
+                      </span>
+                      <.button id="profile-accept-friend-request" phx-click="accept-friend-request">
+                        <.icon name="hero-check" class="size-4" /> Accept
+                      </.button>
+                      <.button
+                        id="profile-decline-friend-request"
+                        phx-click="decline-friend-request"
+                        variant="secondary"
+                      >
+                        <.icon name="hero-x-mark" class="size-4" /> Decline
+                      </.button>
+                    <% :friends -> %>
+                      <span
+                        id="profile-friend-state"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-md border border-ascents-tape/40 bg-ascents-tape/10 px-4 py-2 text-sm font-bold text-ascents-chalk"
+                      >
+                        <.icon name="hero-user-group" class="size-4 text-ascents-tape" /> Friends
+                      </span>
+                      <.button
+                        id="profile-remove-friend"
+                        phx-click="remove-friend"
+                        variant="danger"
+                      >
+                        <.icon name="hero-user-minus" class="size-4" /> Remove
+                      </.button>
+                    <% _other -> %>
+                  <% end %>
+                </div>
               </div>
             </div>
           </div>
@@ -178,6 +295,35 @@ defmodule AscentsWeb.ProfileLive.Show do
     socket
     |> assign(:posts_empty?, posts == [])
     |> stream(:posts, posts, reset: true)
+  end
+
+  defp update_friendship(socket, expected_state, operation, success_message) do
+    with ^expected_state <- current_relationship_state(socket),
+         %Ascents.Friends.Friendship{} = friendship <-
+           Friends.get_relationship(socket.assigns.current_scope, socket.assigns.profile_user),
+         {:ok, _friendship} <- operation.(socket.assigns.current_scope, friendship) do
+      {:noreply,
+       socket
+       |> refresh_relationship_state()
+       |> put_flash(:info, success_message)}
+    else
+      _error -> friendship_action_error(socket)
+    end
+  end
+
+  defp friendship_action_error(socket) do
+    {:noreply,
+     socket
+     |> refresh_relationship_state()
+     |> put_flash(:error, "Unable to update this friendship. Please try again.")}
+  end
+
+  defp current_relationship_state(socket) do
+    Friends.relationship_state(socket.assigns.current_scope, socket.assigns.profile_user)
+  end
+
+  defp refresh_relationship_state(socket) do
+    assign(socket, :relationship_state, current_relationship_state(socket))
   end
 
   defp profile_name(user) do
