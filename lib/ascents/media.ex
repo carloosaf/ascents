@@ -4,8 +4,10 @@ defmodule Ascents.Media do
   """
 
   alias Ascents.Accounts.{Scope, User}
+  alias Ascents.Feed
   alias Ascents.Feed.Post
   alias Ascents.Gyms.Gym
+  alias Ascents.Repo
   alias Ascents.Routes.BoulderProblem
 
   @allowed_content_types ~w(image/jpeg image/png image/webp)
@@ -35,14 +37,33 @@ defmodule Ascents.Media do
   def get_object(_object_key), do: {:error, :not_found}
 
   @doc """
-  Generates a short-lived application URL for a stored object.
+  Generates a short-lived application URL for a public-owner stored object.
+
+  Post object keys must use the scope-aware `signed_url/2` function.
   """
+  def signed_url("posts/" <> _post_object_key), do: nil
+
   def signed_url(object_key) when is_binary(object_key) and object_key != "" do
     token = Phoenix.Token.sign(AscentsWeb.Endpoint, signing_salt(), object_key)
     AscentsWeb.Endpoint.url() <> "/media/#{token}"
   end
 
   def signed_url(_object_key), do: nil
+
+  @doc """
+  Generates a short-lived, owner-bound URL after authorizing the current scope.
+
+  Post tokens bind both the post and its current object key. The media endpoint
+  rechecks the post visibility and binding before reading from storage.
+  """
+  def signed_url(scope, {:post, %Post{image_object_key: object_key} = post})
+      when is_binary(object_key) and object_key != "" do
+    if authorized?(scope, {:post, post}) do
+      signed_url_for({:post, post.id, object_key})
+    end
+  end
+
+  def signed_url(_scope, {:post, _post}), do: nil
 
   @doc """
   Verifies a signed media token.
@@ -56,6 +77,19 @@ defmodule Ascents.Media do
   def verify_token(_token), do: {:error, :invalid}
 
   @doc """
+  Resolves and downloads a token only when its current owner remains authorized.
+  """
+  def get_authorized_object(scope, token) do
+    with {:ok, payload} <- verify_token(token),
+         {:ok, object_key} <- authorized_object_key(scope, payload),
+         {:ok, body, content_type} <- get_object(object_key) do
+      {:ok, body, content_type}
+    else
+      {:error, _reason} -> {:error, :not_found}
+    end
+  end
+
+  @doc """
   Returns true when the current scope can receive a signed URL for an owner image.
   """
   def authorized?(%Scope{user: %User{}}, {:user, %User{}}), do: true
@@ -63,7 +97,7 @@ defmodule Ascents.Media do
 
   def authorized?(_scope, {:gym, %Gym{}}), do: true
   def authorized?(_scope, {:problem, %BoulderProblem{}}), do: true
-  def authorized?(_scope, {:post, %Post{}}), do: true
+  def authorized?(scope, {:post, %Post{} = post}), do: Feed.can_view_post?(scope, post)
   def authorized?(_scope, _owner), do: false
 
   def allowed_content_types, do: @allowed_content_types
@@ -133,4 +167,32 @@ defmodule Ascents.Media do
   end
 
   defp signing_salt, do: "media object access"
+
+  defp signed_url_for(payload) do
+    token = Phoenix.Token.sign(AscentsWeb.Endpoint, signing_salt(), payload)
+    AscentsWeb.Endpoint.url() <> "/media/#{token}"
+  end
+
+  defp authorized_object_key(scope, {:post, post_id, object_key})
+       when is_integer(post_id) and is_binary(object_key) do
+    case Repo.get(Post, post_id) do
+      %Post{image_object_key: ^object_key} = post ->
+        if authorized?(scope, {:post, post}) do
+          {:ok, object_key}
+        else
+          {:error, :not_found}
+        end
+
+      _post ->
+        {:error, :not_found}
+    end
+  end
+
+  defp authorized_object_key(_scope, "posts/" <> _post_object_key),
+    do: {:error, :not_found}
+
+  defp authorized_object_key(_scope, object_key) when is_binary(object_key),
+    do: {:ok, object_key}
+
+  defp authorized_object_key(_scope, _payload), do: {:error, :not_found}
 end
