@@ -8,6 +8,8 @@ defmodule Ascents.Accounts do
 
   alias Ascents.Accounts.{Scope, User, UserToken, UserNotifier}
 
+  @profile_search_limit 20
+
   ## Database getters
 
   @doc """
@@ -84,6 +86,11 @@ defmodule Ascents.Accounts do
   def get_user!(id), do: Repo.get!(User, id)
 
   @doc """
+  Gets a single user, returning `nil` when it does not exist.
+  """
+  def get_user(id), do: Repo.get(User, id)
+
+  @doc """
   Returns true when the current user is configured as a platform administrator.
 
   Platform administrators are configured with the runtime
@@ -102,6 +109,38 @@ defmodule Ascents.Accounts do
   end
 
   def platform_admin?(_scope), do: false
+
+  @doc """
+  Searches public profiles by username or display name for the current user.
+
+  Results exclude the current user and are capped at 20 profiles, even when a
+  larger limit is requested.
+  """
+  def search_profiles(scope, query, opts \\ [])
+
+  def search_profiles(%Scope{user: %User{} = current_user}, query, opts)
+      when is_binary(query) and is_list(opts) do
+    query = query |> String.trim() |> String.slice(0, 80)
+
+    if query == "" do
+      []
+    else
+      pattern = "%#{escape_like(query)}%"
+      limit = bounded_profile_search_limit(opts)
+
+      User
+      |> where([user], user.id != ^current_user.id)
+      |> where(
+        [user],
+        ilike(user.username, ^pattern) or ilike(user.display_name, ^pattern)
+      )
+      |> order_by([user], asc: user.username, asc: user.id)
+      |> limit(^limit)
+      |> Repo.all()
+    end
+  end
+
+  def search_profiles(_scope, _query, _opts), do: []
 
   ## User registration
 
@@ -364,5 +403,19 @@ defmodule Ascents.Accounts do
         {:ok, {user, tokens_to_expire}}
       end
     end)
+  end
+
+  defp bounded_profile_search_limit(opts) do
+    case Keyword.get(opts, :limit, @profile_search_limit) do
+      limit when is_integer(limit) -> limit |> max(1) |> min(@profile_search_limit)
+      _invalid -> @profile_search_limit
+    end
+  end
+
+  defp escape_like(query) do
+    query
+    |> String.replace("\\", "\\\\")
+    |> String.replace("%", "\\%")
+    |> String.replace("_", "\\_")
   end
 end
