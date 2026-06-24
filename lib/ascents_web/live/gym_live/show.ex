@@ -155,7 +155,7 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("comment", %{"post_id" => post_id, "comment" => comment_params}, socket) do
-    case Feed.get_post(socket.assigns.gym, post_id) do
+    case Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post_id) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -170,7 +170,10 @@ defmodule AscentsWeb.GymLive.Show do
             {:noreply,
              socket
              |> assign(:comment_form, to_form(Feed.change_comment(%Comment{})))
-             |> stream_insert(:posts, Feed.get_post(socket.assigns.gym, post.id))}
+             |> stream_insert(
+               :posts,
+               Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post.id)
+             )}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply,
@@ -186,7 +189,7 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("delete-post", %{"id" => post_id}, socket) do
-    case Feed.get_post(socket.assigns.gym, post_id) do
+    case Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post_id) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -202,11 +205,18 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("delete-comment", %{"post_id" => post_id, "id" => comment_id}, socket) do
-    with %Post{} = post <- Feed.get_post(socket.assigns.gym, post_id),
-         %Comment{} = comment <- Feed.get_post_comment(post, comment_id) do
+    with %Post{} = post <-
+           Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post_id),
+         %Comment{} = comment <-
+           Feed.get_post_comment(socket.assigns.current_scope, post, comment_id) do
       case Feed.delete_comment(socket.assigns.current_scope, socket.assigns.gym, post, comment) do
         {:ok, _comment} ->
-          {:noreply, stream_insert(socket, :posts, Feed.get_post(socket.assigns.gym, post.id))}
+          {:noreply,
+           stream_insert(
+             socket,
+             :posts,
+             Feed.get_post(socket.assigns.current_scope, socket.assigns.gym, post.id)
+           )}
 
         {:error, :unauthorized} ->
           {:noreply, put_flash(socket, :error, "You can only delete your own comments.")}
@@ -550,7 +560,7 @@ defmodule AscentsWeb.GymLive.Show do
   defp assign_gym_state(socket, gym) do
     gym = Gyms.get_gym!(gym.id)
     current_scope = socket.assigns.current_scope
-    posts = Feed.list_gym_posts(gym)
+    posts = Feed.list_gym_posts(current_scope, gym)
 
     socket
     |> assign(

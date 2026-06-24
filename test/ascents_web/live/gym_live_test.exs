@@ -3,6 +3,7 @@ defmodule AscentsWeb.GymLiveTest do
 
   import Ascents.AccountsFixtures
   import Ascents.FeedFixtures
+  import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
   import Ascents.RoutesFixtures
   import Phoenix.LiveViewTest
@@ -197,6 +198,33 @@ defmodule AscentsWeb.GymLiveTest do
       refute has_element?(view, "#gym-post-form")
     end
 
+    test "filters friends-only gym posts for every viewer role", %{conn: conn} do
+      author = user_fixture()
+      friend = user_fixture()
+      non_friend = user_fixture()
+      moderator = user_fixture()
+      author_scope = user_scope_fixture(author)
+      gym = gym_fixture()
+      role_membership_fixture(gym, "mod", scope: user_scope_fixture(moderator))
+      accepted_friendship_fixture(requester: author, recipient: friend)
+
+      post =
+        post_fixture(scope: author_scope, gym: gym, body: "Private beta", visibility: "friends")
+
+      {:ok, anonymous_view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+      refute has_element?(anonymous_view, "#posts-#{post.id}")
+
+      for viewer <- [author, friend] do
+        {:ok, view, _html} = live(log_in_user(build_conn(), viewer), ~p"/gyms/#{gym.slug}")
+        assert has_element?(view, "#posts-#{post.id}")
+      end
+
+      for viewer <- [non_friend, moderator] do
+        {:ok, view, _html} = live(log_in_user(build_conn(), viewer), ~p"/gyms/#{gym.slug}")
+        refute has_element?(view, "#posts-#{post.id}")
+      end
+    end
+
     test "allows members to create posts", %{conn: conn} do
       user = user_fixture()
       scope = user_scope_fixture(user)
@@ -219,7 +247,7 @@ defmodule AscentsWeb.GymLiveTest do
       )
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym)
+      assert [post] = Feed.list_gym_posts(scope, gym)
       assert post.body == "New slab is technical."
       assert post.visibility == "friends"
       assert post.gym_id == gym.id
@@ -250,7 +278,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> form("#gym-post-form", post: %{body: "Photo beta."})
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym)
+      assert [post] = Feed.list_gym_posts(scope, gym)
       assert post.image_object_key =~ ~r/^posts\/pending\//
     end
 
@@ -290,7 +318,7 @@ defmodule AscentsWeb.GymLiveTest do
       )
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym)
+      assert [post] = Feed.list_gym_posts(scope, gym)
       assert post.post_type == "ascent"
       assert post.body == nil
       assert post.boulder_problem_id == problem.id
@@ -328,7 +356,7 @@ defmodule AscentsWeb.GymLiveTest do
         |> render_submit()
 
       assert html =~ "can&#39;t be blank"
-      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(scope, gym) == []
       assert has_element?(view, "#gym-ascent-post-form")
     end
 
@@ -368,7 +396,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> form("#home-comment-form-#{post.id}", post_id: post.id, comment: %{body: "Looks good."})
       |> render_submit()
 
-      reloaded_post = Feed.get_post(gym, post.id)
+      reloaded_post = Feed.get_post(scope, gym, post.id)
       assert [comment] = reloaded_post.comments
       assert has_element?(view, "#home-comment-#{comment.id}")
 
@@ -377,7 +405,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> render_click()
 
       assert Ascents.Repo.get!(Ascents.Feed.Comment, comment.id).deleted_at
-      assert Feed.get_post(gym, post.id).comments == []
+      assert Feed.get_post(scope, gym, post.id).comments == []
       refute has_element?(view, "#home-comment-#{comment.id}")
     end
 
@@ -395,7 +423,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> element("#home-post-delete-#{post.id}")
       |> render_click()
 
-      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(scope, gym) == []
       refute has_element?(view, "#posts-#{post.id}")
     end
 
@@ -423,7 +451,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> element("#home-post-delete-#{post.id}")
       |> render_click()
 
-      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(admin_scope, gym) == []
       refute has_element?(view, "#posts-#{post.id}")
     end
 

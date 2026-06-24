@@ -3,6 +3,8 @@ defmodule AscentsWeb.ProfileLiveTest do
 
   import Ascents.AccountsFixtures
   import Ascents.FeedFixtures
+  import Ascents.FriendsFixtures
+  import Ascents.GymsFixtures
   import Phoenix.LiveViewTest
 
   alias Ascents.Accounts
@@ -85,7 +87,7 @@ defmodule AscentsWeb.ProfileLiveTest do
       |> element("#home-post-delete-#{post.id}")
       |> render_click()
 
-      assert Feed.list_user_posts(profile_user) == []
+      assert Feed.list_user_posts(profile_scope, profile_user) == []
       refute has_element?(view, "#posts-#{post.id}")
     end
 
@@ -111,6 +113,39 @@ defmodule AscentsWeb.ProfileLiveTest do
       refute has_element?(view, "#posts-#{other_post.id}")
     end
 
+    test "filters friends-only profile posts for every authenticated viewer role", %{conn: _conn} do
+      profile_user = user_fixture()
+      friend = user_fixture()
+      non_friend = user_fixture()
+      moderator = user_fixture()
+      profile_scope = user_scope_fixture(profile_user)
+      gym = gym_fixture()
+      role_membership_fixture(gym, "mod", scope: user_scope_fixture(moderator))
+      accepted_friendship_fixture(requester: profile_user, recipient: friend)
+
+      post =
+        post_fixture(
+          scope: profile_scope,
+          gym: gym,
+          body: "Friends profile post",
+          visibility: "friends"
+        )
+
+      for viewer <- [profile_user, friend] do
+        {:ok, view, _html} =
+          live(log_in_user(build_conn(), viewer), ~p"/u/#{profile_user.username}")
+
+        assert has_element?(view, "#posts-#{post.id}")
+      end
+
+      for viewer <- [non_friend, moderator] do
+        {:ok, view, _html} =
+          live(log_in_user(build_conn(), viewer), ~p"/u/#{profile_user.username}")
+
+        refute has_element?(view, "#posts-#{post.id}")
+      end
+    end
+
     test "allows comments on profile feed posts when viewer belongs to the gym", %{conn: conn} do
       profile_user = user_fixture()
       profile_scope = user_scope_fixture(profile_user)
@@ -129,7 +164,7 @@ defmodule AscentsWeb.ProfileLiveTest do
       )
       |> render_submit()
 
-      assert [comment] = Feed.get_post(post.gym, post.id).comments
+      assert [comment] = Feed.get_post(viewer_scope, post.gym, post.id).comments
       assert has_element?(view, "#home-comment-#{comment.id}")
     end
   end

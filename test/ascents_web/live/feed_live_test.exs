@@ -3,6 +3,7 @@ defmodule AscentsWeb.FeedLiveTest do
 
   import Ascents.AccountsFixtures
   import Ascents.FeedFixtures
+  import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
   import Phoenix.LiveViewTest
 
@@ -38,6 +39,37 @@ defmodule AscentsWeb.FeedLiveTest do
 
       assert has_element?(view, "#posts-#{joined_post.id}")
       refute has_element?(view, "#posts-#{other_post.id}")
+    end
+
+    test "renders friends-only posts only for accepted friends in joined gyms", %{conn: _conn} do
+      author = user_fixture()
+      friend = user_fixture()
+      non_friend = user_fixture()
+      moderator = user_fixture()
+      author_scope = user_scope_fixture(author)
+      friend_scope = user_scope_fixture(friend)
+      non_friend_scope = user_scope_fixture(non_friend)
+      moderator_scope = user_scope_fixture(moderator)
+      gym = gym_fixture()
+
+      {:ok, _membership} = Gyms.join_gym(author_scope, gym)
+      {:ok, _membership} = Gyms.join_gym(friend_scope, gym)
+      {:ok, _membership} = Gyms.join_gym(non_friend_scope, gym)
+      role_membership_fixture(gym, "mod", scope: moderator_scope)
+      accepted_friendship_fixture(requester: author, recipient: friend)
+
+      post =
+        post_fixture(scope: author_scope, gym: gym, body: "Friends only", visibility: "friends")
+
+      for viewer <- [author, friend] do
+        {:ok, view, _html} = live(log_in_user(build_conn(), viewer), ~p"/feed")
+        assert has_element?(view, "#posts-#{post.id}")
+      end
+
+      for viewer <- [non_friend, moderator] do
+        {:ok, view, _html} = live(log_in_user(build_conn(), viewer), ~p"/feed")
+        refute has_element?(view, "#posts-#{post.id}")
+      end
     end
 
     test "renders profile pictures for post authors", %{conn: conn} do
@@ -80,7 +112,7 @@ defmodule AscentsWeb.FeedLiveTest do
       )
       |> render_submit()
 
-      assert [comment] = Feed.get_post(gym, post.id).comments
+      assert [comment] = Feed.get_post(scope, gym, post.id).comments
       assert has_element?(view, "#home-comment-#{comment.id}")
     end
   end
