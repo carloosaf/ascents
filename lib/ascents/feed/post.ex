@@ -9,11 +9,13 @@ defmodule Ascents.Feed.Post do
   alias Ascents.Routes.BoulderProblem
 
   @post_types ~w(normal ascent)
+  @visibilities ~w(public friends)
 
   schema "posts" do
     field :body, :string
     field :image_object_key, :string
     field :post_type, :string, default: "normal"
+    field :visibility, :string, default: "public"
     field :deleted_at, :utc_datetime
 
     belongs_to :gym, Gym
@@ -30,11 +32,12 @@ defmodule Ascents.Feed.Post do
   """
   def changeset(post, attrs) do
     post
-    |> cast(attrs, [:body, :image_object_key])
+    |> cast(attrs, [:body, :image_object_key, :visibility])
     |> update_change(:body, &blank_to_nil/1)
     |> update_change(:image_object_key, &trim_string/1)
-    |> validate_required([:gym_id, :user_id, :post_type])
+    |> validate_required([:gym_id, :user_id, :post_type, :visibility])
     |> validate_inclusion(:post_type, @post_types)
+    |> validate_inclusion(:visibility, @visibilities)
     |> validate_body()
     |> validate_ascent_route()
     |> validate_length(:image_object_key, max: 1_024)
@@ -42,7 +45,10 @@ defmodule Ascents.Feed.Post do
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:boulder_problem_id)
     |> check_constraint(:post_type, name: :posts_post_type_check)
+    |> check_constraint(:visibility, name: :posts_visibility_check)
   end
+
+  def visibilities, do: @visibilities
 
   defp validate_body(changeset) do
     changeset =

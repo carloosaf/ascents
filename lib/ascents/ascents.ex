@@ -21,19 +21,21 @@ defmodule Ascents.Ascents do
     body: :string,
     image_object_key: :string,
     boulder_problem_id: :integer,
-    climbed_at: :string
+    climbed_at: :string,
+    visibility: :string
   }
 
   @doc """
   Returns an `%Ecto.Changeset{}` for ascent post forms.
   """
   def change_ascent_post(attrs \\ %{}) do
-    {%{}, @ascent_post_types}
+    {%{visibility: "public"}, @ascent_post_types}
     |> cast(attrs, Map.keys(@ascent_post_types))
     |> update_change(:body, &trim_string/1)
     |> update_change(:image_object_key, &trim_string/1)
     |> update_change(:climbed_at, &trim_string/1)
-    |> validate_required([:boulder_problem_id, :climbed_at])
+    |> validate_required([:boulder_problem_id, :climbed_at, :visibility])
+    |> validate_inclusion(:visibility, Post.visibilities())
     |> validate_length(:body, max: 2_000)
     |> validate_length(:image_object_key, max: 1_024)
     |> validate_climbed_at()
@@ -228,7 +230,7 @@ defmodule Ascents.Ascents do
     post_attrs =
       changeset
       |> apply_changes()
-      |> Map.take([:body, :image_object_key])
+      |> Map.take([:body, :image_object_key, :visibility])
 
     Multi.new()
     |> Multi.insert(:post, fn _changes ->

@@ -45,6 +45,7 @@ defmodule Ascents.AscentsTest do
       assert post.gym_id == gym.id
       assert post.user_id == user.id
       assert post.boulder_problem_id == problem.id
+      assert post.visibility == "public"
 
       assert %Ascent{} = ascent
       assert ascent.post_id == post.id
@@ -54,6 +55,47 @@ defmodule Ascents.AscentsTest do
       assert ascent.grade_snapshot == "6A"
       assert ascent.grade_scale_snapshot == "french"
       assert ascent.climbed_at == ~U[2026-06-11 10:30:00Z]
+    end
+
+    test "accepts public and friends visibility values" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      for visibility <- ~w(public friends) do
+        assert {:ok, %{post: post}} =
+                 AscentLogs.create_ascent_post(
+                   scope,
+                   gym,
+                   valid_ascent_post_attributes(
+                     boulder_problem_id: problem.id,
+                     visibility: visibility
+                   )
+                 )
+
+        assert post.visibility == visibility
+        assert post.gym_id == gym.id
+      end
+    end
+
+    test "rejects invalid visibility values" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      assert {:error, changeset} =
+               AscentLogs.create_ascent_post(
+                 scope,
+                 gym,
+                 valid_ascent_post_attributes(
+                   boulder_problem_id: problem.id,
+                   visibility: "private"
+                 )
+               )
+
+      assert %{visibility: ["is invalid"]} = errors_on(changeset)
     end
 
     test "requires gym membership" do

@@ -125,7 +125,7 @@ defmodule Ascents.Feed do
 
     if Gyms.can_post_in_gym?(scope, gym) do
       %Post{gym_id: gym.id, user_id: user.id}
-      |> Post.changeset(take_attrs(attrs, [:body, :image_object_key]))
+      |> Post.changeset(take_attrs(attrs, [:body, :image_object_key, :visibility]))
       |> Repo.insert()
       |> preload_result()
     else

@@ -211,13 +211,18 @@ defmodule AscentsWeb.GymLiveTest do
       |> render_click()
 
       assert has_element?(view, "#gym-post-modal")
+      assert has_element?(view, "#gym-post-visibility option[selected][value='public']")
 
       view
-      |> form("#gym-post-form", post: %{body: "New slab is technical."})
+      |> form("#gym-post-form",
+        post: %{body: "New slab is technical.", visibility: "friends"}
+      )
       |> render_submit()
 
       assert [post] = Feed.list_gym_posts(gym)
       assert post.body == "New slab is technical."
+      assert post.visibility == "friends"
+      assert post.gym_id == gym.id
       assert has_element?(view, "#posts-#{post.id}")
     end
 
@@ -269,12 +274,18 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert has_element?(view, "#gym-ascent-post-form")
 
+      assert has_element?(
+               view,
+               "#gym-ascent-post-visibility option[selected][value='public']"
+             )
+
       view
       |> form("#gym-ascent-post-form",
         ascent_post: %{
           boulder_problem_id: problem.id,
           climbed_at: "2026-06-11T10:30",
-          body: ""
+          body: "",
+          visibility: "friends"
         }
       )
       |> render_submit()
@@ -283,6 +294,8 @@ defmodule AscentsWeb.GymLiveTest do
       assert post.post_type == "ascent"
       assert post.body == nil
       assert post.boulder_problem_id == problem.id
+      assert post.visibility == "friends"
+      assert post.gym_id == gym.id
       assert has_element?(view, "#home-post-ascent-#{post.id}")
 
       ascent = AscentLogs.get_ascent_by_post(post)

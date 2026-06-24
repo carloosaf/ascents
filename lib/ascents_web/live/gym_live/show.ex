@@ -463,6 +463,16 @@ defmodule AscentsWeb.GymLive.Show do
                 label="Post"
                 placeholder="Share beta, session notes, or gym updates"
               />
+              <.input
+                field={@post_form[:visibility]}
+                id="gym-post-visibility"
+                type="select"
+                label="Audience"
+                options={visibility_options()}
+              />
+              <p id="gym-post-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
+                Friends-only posts will be limited to your accepted friends.
+              </p>
               <.image_upload_input
                 upload={@uploads.image}
                 label="Image"
@@ -498,6 +508,16 @@ defmodule AscentsWeb.GymLive.Show do
                 label="Notes"
                 placeholder="Optional beta, attempts, or session notes"
               />
+              <.input
+                field={@ascent_form[:visibility]}
+                id="gym-ascent-post-visibility"
+                type="select"
+                label="Audience"
+                options={visibility_options()}
+              />
+              <p id="gym-ascent-post-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
+                Friends-only ascents will be limited to your accepted friends.
+              </p>
               <.image_upload_input
                 upload={@uploads.image}
                 label="Image"
@@ -593,6 +613,10 @@ defmodule AscentsWeb.GymLive.Show do
     Enum.map(problems, fn problem ->
       {"#{problem.grade} · #{problem.title}", problem.id}
     end)
+  end
+
+  defp visibility_options do
+    [{"Public", "public"}, {"Friends only", "friends"}]
   end
 
   defp default_ascent_attrs do

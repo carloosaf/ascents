@@ -46,6 +46,35 @@ defmodule Ascents.FeedTest do
       assert post.user_id == user.id
       assert post.body == "Big move on blue."
       assert post.image_object_key == "posts/1/a.jpg"
+      assert post.visibility == "public"
+    end
+
+    test "accepts public and friends visibility values" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      for visibility <- ~w(public friends) do
+        assert {:ok, post} =
+                 Feed.create_post(scope, gym, %{
+                   body: "#{visibility} post",
+                   visibility: visibility
+                 })
+
+        assert post.visibility == visibility
+        assert post.gym_id == gym.id
+      end
+    end
+
+    test "rejects invalid visibility values" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      assert {:error, changeset} =
+               Feed.create_post(scope, gym, %{body: "Hidden", visibility: "private"})
+
+      assert %{visibility: ["is invalid"]} = errors_on(changeset)
     end
 
     test "validates post body" do
