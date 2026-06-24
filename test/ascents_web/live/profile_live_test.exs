@@ -162,6 +162,34 @@ defmodule AscentsWeb.ProfileLiveTest do
       refute has_element?(view, "#profile-add-friend")
     end
 
+    test "refreshes an externally changed relationship after a stale send click", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      current_scope = user_scope_fixture(current_user)
+      profile_scope = user_scope_fixture(profile_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='none']")
+      assert has_element?(view, "#profile-add-friend")
+
+      assert {:ok, _friendship} = Friends.send_request(profile_scope, current_user)
+
+      view
+      |> element("#profile-add-friend")
+      |> render_click()
+
+      relationship = Friends.get_relationship(current_scope, profile_user)
+
+      assert relationship.status == "pending"
+      assert relationship.requester_id == profile_user.id
+      assert relationship.recipient_id == current_user.id
+      assert flash_text(view, "#flash-error") == friendship_action_error()
+      refute has_element?(view, "#flash-info")
+      assert has_element?(view, "#profile-friend-controls[data-state='incoming_pending']")
+    end
+
     test "shows an outgoing request and cancels it", %{conn: conn} do
       current_user = user_fixture()
       profile_user = user_fixture()
@@ -182,6 +210,35 @@ defmodule AscentsWeb.ProfileLiveTest do
       assert has_element?(view, "#profile-friend-controls[data-state='none']")
       assert has_element?(view, "#profile-add-friend")
       refute has_element?(view, "#profile-cancel-friend-request")
+    end
+
+    test "refreshes an externally accepted relationship after a stale update click", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      friendship = friendship_fixture(requester: current_user, recipient: profile_user)
+      current_scope = user_scope_fixture(current_user)
+      profile_scope = user_scope_fixture(profile_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='outgoing_pending']")
+      assert has_element?(view, "#profile-cancel-friend-request")
+
+      assert {:ok, accepted} = Friends.accept_request(profile_scope, friendship)
+
+      view
+      |> element("#profile-cancel-friend-request")
+      |> render_click()
+
+      relationship = Friends.get_relationship(current_scope, profile_user)
+
+      assert relationship.id == accepted.id
+      assert relationship.status == "accepted"
+      assert Friends.relationship_state(current_scope, profile_user) == :friends
+      assert flash_text(view, "#flash-error") == friendship_action_error()
+      refute has_element?(view, "#flash-info")
+      assert has_element?(view, "#profile-friend-controls[data-state='friends']")
     end
 
     test "shows an incoming request and accepts it", %{conn: conn} do
@@ -290,6 +347,19 @@ defmodule AscentsWeb.ProfileLiveTest do
       assert has_element?(view, "#profile-friend-controls[data-state='none']")
       assert has_element?(view, "#flash-error")
     end
+  end
+
+  defp friendship_action_error do
+    "Unable to update this friendship. Please try again."
+  end
+
+  defp flash_text(view, selector) do
+    view
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query(selector)
+    |> LazyHTML.text()
+    |> String.trim()
   end
 
   describe "edit" do
