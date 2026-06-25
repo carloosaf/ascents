@@ -5,6 +5,7 @@ defmodule AscentsWeb.StatsLiveTest do
   import Ascents.AscentsFixtures
   import Ascents.GymsFixtures
   import Ascents.RoutesFixtures
+  import Ascents.SessionsFixtures
   import Phoenix.LiveViewTest
 
   describe "show" do
@@ -47,6 +48,27 @@ defmodule AscentsWeb.StatsLiveTest do
       assert has_element?(view, "#user-stats-grade-chart[phx-hook='StatsChart']")
       assert has_element?(view, "#user-stats-grade-list [data-component='grade-badge']")
       refute has_element?(view, "#user-stats-empty")
+    end
+
+    test "counts every ascent from a grouped session", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+
+      session_fixture(
+        scope: scope,
+        gym: gym,
+        problems: [
+          boulder_problem_fixture(gym: gym, grade: "V2"),
+          boulder_problem_fixture(gym: gym, grade: "V4")
+        ]
+      )
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/users/stats")
+
+      assert has_element?(view, "#user-stats-total-ascents", "2")
+      assert has_element?(view, "#user-stats-timeline-chart")
     end
   end
 end

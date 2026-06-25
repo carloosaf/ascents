@@ -415,6 +415,159 @@ defmodule AscentsWeb.GymLiveTest do
       assert has_element?(view, "#home-post-ascent-#{post.id}")
     end
 
+    test "switches between post, ascent, and session composer modes", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      assert has_element?(view, "#gym-post-form")
+
+      view |> element("#gym-post-session-mode") |> render_click()
+      assert has_element?(view, "#gym-session-form")
+      refute has_element?(view, "#gym-post-form")
+
+      view |> element("#gym-post-ascent-mode") |> render_click()
+      assert has_element?(view, "#gym-ascent-post-form")
+      refute has_element?(view, "#gym-session-form")
+    end
+
+    test "rejects forged session composer events from non-members", %{conn: conn} do
+      user = user_fixture()
+      gym = gym_fixture()
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      render_hook(view, "select-post-mode", %{"mode" => "session"})
+
+      refute has_element?(view, "#gym-session-form")
+      assert has_element?(view, "#flash-error")
+    end
+
+    test "adds and removes session ascent rows without changing stable row IDs", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      assert has_element?(view, "#session-ascent-row-1[data-row-id='1']")
+      refute has_element?(view, "#session-ascent-row-2")
+
+      view |> element("#gym-session-add-ascent") |> render_click()
+
+      assert has_element?(view, "#session-ascent-row-1[data-row-id='1']")
+      assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
+
+      view |> element("#gym-session-remove-ascent-1") |> render_click()
+
+      refute has_element?(view, "#session-ascent-row-1")
+      assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
+
+      view |> element("#gym-session-add-ascent") |> render_click()
+
+      assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
+      assert has_element?(view, "#session-ascent-row-3[data-row-id='3']")
+    end
+
+    test "validates session metadata and route rows", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          title: "",
+          started_at: "2026-06-24T18:30",
+          notes: "",
+          visibility: "public",
+          ascents: %{"1" => %{boulder_problem_id: ""}}
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#gym-session-title-field p")
+      assert has_element?(view, "#gym-session-route-field-1 p")
+      assert has_element?(view, "#gym-session-ascents-error")
+      assert Feed.list_gym_posts(scope, gym) == []
+    end
+
+    test "creates one grouped feed card and two stats ascents with private media", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      first_problem = boulder_problem_fixture(gym: gym, title: "Blue Arete", grade: "V3")
+      second_problem = boulder_problem_fixture(gym: gym, title: "Roof Pinch", grade: "V5")
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+      view |> element("#gym-session-add-ascent") |> render_click()
+
+      upload =
+        file_input(view, "#gym-session-form", :image, [
+          %{name: "training.jpg", content: "session image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "training.jpg") =~ "100%"
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          title: "Power circuit",
+          started_at: "2026-06-24T18:30",
+          notes: "Linked both projects.",
+          visibility: "friends",
+          ascents: %{
+            "1" => %{boulder_problem_id: first_problem.id},
+            "2" => %{boulder_problem_id: second_problem.id}
+          }
+        }
+      )
+      |> render_submit()
+
+      assert [post] = Feed.list_gym_posts(scope, gym)
+      assert post.post_type == "session"
+      assert post.visibility == "friends"
+      assert post.image_object_key =~ ~r/^posts\/pending\//
+      assert length(post.session.ascents) == 2
+
+      assert has_element?(view, "#posts-#{post.id}")
+      assert has_element?(view, "#home-post-session-#{post.id}")
+      assert has_element?(view, "#home-post-session-title-#{post.id}", "Power circuit")
+      assert has_element?(view, "#home-post-privacy-#{post.id}", "Friends")
+      assert has_element?(view, "#home-post-image-#{post.id}[src*='/media/']")
+
+      for ascent <- post.session.ascents do
+        assert has_element?(view, "#home-post-session-route-#{ascent.id}")
+      end
+
+      assert {:ok, stats} = AscentLogs.get_user_stats(scope, user)
+      assert stats.total_ascents == 2
+    end
+
     test "allows members to comment and content owners to delete comments", %{conn: conn} do
       user = user_fixture()
       scope = user_scope_fixture(user)

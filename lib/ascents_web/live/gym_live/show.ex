@@ -7,6 +7,7 @@ defmodule AscentsWeb.GymLive.Show do
   alias Ascents.Gyms
   alias Ascents.Media
   alias Ascents.Routes, as: ClimbingRoutes
+  alias Ascents.Sessions
   alias AscentsWeb.UserAuth
 
   def mount(%{"slug" => slug}, session, socket) do
@@ -18,9 +19,15 @@ defmodule AscentsWeb.GymLive.Show do
      |> assign(:current_scope, current_scope)
      |> assign(:post_form, to_form(Feed.change_post(%Post{})))
      |> assign_ascent_form(AscentLogs.change_ascent_post(default_ascent_attrs()))
+     |> assign_session_form(Sessions.change_session(default_session_attrs()))
+     |> assign(:session_row_order, [1])
+     |> assign(:session_rows_by_id, %{1 => session_row(1)})
+     |> assign(:next_session_row_id, 2)
      |> assign(:comment_form, to_form(Feed.change_comment(%Comment{})))
      |> assign(:post_mode, "normal")
      |> assign(:post_modal_open?, false)
+     |> stream_configure(:session_rows, dom_id: &"session-ascent-row-#{&1.id}")
+     |> stream(:session_rows, [session_row(1)])
      |> allow_upload(:image,
        accept: ~w(.jpg .jpeg .png .webp),
        max_entries: 1,
@@ -72,7 +79,11 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("open-post-modal", _params, socket) do
-    {:noreply, assign(socket, :post_modal_open?, true)}
+    if composer_allowed?(socket) do
+      {:noreply, assign(socket, :post_modal_open?, true)}
+    else
+      {:noreply, put_flash(socket, :error, "Join this gym before posting.")}
+    end
   end
 
   def handle_event("close-post-modal", _params, socket) do
@@ -80,8 +91,21 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("select-post-mode", %{"mode" => mode}, socket)
-      when mode in ~w(normal ascent) do
-    {:noreply, assign(socket, :post_mode, mode)}
+      when mode in ~w(normal ascent session) do
+    if mode != "session" or composer_allowed?(socket) do
+      socket = assign(socket, :post_mode, mode)
+
+      socket =
+        if mode == "session" do
+          stream(socket, :session_rows, ordered_session_rows(socket), reset: true)
+        else
+          socket
+        end
+
+      {:noreply, socket}
+    else
+      {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+    end
   end
 
   def handle_event("validate-post", %{"post" => post_params}, socket) do
@@ -101,6 +125,78 @@ defmodule AscentsWeb.GymLive.Show do
       |> Map.put(:action, :validate)
 
     {:noreply, assign_ascent_form(socket, changeset)}
+  end
+
+  def handle_event("add-session-ascent", _params, socket) do
+    if composer_allowed?(socket) do
+      row_id = socket.assigns.next_session_row_id
+
+      socket =
+        socket
+        |> assign(:session_row_order, socket.assigns.session_row_order ++ [row_id])
+        |> assign(
+          :session_rows_by_id,
+          Map.put(socket.assigns.session_rows_by_id, row_id, session_row(row_id))
+        )
+        |> assign(:next_session_row_id, row_id + 1)
+
+      {:noreply, stream(socket, :session_rows, ordered_session_rows(socket), reset: true)}
+    else
+      {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+    end
+  end
+
+  def handle_event("remove-session-ascent", %{"row-id" => row_id}, socket) do
+    cond do
+      not composer_allowed?(socket) ->
+        {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+
+      length(socket.assigns.session_row_order) == 1 ->
+        {:noreply, put_flash(socket, :error, "A session needs at least one ascent.")}
+
+      true ->
+        case Integer.parse(row_id) do
+          {row_id, ""} ->
+            if row_id in socket.assigns.session_row_order do
+              socket =
+                socket
+                |> assign(
+                  :session_row_order,
+                  List.delete(socket.assigns.session_row_order, row_id)
+                )
+                |> assign(
+                  :session_rows_by_id,
+                  Map.delete(socket.assigns.session_rows_by_id, row_id)
+                )
+
+              {:noreply, stream(socket, :session_rows, ordered_session_rows(socket), reset: true)}
+            else
+              {:noreply, socket}
+            end
+
+          _invalid ->
+            {:noreply, socket}
+        end
+    end
+  end
+
+  def handle_event("validate-session", %{"session" => session_params}, socket) do
+    if composer_allowed?(socket) do
+      {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
+
+      changeset =
+        session_attrs
+        |> Sessions.change_session()
+        |> Map.put(:action, :validate)
+
+      {:noreply,
+       socket
+       |> assign_session_form(changeset)
+       |> assign(:session_rows_by_id, Map.new(rows, &{&1.id, &1}))
+       |> stream(:session_rows, rows, reset: true)}
+    else
+      {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+    end
   end
 
   def handle_event("create-post", %{"post" => post_params}, socket) do
@@ -151,6 +247,43 @@ defmodule AscentsWeb.GymLive.Show do
 
       {:error, message} ->
         {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event("create-session", %{"session" => session_params}, socket) do
+    if composer_allowed?(socket) do
+      {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
+
+      case put_uploaded_image(socket, session_attrs) do
+        {:ok, session_attrs} ->
+          case Sessions.create_session(
+                 socket.assigns.current_scope,
+                 socket.assigns.gym,
+                 session_attrs
+               ) do
+            {:ok, _result} ->
+              {:noreply,
+               socket
+               |> put_flash(:info, "Session posted.")
+               |> reset_post_modal()
+               |> assign_gym_state(socket.assigns.gym)}
+
+            {:error, %Ecto.Changeset{} = changeset} ->
+              {:noreply,
+               socket
+               |> assign_session_form(Map.put(changeset, :action, :validate))
+               |> assign(:session_rows_by_id, Map.new(rows, &{&1.id, &1}))
+               |> stream(:session_rows, rows, reset: true)}
+
+            {:error, :unauthorized} ->
+              {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+          end
+
+        {:error, message} ->
+          {:noreply, put_flash(socket, :error, message)}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
     end
   end
 
@@ -464,7 +597,7 @@ defmodule AscentsWeb.GymLive.Show do
               <div>
                 <h2 class="text-lg font-black text-ascents-chalk">New post</h2>
                 <p class="mt-1 text-sm text-ascents-muted">
-                  Share an update or log an ascent at {@gym.name}.
+                  Share an update, ascent, or full session at {@gym.name}.
                 </p>
               </div>
               <button
@@ -480,7 +613,7 @@ defmodule AscentsWeb.GymLive.Show do
 
             <div
               id="gym-post-mode-toggle"
-              class="mb-5 grid grid-cols-2 gap-2 rounded-lg border border-ascents-line bg-ascents-panel-deep p-1"
+              class="mb-5 grid grid-cols-3 gap-2 rounded-lg border border-ascents-line bg-ascents-panel-deep p-1"
             >
               <button
                 id="gym-post-normal-mode"
@@ -511,6 +644,21 @@ defmodule AscentsWeb.GymLive.Show do
                 ]}
               >
                 <.icon name="hero-sparkles" class="size-4" /> Ascent
+              </button>
+              <button
+                id="gym-post-session-mode"
+                type="button"
+                phx-click="select-post-mode"
+                phx-value-mode="session"
+                class={[
+                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
+                  @post_mode == "session" &&
+                    "bg-grade-blue text-grade-blue-content shadow-lg",
+                  @post_mode != "session" &&
+                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+                ]}
+              >
+                <.icon name="hero-rectangle-stack" class="size-4" /> Session
               </button>
             </div>
 
@@ -590,6 +738,124 @@ defmodule AscentsWeb.GymLive.Show do
               <div class="flex flex-wrap items-center gap-3">
                 <.button id="gym-ascent-post-submit" variant="primary" phx-disable-with="Posting...">
                   <.icon name="hero-sparkles" class="size-4" /> Post ascent
+                </.button>
+                <p :if={@active_problems == []} class="text-sm text-ascents-muted">
+                  This gym has no active routes to log yet.
+                </p>
+              </div>
+            </.form>
+
+            <.form
+              :if={@post_mode == "session"}
+              for={@session_form}
+              id="gym-session-form"
+              phx-change="validate-session"
+              phx-submit="create-session"
+            >
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div id="gym-session-title-field">
+                  <.input
+                    field={@session_form[:title]}
+                    id="gym-session-title"
+                    type="text"
+                    label="Session title"
+                    placeholder="Tuesday power session"
+                  />
+                </div>
+                <.input
+                  field={@session_form[:started_at]}
+                  id="gym-session-started-at"
+                  type="datetime-local"
+                  label="Climbed at"
+                />
+              </div>
+
+              <.input
+                field={@session_form[:notes]}
+                id="gym-session-notes"
+                type="textarea"
+                label="Notes"
+                placeholder="Optional highlights, attempts, or beta"
+              />
+
+              <section class="mb-4 rounded-lg border border-ascents-line bg-ascents-panel-deep/70 p-3 sm:p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 class="text-sm font-black text-ascents-chalk">Ascents</h3>
+                    <p class="mt-1 text-xs text-ascents-muted">
+                      Add every route sent in this session.
+                    </p>
+                  </div>
+                  <button
+                    id="gym-session-add-ascent"
+                    type="button"
+                    phx-click="add-session-ascent"
+                    class="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-ascents-line px-3 text-xs font-black text-ascents-chalk transition hover:border-ascents-tape hover:text-ascents-tape"
+                  >
+                    <.icon name="hero-plus" class="size-4" /> Add ascent
+                  </button>
+                </div>
+
+                <div id="gym-session-ascent-rows" phx-update="stream" class="mt-4 space-y-3">
+                  <div
+                    :for={{row_dom_id, row} <- @streams.session_rows}
+                    id={row_dom_id}
+                    data-row-id={row.id}
+                    class="grid gap-2 rounded-md border border-ascents-line bg-ascents-panel p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+                  >
+                    <div id={"gym-session-route-field-#{row.id}"}>
+                      <.input
+                        id={"gym-session-route-#{row.id}"}
+                        name={"session[ascents][#{row.id}][boulder_problem_id]"}
+                        type="select"
+                        label={"Route #{session_row_number(@session_row_order, row.id)}"}
+                        prompt="Choose an active route"
+                        options={active_problem_options(@active_problems)}
+                        value={row.boulder_problem_id}
+                        errors={row.errors}
+                      />
+                    </div>
+                    <button
+                      id={"gym-session-remove-ascent-#{row.id}"}
+                      type="button"
+                      phx-click="remove-session-ascent"
+                      phx-value-row-id={row.id}
+                      disabled={length(@session_row_order) == 1}
+                      class="mb-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-ascents-line px-3 text-sm font-bold text-ascents-muted transition hover:border-ascents-danger/50 hover:bg-ascents-danger/10 hover:text-ascents-danger-hover disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label={"Remove route #{session_row_number(@session_row_order, row.id)}"}
+                    >
+                      <.icon name="hero-trash" class="size-4" />
+                      <span class="sm:hidden">Remove</span>
+                    </button>
+                  </div>
+                </div>
+                <p
+                  :for={error <- session_ascent_errors(@session_form)}
+                  id="gym-session-ascents-error"
+                  class="mt-2 text-sm text-ascents-danger-hover"
+                >
+                  {error}
+                </p>
+              </section>
+
+              <.input
+                field={@session_form[:visibility]}
+                id="gym-session-visibility"
+                type="select"
+                label="Audience"
+                options={visibility_options()}
+              />
+              <p id="gym-session-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
+                Friends-only sessions and their image are limited to accepted friends.
+              </p>
+              <.image_upload_input
+                upload={@uploads.image}
+                label="Session image"
+                help="Optional JPG, PNG, or WebP up to 5 MB."
+              />
+              <div class="flex flex-wrap items-center gap-3">
+                <.button id="gym-session-submit" variant="primary" phx-disable-with="Posting...">
+                  <.icon name="hero-rectangle-stack" class="size-4" /> Post session
                 </.button>
                 <p :if={@active_problems == []} class="text-sm text-ascents-muted">
                   This gym has no active routes to log yet.
@@ -689,10 +955,19 @@ defmodule AscentsWeb.GymLive.Show do
     |> assign(:post_mode, "normal")
     |> assign(:post_form, to_form(Feed.change_post(%Post{})))
     |> assign_ascent_form(AscentLogs.change_ascent_post(default_ascent_attrs()))
+    |> assign_session_form(Sessions.change_session(default_session_attrs()))
+    |> assign(:session_row_order, [1])
+    |> assign(:session_rows_by_id, %{1 => session_row(1)})
+    |> assign(:next_session_row_id, 2)
+    |> stream(:session_rows, [session_row(1)], reset: true)
   end
 
   defp assign_ascent_form(socket, changeset) do
     assign(socket, :ascent_form, to_form(changeset, as: :ascent_post))
+  end
+
+  defp assign_session_form(socket, changeset) do
+    assign(socket, :session_form, to_form(changeset, as: :session))
   end
 
   defp active_problem_options(problems) do
@@ -712,6 +987,66 @@ defmodule AscentsWeb.GymLive.Show do
   defp default_ascent_attrs do
     %{climbed_at: format_datetime_local(DateTime.utc_now(:second))}
   end
+
+  defp default_session_attrs do
+    %{
+      started_at: format_datetime_local(DateTime.utc_now(:second)),
+      visibility: "public",
+      ascents: [%{boulder_problem_id: nil}]
+    }
+  end
+
+  defp session_attrs_and_rows(socket, session_params) do
+    ascent_params = Map.get(session_params, "ascents", %{})
+
+    rows =
+      Enum.map(socket.assigns.session_row_order, fn row_id ->
+        row_params = Map.get(ascent_params, Integer.to_string(row_id), %{})
+        route_id = Map.get(row_params, "boulder_problem_id")
+        session_row(row_id, route_id, blank?(route_id))
+      end)
+
+    attrs =
+      session_params
+      |> Map.put(
+        "ascents",
+        Enum.map(rows, &%{"boulder_problem_id" => &1.boulder_problem_id})
+      )
+
+    {attrs, rows}
+  end
+
+  defp session_row(id, route_id \\ nil, invalid? \\ false) do
+    %{
+      id: id,
+      boulder_problem_id: route_id,
+      errors: if(invalid?, do: ["can't be blank"], else: [])
+    }
+  end
+
+  defp session_row_number(row_order, row_id) do
+    case Enum.find_index(row_order, &(&1 == row_id)) do
+      nil -> 1
+      index -> index + 1
+    end
+  end
+
+  defp ordered_session_rows(socket) do
+    Enum.map(socket.assigns.session_row_order, &Map.fetch!(socket.assigns.session_rows_by_id, &1))
+  end
+
+  defp session_ascent_errors(form) do
+    form[:ascents].errors
+    |> Enum.map(fn {message, options} ->
+      Gettext.dgettext(AscentsWeb.Gettext, "errors", message, options)
+    end)
+  end
+
+  defp composer_allowed?(socket) do
+    not is_nil(socket.assigns.current_scope) and not is_nil(socket.assigns.membership)
+  end
+
+  defp blank?(value), do: is_nil(value) or (is_binary(value) and String.trim(value) == "")
 
   defp format_datetime_local(%DateTime{} = datetime) do
     datetime
