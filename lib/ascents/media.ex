@@ -81,9 +81,9 @@ defmodule Ascents.Media do
   """
   def get_authorized_object(scope, token) do
     with {:ok, payload} <- verify_token(token),
-         {:ok, object_key} <- authorized_object_key(scope, payload),
+         {:ok, object_key, cache_policy} <- authorized_object_key(scope, payload),
          {:ok, body, content_type} <- get_object(object_key) do
-      {:ok, body, content_type}
+      {:ok, body, content_type, cache_policy}
     else
       {:error, _reason} -> {:error, :not_found}
     end
@@ -178,7 +178,7 @@ defmodule Ascents.Media do
     case Repo.get(Post, post_id) do
       %Post{image_object_key: ^object_key} = post ->
         if authorized?(scope, {:post, post}) do
-          {:ok, object_key}
+          {:ok, object_key, post_cache_policy(post)}
         else
           {:error, :not_found}
         end
@@ -192,7 +192,10 @@ defmodule Ascents.Media do
     do: {:error, :not_found}
 
   defp authorized_object_key(_scope, object_key) when is_binary(object_key),
-    do: {:ok, object_key}
+    do: {:ok, object_key, :default}
 
   defp authorized_object_key(_scope, _payload), do: {:error, :not_found}
+
+  defp post_cache_policy(%Post{visibility: "public"}), do: :public_post
+  defp post_cache_policy(%Post{}), do: :restricted_post
 end

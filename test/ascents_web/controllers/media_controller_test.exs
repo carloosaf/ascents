@@ -72,6 +72,39 @@ defmodule AscentsWeb.MediaControllerTest do
     end
   end
 
+  test "friends-only media is not stored for authorized authors or friends" do
+    context = post_media_context()
+    friends_url = Media.signed_url(context.author_scope, {:post, context.friends_post})
+
+    for user <- [context.author, context.friend] do
+      conn = media_conn(friends_url, user)
+
+      assert response(conn, 200) == "friends image"
+
+      assert get_resp_header(conn, "cache-control") == [
+               "private, no-store, max-age=0, must-revalidate"
+             ]
+    end
+  end
+
+  test "public post media is cacheable only with mandatory authorization revalidation" do
+    context = post_media_context()
+    public_url = Media.signed_url(nil, {:post, context.public_post})
+    conn = media_conn(public_url, nil)
+
+    assert response(conn, 200) == "public image"
+
+    assert get_resp_header(conn, "cache-control") == [
+             "public, no-cache, max-age=0, must-revalidate"
+           ]
+
+    context.public_post
+    |> Ecto.Changeset.change(visibility: "friends")
+    |> Ascents.Repo.update!()
+
+    assert media_response(public_url, nil) == {404, "Not found"}
+  end
+
   test "rechecks friendship and object binding when a post token is replayed" do
     context = post_media_context()
     friends_url = Media.signed_url(context.friend_scope, {:post, context.friends_post})
@@ -141,12 +174,18 @@ defmodule AscentsWeb.MediaControllerTest do
   end
 
   defp media_response(url, user) do
+    conn = media_conn(url, user)
+
+    {conn.status, response(conn, conn.status)}
+  end
+
+  defp media_conn(url, user) do
     conn =
       Phoenix.ConnTest.build_conn()
       |> maybe_log_in(user)
       |> get(URI.parse(url).path)
 
-    {conn.status, response(conn, conn.status)}
+    conn
   end
 
   defp maybe_log_in(conn, nil), do: conn
