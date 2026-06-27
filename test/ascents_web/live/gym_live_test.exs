@@ -14,6 +14,7 @@ defmodule AscentsWeb.GymLiveTest do
   alias Ascents.Gyms
   alias Ascents.Media.TestStorage
   alias Ascents.Repo
+  alias Ascents.Routes, as: ClimbingRoutes
   alias Ascents.Sessions.Session
 
   setup do
@@ -614,6 +615,13 @@ defmodule AscentsWeb.GymLiveTest do
       view |> element("#gym-new-post-button") |> render_click()
       view |> element("#gym-post-session-mode") |> render_click()
 
+      upload =
+        file_input(view, "#gym-session-form", :image, [
+          %{name: "invalid-session.jpg", content: "session image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "invalid-session.jpg") =~ "100%"
+
       view
       |> form("#gym-session-form",
         session: %{
@@ -630,6 +638,53 @@ defmodule AscentsWeb.GymLiveTest do
       assert has_element?(view, "#gym-session-route-field-1 p")
       assert has_element?(view, "#gym-session-ascents-error")
       assert Feed.list_gym_posts(scope, gym) == []
+      assert Repo.aggregate(Session, :count) == 0
+      assert Repo.aggregate(Ascent, :count) == 0
+      assert TestStorage.objects() == %{}
+    end
+
+    test "removes uploaded session image when a route is archived after composer opens", %{
+      conn: conn
+    } do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture(scope: owner_scope)
+      problem = boulder_problem_fixture(gym: gym, scope: owner_scope)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      upload =
+        file_input(view, "#gym-session-form", :image, [
+          %{name: "archived-route.jpg", content: "session image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "archived-route.jpg") =~ "100%"
+      assert {:ok, _problem} = ClimbingRoutes.archive_boulder_problem(owner_scope, gym, problem)
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          title: "Stale route session",
+          started_at: "2026-06-24T18:30",
+          notes: "",
+          visibility: "public",
+          ascents: %{"1" => %{boulder_problem_id: problem.id}}
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#gym-session-ascents-error")
+      assert Feed.list_gym_posts(scope, gym) == []
+      assert Repo.aggregate(Session, :count) == 0
+      assert Repo.aggregate(Ascent, :count) == 0
+      assert TestStorage.objects() == %{}
     end
 
     test "creates one grouped feed card and two stats ascents with private media", %{conn: conn} do

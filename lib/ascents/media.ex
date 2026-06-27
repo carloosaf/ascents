@@ -37,6 +37,15 @@ defmodule Ascents.Media do
   def get_object(_object_key), do: {:error, :not_found}
 
   @doc """
+  Deletes a private object by key.
+  """
+  def delete_object(object_key) when is_binary(object_key) do
+    storage().delete_object(object_key, config())
+  end
+
+  def delete_object(_object_key), do: :ok
+
+  @doc """
   Generates a short-lived application URL for a public-owner stored object.
 
   Post object keys must use the scope-aware `signed_url/2` function.

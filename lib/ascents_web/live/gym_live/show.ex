@@ -299,6 +299,8 @@ defmodule AscentsWeb.GymLive.Show do
                  |> assign_gym_state(socket.assigns.gym)}
 
               {:error, %Ecto.Changeset{} = changeset} ->
+                delete_uploaded_image(session_attrs)
+
                 {:noreply,
                  socket
                  |> assign_session_form(Map.put(changeset, :action, :validate))
@@ -306,7 +308,12 @@ defmodule AscentsWeb.GymLive.Show do
                  |> stream(:session_rows, rows, reset: true)}
 
               {:error, :unauthorized} ->
+                delete_uploaded_image(session_attrs)
                 {:noreply, deny_composer_action(socket)}
+
+              {:error, _reason} ->
+                delete_uploaded_image(session_attrs)
+                {:noreply, put_flash(socket, :error, "Session could not be posted.")}
             end
 
           {:error, message} ->
@@ -971,6 +978,10 @@ defmodule AscentsWeb.GymLive.Show do
       [{:error, reason}] -> {:error, Media.upload_error_message(reason)}
     end
   end
+
+  defp delete_uploaded_image(%{"image_object_key" => key}), do: Media.delete_object(key)
+  defp delete_uploaded_image(%{image_object_key: key}), do: Media.delete_object(key)
+  defp delete_uploaded_image(_attrs), do: :ok
 
   defp post_for_form(socket) do
     %Post{

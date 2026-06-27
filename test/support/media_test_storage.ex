@@ -18,6 +18,10 @@ defmodule Ascents.Media.TestStorage do
     end
   end
 
+  def delete_object(key, _config) do
+    Agent.update(__MODULE__, &Map.delete(&1, key))
+  end
+
   def objects do
     Agent.get(__MODULE__, & &1)
   end

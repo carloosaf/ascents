@@ -25,6 +25,17 @@ defmodule Ascents.Media.S3Storage do
     end
   end
 
+  def delete_object(key, config) do
+    config
+    |> bucket()
+    |> S3.delete_object(key)
+    |> ExAws.request(ex_aws_options(config))
+    |> case do
+      {:ok, _response} -> :ok
+      {:error, reason} -> {:error, normalize_error(reason)}
+    end
+  end
+
   defp put_object_once(key, body, content_type, config) do
     config
     |> bucket()
