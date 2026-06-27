@@ -93,7 +93,7 @@ defmodule AscentsWeb.ProblemLive.New do
               id="route-new-image-upload"
               upload={@uploads.image}
               label="Route image"
-              capture="environment"
+              help="Take a photo or choose a JPG, PNG, or WebP up to 5 MB."
             />
 
             <div class="flex flex-wrap gap-3">

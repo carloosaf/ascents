@@ -110,7 +110,7 @@ defmodule AscentsWeb.ProblemLiveTest do
   end
 
   describe "new" do
-    test "offers camera capture with MIME hints and extension fallback", %{conn: conn} do
+    test "offers image picking with MIME hints and extension fallback", %{conn: conn} do
       owner = user_fixture()
       scope = user_scope_fixture(owner)
       gym = gym_fixture(scope: scope)
@@ -128,9 +128,9 @@ defmodule AscentsWeb.ProblemLiveTest do
                "#route-new-image-upload input[accept*='image/jpeg'][accept*='image/png'][accept*='image/webp']"
              )
 
-      assert has_element?(
+      refute has_element?(
                view,
-               "#route-new-image-upload input[capture='environment']"
+               "#route-new-image-upload input[capture]"
              )
     end
 
@@ -209,7 +209,7 @@ defmodule AscentsWeb.ProblemLiveTest do
   end
 
   describe "edit" do
-    test "offers camera capture with MIME hints and extension fallback", %{conn: conn} do
+    test "offers image picking with MIME hints and extension fallback", %{conn: conn} do
       owner = user_fixture()
       scope = user_scope_fixture(owner)
       gym = gym_fixture(scope: scope)
@@ -228,9 +228,9 @@ defmodule AscentsWeb.ProblemLiveTest do
                "#route-edit-image-upload input[accept*='image/jpeg'][accept*='image/png'][accept*='image/webp']"
              )
 
-      assert has_element?(
+      refute has_element?(
                view,
-               "#route-edit-image-upload input[capture='environment']"
+               "#route-edit-image-upload input[capture]"
              )
     end
 
