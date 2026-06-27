@@ -3,6 +3,7 @@ defmodule Ascents.SessionsTest do
 
   import Ascents.AccountsFixtures
   import Ascents.AscentsFixtures
+  import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
   import Ascents.RoutesFixtures
   import Ascents.SessionsFixtures
@@ -111,12 +112,24 @@ defmodule Ascents.SessionsTest do
       assert stats.unique_gyms == 1
       assert stats.unique_routes == 2
 
-      assert [feed_post] = Feed.list_gym_posts(gym)
+      friend = user_fixture()
+      friend_scope = user_scope_fixture(friend)
+      unrelated_scope = user_scope_fixture()
+      accepted_friendship_fixture(requester: user, recipient: friend)
+
+      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(gym, unrelated_scope) == []
+
+      assert [feed_post] = Feed.list_gym_posts(gym, scope)
       assert feed_post.id == post.id
       assert feed_post.session.id == session.id
 
       assert Enum.map(feed_post.session.ascents, & &1.boulder_problem_id) ==
                Enum.map(ascents, & &1.boulder_problem_id)
+
+      assert [friend_feed_post] = Feed.list_gym_posts(gym, friend_scope)
+      assert friend_feed_post.id == post.id
+      assert friend_feed_post.session.id == session.id
     end
 
     test "allows blank optional notes and image while preserving the session date" do
@@ -141,6 +154,10 @@ defmodule Ascents.SessionsTest do
       assert post.body == nil
       assert post.image_object_key == nil
       assert ascent.climbed_at == session.started_at
+
+      assert [feed_post] = Feed.list_gym_posts(gym)
+      assert feed_post.id == post.id
+      assert feed_post.session.id == session.id
     end
 
     test "requires authenticated gym membership" do

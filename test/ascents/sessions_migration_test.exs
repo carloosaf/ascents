@@ -12,7 +12,7 @@ defmodule Ascents.SessionsMigrationTest do
   alias Ascents.Repo
   alias Ascents.Sessions
 
-  @before_sessions 20_260_624_115_105
+  @before_sessions 20_260_624_115_112
 
   setup do
     compiler_options = Code.compiler_options(ignore_module_conflict: true)
