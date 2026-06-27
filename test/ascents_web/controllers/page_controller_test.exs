@@ -12,7 +12,7 @@ defmodule AscentsWeb.PageControllerTest do
       |> LazyHTML.from_document()
 
     assert document |> LazyHTML.query("#home-page") |> Enum.any?()
-    assert document |> LazyHTML.query("#home-hero") |> Enum.any?()
+    assert document |> LazyHTML.query("#home-hero.text-center") |> Enum.any?()
     assert document |> LazyHTML.query("#home-purpose") |> Enum.any?()
     assert document |> LazyHTML.query("#home-product-loop") |> Enum.any?()
     assert document |> LazyHTML.query("#home-step-gym") |> Enum.any?()
@@ -33,6 +33,9 @@ defmodule AscentsWeb.PageControllerTest do
            |> Enum.any?()
 
     refute document |> LazyHTML.query("#home-member-actions") |> Enum.any?()
+    refute document |> LazyHTML.query("#home-action-panel") |> Enum.any?()
+    refute document |> LazyHTML.query("#app-sidebar") |> Enum.any?()
+    refute document |> LazyHTML.query("#app-mobile-tabbar") |> Enum.any?()
   end
 
   test "GET / renders relevant actions for authenticated users", %{conn: conn} do
@@ -50,6 +53,7 @@ defmodule AscentsWeb.PageControllerTest do
 
     assert document |> LazyHTML.query("#home-authenticated-intro") |> Enum.any?()
     assert document |> LazyHTML.query("#home-member-actions") |> Enum.any?()
+    assert document |> LazyHTML.query("#home-hero.text-center") |> Enum.any?()
 
     assert document
            |> LazyHTML.query("#home-member-feed-link[href='/feed']")
@@ -68,5 +72,8 @@ defmodule AscentsWeb.PageControllerTest do
            |> Enum.any?()
 
     refute document |> LazyHTML.query("#home-anonymous-actions") |> Enum.any?()
+    refute document |> LazyHTML.query("#home-action-panel") |> Enum.any?()
+    refute document |> LazyHTML.query("#app-sidebar") |> Enum.any?()
+    refute document |> LazyHTML.query("#app-mobile-tabbar") |> Enum.any?()
   end
 end
