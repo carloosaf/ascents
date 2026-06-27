@@ -3,6 +3,7 @@ defmodule AscentsWeb.GymLiveTest do
 
   import Ascents.AccountsFixtures
   import Ascents.FeedFixtures
+  import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
   import Ascents.RoutesFixtures
   import Phoenix.LiveViewTest
@@ -227,6 +228,35 @@ defmodule AscentsWeb.GymLiveTest do
       refute has_element?(view, "#gym-post-form")
     end
 
+    test "limits friends-only posts on the public gym root", %{conn: conn} do
+      author = user_fixture()
+      author_scope = user_scope_fixture(author)
+      friend = user_fixture()
+      unrelated = user_fixture()
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(author_scope, gym)
+      accepted_friendship_fixture(requester: author, recipient: friend)
+
+      post =
+        post_fixture(scope: author_scope, gym: gym, body: "Friend beta", visibility: "friends")
+
+      {:ok, anonymous_view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      {:ok, unrelated_view, _html} =
+        build_conn() |> log_in_user(unrelated) |> live(~p"/gyms/#{gym.slug}")
+
+      {:ok, friend_view, _html} =
+        build_conn() |> log_in_user(friend) |> live(~p"/gyms/#{gym.slug}")
+
+      {:ok, author_view, _html} =
+        build_conn() |> log_in_user(author) |> live(~p"/gyms/#{gym.slug}")
+
+      refute has_element?(anonymous_view, "#posts-#{post.id}")
+      refute has_element?(unrelated_view, "#posts-#{post.id}")
+      assert has_element?(friend_view, "#posts-#{post.id}")
+      assert has_element?(author_view, "#posts-#{post.id}")
+    end
+
     test "allows members to create posts", %{conn: conn} do
       user = user_fixture()
       scope = user_scope_fixture(user)
@@ -249,7 +279,7 @@ defmodule AscentsWeb.GymLiveTest do
       )
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym)
+      assert [post] = Feed.list_gym_posts(gym, scope)
       assert post.body == "New slab is technical."
       assert post.visibility == "friends"
       assert post.gym_id == gym.id

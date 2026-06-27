@@ -155,16 +155,20 @@ defmodule Ascents.Feed do
   def create_comment(%Scope{user: %User{} = user} = scope, %Gym{} = gym, %Post{} = post, attrs)
       when is_map(attrs) do
     gym = Gyms.get_gym!(gym.id)
+    visible_post = get_post(gym, post.id, scope)
 
     cond do
+      is_nil(visible_post) ->
+        {:error, :not_found}
+
       not Gyms.can_post_in_gym?(scope, gym) ->
         {:error, :unauthorized}
 
-      post.gym_id != gym.id or post.deleted_at ->
+      visible_post.gym_id != gym.id or visible_post.deleted_at ->
         {:error, :not_found}
 
       true ->
-        %Comment{post_id: post.id, user_id: user.id}
+        %Comment{post_id: visible_post.id, user_id: user.id}
         |> Comment.changeset(take_attrs(attrs, [:body]))
         |> Repo.insert()
         |> preload_result()
@@ -265,11 +269,34 @@ defmodule Ascents.Feed do
   end
 
   defp visible_to(query, %Scope{user: %User{id: user_id}}) do
-    where(query, [post], post.visibility != "private" or post.user_id == ^user_id)
+    where(
+      query,
+      [post],
+      post.visibility == "public" or post.user_id == ^user_id or
+        (post.visibility == "friends" and
+           fragment(
+             """
+             EXISTS (
+               SELECT 1
+               FROM friendships AS friendship
+               WHERE friendship.status = 'accepted'
+                 AND (
+                   (friendship.requester_id = ? AND friendship.recipient_id = ?)
+                   OR
+                   (friendship.recipient_id = ? AND friendship.requester_id = ?)
+                 )
+             )
+             """,
+             post.user_id,
+             ^user_id,
+             post.user_id,
+             ^user_id
+           ))
+    )
   end
 
   defp visible_to(query, _scope) do
-    where(query, [post], post.visibility != "private")
+    where(query, [post], post.visibility == "public")
   end
 
   defp preload_result({:ok, %Post{} = post}), do: {:ok, Repo.preload(post, [:user, :gym])}
