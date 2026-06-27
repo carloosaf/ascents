@@ -643,6 +643,48 @@ defmodule AscentsWeb.GymLiveTest do
       assert TestStorage.objects() == %{}
     end
 
+    test "ignores forged session image keys when session submit fails", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      referenced_key = "posts/referenced-session-media.jpg"
+      :ok = TestStorage.put_object(referenced_key, "existing image", "image/jpeg", [])
+      referenced_post = post_fixture(scope: scope, gym: gym, image_object_key: referenced_key)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      html =
+        render_submit(view, "create-session", %{
+          "session" => %{
+            "title" => "",
+            "started_at" => "2026-06-24T18:30",
+            "notes" => "",
+            "visibility" => "public",
+            "image_object_key" => referenced_key,
+            "ascents" => %{"1" => %{"boulder_problem_id" => ""}}
+          }
+        })
+
+      assert has_element?(view, "#gym-session-title-field p")
+      assert has_element?(view, "#gym-session-route-field-1 p")
+      assert has_element?(view, "#gym-session-ascents-error")
+      refute html =~ referenced_key
+      assert Repo.aggregate(Session, :count) == 0
+      assert Repo.aggregate(Ascent, :count) == 0
+      assert Map.fetch!(TestStorage.objects(), referenced_key) == {"existing image", "image/jpeg"}
+
+      referenced_post_id = referenced_post.id
+
+      assert [%{id: ^referenced_post_id, image_object_key: ^referenced_key}] =
+               Feed.list_gym_posts(scope, gym)
+    end
+
     test "removes uploaded session image when a route is archived after composer opens", %{
       conn: conn
     } do

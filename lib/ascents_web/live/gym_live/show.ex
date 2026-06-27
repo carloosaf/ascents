@@ -220,7 +220,7 @@ defmodule AscentsWeb.GymLive.Show do
     case ensure_composer_authorized(socket) do
       {:ok, socket} ->
         case put_uploaded_image(socket, post_params) do
-          {:ok, post_params} ->
+          {:ok, post_params, _uploaded_object_key} ->
             case Feed.create_post(socket.assigns.current_scope, socket.assigns.gym, post_params) do
               {:ok, _post} ->
                 {:noreply,
@@ -250,7 +250,7 @@ defmodule AscentsWeb.GymLive.Show do
     case ensure_composer_authorized(socket) do
       {:ok, socket} ->
         case put_uploaded_image(socket, ascent_params) do
-          {:ok, ascent_params} ->
+          {:ok, ascent_params, _uploaded_object_key} ->
             case AscentLogs.create_ascent_post(
                    socket.assigns.current_scope,
                    socket.assigns.gym,
@@ -285,7 +285,7 @@ defmodule AscentsWeb.GymLive.Show do
         {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
 
         case put_uploaded_image(socket, session_attrs) do
-          {:ok, session_attrs} ->
+          {:ok, session_attrs, uploaded_object_key} ->
             case Sessions.create_session(
                    socket.assigns.current_scope,
                    socket.assigns.gym,
@@ -299,7 +299,7 @@ defmodule AscentsWeb.GymLive.Show do
                  |> assign_gym_state(socket.assigns.gym)}
 
               {:error, %Ecto.Changeset{} = changeset} ->
-                delete_uploaded_image(session_attrs)
+                delete_uploaded_image(uploaded_object_key)
 
                 {:noreply,
                  socket
@@ -308,11 +308,11 @@ defmodule AscentsWeb.GymLive.Show do
                  |> stream(:session_rows, rows, reset: true)}
 
               {:error, :unauthorized} ->
-                delete_uploaded_image(session_attrs)
+                delete_uploaded_image(uploaded_object_key)
                 {:noreply, deny_composer_action(socket)}
 
               {:error, _reason} ->
-                delete_uploaded_image(session_attrs)
+                delete_uploaded_image(uploaded_object_key)
                 {:noreply, put_flash(socket, :error, "Session could not be posted.")}
             end
 
@@ -973,15 +973,14 @@ defmodule AscentsWeb.GymLive.Show do
            result = Media.upload_image(:post, path, entry.client_name, entry.client_type)
            {:ok, result}
          end) do
-      [] -> {:ok, attrs}
-      [{:ok, key}] -> {:ok, Map.put(attrs, "image_object_key", key)}
+      [] -> {:ok, attrs, nil}
+      [{:ok, key}] -> {:ok, Map.put(attrs, "image_object_key", key), key}
       [{:error, reason}] -> {:error, Media.upload_error_message(reason)}
     end
   end
 
-  defp delete_uploaded_image(%{"image_object_key" => key}), do: Media.delete_object(key)
-  defp delete_uploaded_image(%{image_object_key: key}), do: Media.delete_object(key)
-  defp delete_uploaded_image(_attrs), do: :ok
+  defp delete_uploaded_image(key) when is_binary(key) and key != "", do: Media.delete_object(key)
+  defp delete_uploaded_image(_key), do: :ok
 
   defp post_for_form(socket) do
     %Post{
@@ -1057,6 +1056,7 @@ defmodule AscentsWeb.GymLive.Show do
 
     attrs =
       session_params
+      |> Map.drop(["image_object_key", :image_object_key])
       |> Map.put(
         "ascents",
         Enum.map(rows, &%{"boulder_problem_id" => &1.boulder_problem_id})
