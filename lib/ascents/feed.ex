@@ -5,12 +5,14 @@ defmodule Ascents.Feed do
 
   import Ecto.Query, warn: false
 
-  alias Ascents.Ascents, as: AscentLogs
+  alias Ecto.Multi
+  alias Ascents.Ascents.Ascent
   alias Ascents.Accounts.{Scope, User}
   alias Ascents.Feed.{Comment, Post}
   alias Ascents.Gyms
   alias Ascents.Gyms.{Gym, GymMembership}
   alias Ascents.Repo
+  alias Ascents.Sessions.Session
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking post changes.
@@ -205,21 +207,61 @@ defmodule Ascents.Feed do
   Soft-deletes a post. Content owners and gym moderators can delete it.
   """
   def delete_post(%Scope{user: %User{}} = scope, %Gym{} = gym, %Post{} = post) do
-    cond do
-      post.gym_id != gym.id ->
-        {:error, :not_found}
+    now = DateTime.utc_now(:second)
 
-      not can_delete_post?(scope, gym, post) ->
-        {:error, :unauthorized}
+    Multi.new()
+    |> Multi.run(:post, fn repo, _changes ->
+      locked_post =
+        Post
+        |> where([candidate], candidate.id == ^post.id)
+        |> lock("FOR UPDATE")
+        |> repo.one()
 
-      true ->
-        post
-        |> Ecto.Changeset.change(deleted_at: DateTime.utc_now(:second))
-        |> Repo.update()
-        |> tap(fn
-          {:ok, deleted_post} -> AscentLogs.soft_delete_ascent_for_post(deleted_post)
-          _result -> :ok
-        end)
+      cond do
+        is_nil(locked_post) or locked_post.gym_id != gym.id ->
+          {:error, :not_found}
+
+        not can_delete_post?(scope, gym, locked_post) ->
+          {:error, :unauthorized}
+
+        true ->
+          locked_post
+          |> Ecto.Changeset.change(deleted_at: now)
+          |> repo.update()
+      end
+    end)
+    |> Multi.run(:session, fn repo, %{post: deleted_post} ->
+      case repo.one(
+             from(session in Session,
+               where: session.post_id == ^deleted_post.id,
+               lock: "FOR UPDATE"
+             )
+           ) do
+        nil ->
+          {:ok, nil}
+
+        session ->
+          session
+          |> Ecto.Changeset.change(deleted_at: now)
+          |> repo.update()
+      end
+    end)
+    |> Multi.update_all(
+      :ascents,
+      fn %{post: deleted_post} ->
+        from(ascent in Ascent,
+          where: ascent.post_id == ^deleted_post.id and is_nil(ascent.deleted_at)
+        )
+      end,
+      set: [deleted_at: now]
+    )
+    |> Repo.transact()
+    |> case do
+      {:ok, %{post: deleted_post}} ->
+        {:ok, deleted_post}
+
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
     end
   end
 
@@ -251,6 +293,13 @@ defmodule Ascents.Feed do
   def delete_comment(_scope, _gym, _post, _comment), do: {:error, :unauthorized}
 
   defp preload_for_feed(query) do
+    session_ascents =
+      from(ascent in Ascent,
+        where: is_nil(ascent.deleted_at),
+        order_by: [asc: ascent.id],
+        preload: [:boulder_problem]
+      )
+
     query
     |> join(:inner, [post], user in assoc(post, :user))
     |> join(:inner, [post, _user], gym in assoc(post, :gym))
@@ -259,6 +308,11 @@ defmodule Ascents.Feed do
       gym: gym,
       boulder_problem: [],
       ascent: [],
+      session:
+        ^from(session in Session,
+          where: is_nil(session.deleted_at),
+          preload: [ascents: ^session_ascents]
+        ),
       comments:
         ^from(comment in Comment,
           where: is_nil(comment.deleted_at),
