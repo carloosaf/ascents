@@ -91,7 +91,13 @@ MINIO_API_PORT=9000
 MINIO_CONSOLE_PORT=9001
 S3_ENDPOINT=http://localhost:9000
 S3_BUCKET=ascents-dev
+PLATFORM_ADMIN_EMAILS=admin@example.com
 ```
+
+`PLATFORM_ADMIN_EMAILS` is a comma-separated, case-insensitive allowlist for
+the platform operators who may approve or revoke official gym badges. Gym
+owner/admin memberships are intentionally not sufficient for those actions.
+Leave the value unset to disable platform verification decisions.
 
 When using a hosted database provider such as Neon, keep the SSL query parameter
 in the URL:
