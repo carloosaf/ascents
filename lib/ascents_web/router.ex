@@ -61,6 +61,8 @@ defmodule AscentsWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live "/feed", FeedLive.Index
+    # Friend discovery reads and mutates the logged-in user's social graph.
+    live "/friends", FriendLive.Index
     live "/gyms/new", GymLive.New
     live "/gyms/:slug/settings", GymLive.Edit
     live "/gyms/:slug/members", GymLive.Members

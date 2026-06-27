@@ -125,6 +125,63 @@ defmodule Ascents.AccountsTest do
     end
   end
 
+  describe "search_profiles/3" do
+    test "matches usernames and display names case-insensitively" do
+      current_user = user_fixture(username: "current_climber")
+      username_match = user_fixture(username: "granite_fox")
+      display_match = user_fixture(username: "quiet_crimp")
+      non_match = user_fixture(username: "slab_only")
+
+      {:ok, display_match} =
+        Accounts.update_user_profile(user_scope_fixture(display_match), %{
+          username: display_match.username,
+          display_name: "Granite Guide"
+        })
+
+      result_ids =
+        current_user
+        |> user_scope_fixture()
+        |> Accounts.search_profiles("GRANITE")
+        |> Enum.map(& &1.id)
+
+      assert username_match.id in result_ids
+      assert display_match.id in result_ids
+      refute non_match.id in result_ids
+    end
+
+    test "excludes the current user and treats wildcard characters literally" do
+      current_user = user_fixture(username: "search_self")
+      wildcard_user = user_fixture(username: "literal_percent")
+      other_user = user_fixture(username: "ordinary_climber")
+      scope = user_scope_fixture(current_user)
+
+      refute current_user.id in Enum.map(Accounts.search_profiles(scope, "search"), & &1.id)
+      assert Enum.map(Accounts.search_profiles(scope, "%"), & &1.id) == []
+      assert wildcard_user.id in Enum.map(Accounts.search_profiles(scope, "percent"), & &1.id)
+      refute other_user.id in Enum.map(Accounts.search_profiles(scope, "percent"), & &1.id)
+    end
+
+    test "honors requested limits and caps oversized limits" do
+      current_user = user_fixture(username: "limit_owner")
+
+      for index <- 1..22 do
+        user_fixture(username: "bounded_#{String.pad_leading(Integer.to_string(index), 2, "0")}")
+      end
+
+      scope = user_scope_fixture(current_user)
+
+      assert length(Accounts.search_profiles(scope, "bounded", limit: 3)) == 3
+      assert length(Accounts.search_profiles(scope, "bounded", limit: 200)) == 20
+    end
+
+    test "returns no results for blank searches or unauthenticated scopes" do
+      user_fixture(username: "hidden_from_anonymous")
+
+      assert Accounts.search_profiles(nil, "hidden") == []
+      assert Accounts.search_profiles(user_scope_fixture(), "   ") == []
+    end
+  end
+
   describe "sudo_mode?/2" do
     test "validates the authenticated_at time" do
       now = DateTime.utc_now()
