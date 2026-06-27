@@ -100,9 +100,9 @@ defmodule AscentsWeb.FriendLive.Index do
 
         <section
           id="friend-discovery"
-          class="chalk-panel rounded-lg border border-ascents-line p-5 sm:p-6"
+          class="chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-5 sm:p-6"
         >
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div class="relative z-10 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 class="text-xl font-black text-ascents-chalk">Find climbers</h2>
               <p class="mt-1 text-sm text-ascents-muted">
@@ -119,7 +119,7 @@ defmodule AscentsWeb.FriendLive.Index do
             id="friend-search-form"
             phx-change="search"
             phx-submit="search"
-            class="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+            class="relative z-10 mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
           >
             <.input
               field={@search_form[:query]}
@@ -135,7 +135,7 @@ defmodule AscentsWeb.FriendLive.Index do
             </.button>
           </.form>
 
-          <div id="friend-search-feedback" class="mt-2">
+          <div id="friend-search-feedback" class="relative z-10 mt-2">
             <.empty_state
               :if={!@search_started?}
               id="friend-search-prompt"
@@ -153,7 +153,11 @@ defmodule AscentsWeb.FriendLive.Index do
             />
           </div>
 
-          <div id="friend-search-results" phx-update="stream" class="mt-3 space-y-3">
+          <div
+            id="friend-search-results"
+            phx-update="stream"
+            class="relative z-10 mt-3 space-y-3"
+          >
             <article
               :for={{id, result} <- @streams.search_results}
               id={id}
@@ -193,15 +197,19 @@ defmodule AscentsWeb.FriendLive.Index do
         <div class="grid gap-6 xl:grid-cols-2">
           <section
             id="incoming-requests-section"
-            class="chalk-panel rounded-lg border border-ascents-line p-5 sm:p-6"
+            class="chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-5 sm:p-6"
           >
-            <div class="flex items-center gap-3">
-              <span class="flex size-10 items-center justify-center rounded-md bg-ascents-tape text-ascents-tape-content">
+            <div class="relative z-10 mb-5 flex items-start gap-3">
+              <span class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md bg-ascents-tape text-ascents-tape-content">
                 <.icon name="hero-inbox-arrow-down" class="size-5" />
               </span>
-              <div>
-                <h2 class="text-lg font-black text-ascents-chalk">Incoming requests</h2>
-                <p class="text-sm text-ascents-muted">Climbers waiting for your response.</p>
+              <div class="min-w-0">
+                <h2 class="text-lg font-black leading-6 text-ascents-chalk">
+                  Incoming requests
+                </h2>
+                <p class="mt-1 text-sm leading-6 text-ascents-muted">
+                  Climbers waiting for your response.
+                </p>
               </div>
             </div>
 
@@ -211,10 +219,10 @@ defmodule AscentsWeb.FriendLive.Index do
               title="No incoming requests"
               description="New friend requests will appear here."
               icon="hero-inbox"
-              class="mt-5"
+              class="relative z-10"
             />
 
-            <div id="incoming-requests" phx-update="stream" class="mt-5 space-y-3">
+            <div id="incoming-requests" phx-update="stream" class="relative z-10 space-y-3">
               <article
                 :for={{id, friendship} <- @streams.incoming_requests}
                 id={id}
@@ -233,15 +241,17 @@ defmodule AscentsWeb.FriendLive.Index do
 
           <section
             id="outgoing-requests-section"
-            class="chalk-panel rounded-lg border border-ascents-line p-5 sm:p-6"
+            class="chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-5 sm:p-6"
           >
-            <div class="flex items-center gap-3">
-              <span class="flex size-10 items-center justify-center rounded-md bg-grade-blue/20 text-grade-blue">
+            <div class="relative z-10 mb-5 flex items-start gap-3">
+              <span class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md bg-grade-blue/20 text-grade-blue">
                 <.icon name="hero-paper-airplane" class="size-5" />
               </span>
-              <div>
-                <h2 class="text-lg font-black text-ascents-chalk">Sent requests</h2>
-                <p class="text-sm text-ascents-muted">Pending invitations you have sent.</p>
+              <div class="min-w-0">
+                <h2 class="text-lg font-black leading-6 text-ascents-chalk">Sent requests</h2>
+                <p class="mt-1 text-sm leading-6 text-ascents-muted">
+                  Pending invitations you have sent.
+                </p>
               </div>
             </div>
 
@@ -251,10 +261,10 @@ defmodule AscentsWeb.FriendLive.Index do
               title="No sent requests"
               description="Search above to invite another climber."
               icon="hero-paper-airplane"
-              class="mt-5"
+              class="relative z-10"
             />
 
-            <div id="outgoing-requests" phx-update="stream" class="mt-5 space-y-3">
+            <div id="outgoing-requests" phx-update="stream" class="relative z-10 space-y-3">
               <article
                 :for={{id, friendship} <- @streams.outgoing_requests}
                 id={id}
@@ -274,15 +284,17 @@ defmodule AscentsWeb.FriendLive.Index do
 
         <section
           id="accepted-friends-section"
-          class="chalk-panel rounded-lg border border-ascents-line p-5 sm:p-6"
+          class="chalk-panel relative overflow-hidden rounded-lg border border-ascents-line p-5 sm:p-6"
         >
-          <div class="flex items-center gap-3">
-            <span class="flex size-10 items-center justify-center rounded-md bg-ascents-action/20 text-ascents-action">
+          <div class="relative z-10 mb-5 flex items-start gap-3">
+            <span class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md bg-ascents-action/20 text-ascents-action">
               <.icon name="hero-user-group" class="size-5" />
             </span>
-            <div>
-              <h2 class="text-lg font-black text-ascents-chalk">Your friends</h2>
-              <p class="text-sm text-ascents-muted">Accepted connections in your climbing crew.</p>
+            <div class="min-w-0">
+              <h2 class="text-lg font-black leading-6 text-ascents-chalk">Your friends</h2>
+              <p class="mt-1 text-sm leading-6 text-ascents-muted">
+                Accepted connections in your climbing crew.
+              </p>
             </div>
           </div>
 
@@ -292,13 +304,13 @@ defmodule AscentsWeb.FriendLive.Index do
             title="No friends yet"
             description="Find a climber above and send your first request."
             icon="hero-user-group"
-            class="mt-5"
+            class="relative z-10"
           />
 
           <div
             id="accepted-friends"
             phx-update="stream"
-            class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            class="relative z-10 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
           >
             <article
               :for={{id, friend} <- @streams.friends}
