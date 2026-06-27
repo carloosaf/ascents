@@ -35,7 +35,7 @@ defmodule Ascents.Ascents do
     |> update_change(:image_object_key, &trim_string/1)
     |> update_change(:climbed_at, &trim_string/1)
     |> validate_required([:boulder_problem_id, :climbed_at, :visibility])
-    |> validate_inclusion(:visibility, Post.visibilities())
+    |> validate_inclusion(:visibility, Post.visibilities(:ascent))
     |> validate_length(:body, max: 2_000)
     |> validate_length(:image_object_key, max: 1_024)
     |> validate_climbed_at()

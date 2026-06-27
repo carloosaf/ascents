@@ -10,7 +10,8 @@ defmodule Ascents.Repo.Migrations.AddVisibilityToPosts do
     create index(:posts, [:user_id, :visibility])
 
     create constraint(:posts, :posts_visibility_check,
-             check: "visibility IN ('public', 'friends')"
+             check:
+               "visibility IN ('public', 'friends') OR (post_type = 'ascent' AND visibility = 'private')"
            )
   end
 end

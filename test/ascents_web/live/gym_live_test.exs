@@ -279,22 +279,25 @@ defmodule AscentsWeb.GymLiveTest do
                "#gym-ascent-post-visibility option[selected][value='public']"
              )
 
+      assert has_element?(view, "#gym-ascent-post-visibility option[value='private']")
+
       view
       |> form("#gym-ascent-post-form",
         ascent_post: %{
           boulder_problem_id: problem.id,
           climbed_at: "2026-06-11T10:30",
           body: "",
-          visibility: "friends"
+          visibility: "private"
         }
       )
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym)
+      assert [post] = Feed.list_gym_posts(gym, scope)
+      assert Feed.list_gym_posts(gym) == []
       assert post.post_type == "ascent"
       assert post.body == nil
       assert post.boulder_problem_id == problem.id
-      assert post.visibility == "friends"
+      assert post.visibility == "private"
       assert post.gym_id == gym.id
       assert has_element?(view, "#home-post-ascent-#{post.id}")
 

@@ -9,7 +9,8 @@ defmodule Ascents.Feed.Post do
   alias Ascents.Routes.BoulderProblem
 
   @post_types ~w(normal ascent)
-  @visibilities ~w(public friends)
+  @normal_visibilities ~w(public friends)
+  @ascent_visibilities ~w(public friends private)
 
   schema "posts" do
     field :body, :string
@@ -37,7 +38,7 @@ defmodule Ascents.Feed.Post do
     |> update_change(:image_object_key, &trim_string/1)
     |> validate_required([:gym_id, :user_id, :post_type, :visibility])
     |> validate_inclusion(:post_type, @post_types)
-    |> validate_inclusion(:visibility, @visibilities)
+    |> validate_visibility()
     |> validate_body()
     |> validate_ascent_route()
     |> validate_length(:image_object_key, max: 1_024)
@@ -48,7 +49,14 @@ defmodule Ascents.Feed.Post do
     |> check_constraint(:visibility, name: :posts_visibility_check)
   end
 
-  def visibilities, do: @visibilities
+  def visibilities, do: @normal_visibilities
+  def visibilities("ascent"), do: @ascent_visibilities
+  def visibilities(:ascent), do: @ascent_visibilities
+  def visibilities(_post_type), do: @normal_visibilities
+
+  defp validate_visibility(changeset) do
+    validate_inclusion(changeset, :visibility, visibilities(get_field(changeset, :post_type)))
+  end
 
   defp validate_body(changeset) do
     changeset =

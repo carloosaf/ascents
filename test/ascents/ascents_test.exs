@@ -57,13 +57,13 @@ defmodule Ascents.AscentsTest do
       assert ascent.climbed_at == ~U[2026-06-11 10:30:00Z]
     end
 
-    test "accepts public and friends visibility values" do
+    test "accepts public, friends, and private visibility values" do
       scope = user_scope_fixture()
       gym = gym_fixture()
       problem = boulder_problem_fixture(gym: gym)
       {:ok, _membership} = Gyms.join_gym(scope, gym)
 
-      for visibility <- ~w(public friends) do
+      for visibility <- ~w(public friends private) do
         assert {:ok, %{post: post}} =
                  AscentLogs.create_ascent_post(
                    scope,
@@ -91,11 +91,39 @@ defmodule Ascents.AscentsTest do
                  gym,
                  valid_ascent_post_attributes(
                    boulder_problem_id: problem.id,
-                   visibility: "private"
+                   visibility: "hidden"
                  )
                )
 
       assert %{visibility: ["is invalid"]} = errors_on(changeset)
+    end
+
+    test "keeps private ascents visible only to their author" do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      viewer_scope = user_scope_fixture()
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      {:ok, _membership} = Gyms.join_gym(viewer_scope, gym)
+
+      assert {:ok, %{post: private_post}} =
+               AscentLogs.create_ascent_post(
+                 scope,
+                 gym,
+                 valid_ascent_post_attributes(
+                   boulder_problem_id: problem.id,
+                   visibility: "private"
+                 )
+               )
+
+      assert Feed.list_gym_posts(gym) == []
+      assert Enum.map(Feed.list_gym_posts(gym, scope), & &1.id) == [private_post.id]
+      assert Feed.list_gym_posts(gym, viewer_scope) == []
+      assert Enum.map(Feed.list_home_posts(scope), & &1.id) == [private_post.id]
+      assert Feed.list_home_posts(viewer_scope) == []
+      assert Enum.map(Feed.list_user_posts(user, scope), & &1.id) == [private_post.id]
+      assert Feed.list_user_posts(user, viewer_scope) == []
     end
 
     test "requires gym membership" do
