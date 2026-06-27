@@ -9,6 +9,7 @@ defmodule AscentsWeb.ProfileLiveTest do
   alias Ascents.Accounts
   alias Ascents.Accounts.Scope
   alias Ascents.Feed
+  alias Ascents.Friends
   alias Ascents.Gyms
   alias Ascents.Media.TestStorage
 
@@ -62,8 +63,13 @@ defmodule AscentsWeb.ProfileLiveTest do
       assert has_element?(viewer_view, "#profile-show")
       assert has_element?(owner_view, "#profile-edit-link")
       assert has_element?(owner_view, "#profile-account-link")
+      assert has_element?(owner_view, "#profile-owner-actions")
+      refute has_element?(owner_view, "#profile-friend-controls")
       refute has_element?(viewer_view, "#profile-edit-link")
       refute has_element?(viewer_view, "#profile-account-link")
+      refute has_element?(viewer_view, "#profile-owner-actions")
+      assert has_element?(viewer_view, "#profile-friend-controls[data-state='none']")
+      assert has_element?(viewer_view, "#profile-add-friend")
       refute has_element?(owner_view, "#profile-stats")
       refute has_element?(viewer_view, "#profile-stats")
       refute has_element?(owner_view, "#profile-stats-private")
@@ -169,6 +175,227 @@ defmodule AscentsWeb.ProfileLiveTest do
       assert [comment] = Feed.get_post(post.gym, post.id).comments
       assert has_element?(view, "#home-comment-#{comment.id}")
     end
+
+    test "adds a friend from another user's profile", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      scope = user_scope_fixture(current_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='none']")
+      assert has_element?(view, "#profile-add-friend")
+
+      view
+      |> element("#profile-add-friend")
+      |> render_click()
+
+      assert Friends.relationship_state(scope, profile_user) == :outgoing_pending
+      assert has_element?(view, "#profile-friend-controls[data-state='outgoing_pending']")
+      assert has_element?(view, "#profile-friend-state")
+      assert has_element?(view, "#profile-cancel-friend-request")
+      refute has_element?(view, "#profile-add-friend")
+    end
+
+    test "refreshes an externally changed relationship after a stale send click", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      current_scope = user_scope_fixture(current_user)
+      profile_scope = user_scope_fixture(profile_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='none']")
+      assert has_element?(view, "#profile-add-friend")
+
+      assert {:ok, _friendship} = Friends.send_request(profile_scope, current_user)
+
+      view
+      |> element("#profile-add-friend")
+      |> render_click()
+
+      relationship = Friends.get_relationship(current_scope, profile_user)
+
+      assert relationship.status == "pending"
+      assert relationship.requester_id == profile_user.id
+      assert relationship.recipient_id == current_user.id
+      assert flash_text(view, "#flash-error") == friendship_action_error()
+      refute has_element?(view, "#flash-info")
+      assert has_element?(view, "#profile-friend-controls[data-state='incoming_pending']")
+    end
+
+    test "shows an outgoing request and cancels it", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      friendship_fixture(requester: current_user, recipient: profile_user)
+      scope = user_scope_fixture(current_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='outgoing_pending']")
+      assert has_element?(view, "#profile-cancel-friend-request")
+
+      view
+      |> element("#profile-cancel-friend-request")
+      |> render_click()
+
+      assert Friends.relationship_state(scope, profile_user) == :none
+      assert has_element?(view, "#profile-friend-controls[data-state='none']")
+      assert has_element?(view, "#profile-add-friend")
+      refute has_element?(view, "#profile-cancel-friend-request")
+    end
+
+    test "refreshes an externally accepted relationship after a stale update click", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      friendship = friendship_fixture(requester: current_user, recipient: profile_user)
+      current_scope = user_scope_fixture(current_user)
+      profile_scope = user_scope_fixture(profile_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='outgoing_pending']")
+      assert has_element?(view, "#profile-cancel-friend-request")
+
+      assert {:ok, accepted} = Friends.accept_request(profile_scope, friendship)
+
+      view
+      |> element("#profile-cancel-friend-request")
+      |> render_click()
+
+      relationship = Friends.get_relationship(current_scope, profile_user)
+
+      assert relationship.id == accepted.id
+      assert relationship.status == "accepted"
+      assert Friends.relationship_state(current_scope, profile_user) == :friends
+      assert flash_text(view, "#flash-error") == friendship_action_error()
+      refute has_element?(view, "#flash-info")
+      assert has_element?(view, "#profile-friend-controls[data-state='friends']")
+    end
+
+    test "shows an incoming request and accepts it", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      friendship_fixture(requester: profile_user, recipient: current_user)
+      scope = user_scope_fixture(current_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='incoming_pending']")
+      assert has_element?(view, "#profile-accept-friend-request")
+      assert has_element?(view, "#profile-decline-friend-request")
+
+      view
+      |> element("#profile-accept-friend-request")
+      |> render_click()
+
+      assert Friends.relationship_state(scope, profile_user) == :friends
+      assert has_element?(view, "#profile-friend-controls[data-state='friends']")
+      assert has_element?(view, "#profile-remove-friend")
+      refute has_element?(view, "#profile-accept-friend-request")
+    end
+
+    test "declines an incoming request", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      friendship_fixture(requester: profile_user, recipient: current_user)
+      scope = user_scope_fixture(current_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      view
+      |> element("#profile-decline-friend-request")
+      |> render_click()
+
+      assert Friends.relationship_state(scope, profile_user) == :declined
+      assert has_element?(view, "#profile-friend-controls[data-state='declined']")
+      assert has_element?(view, "#profile-add-friend")
+      refute has_element?(view, "#profile-decline-friend-request")
+    end
+
+    test "shows accepted friendship and removes it", %{conn: conn} do
+      current_user = user_fixture()
+      profile_user = user_fixture()
+      accepted_friendship_fixture(requester: profile_user, recipient: current_user)
+      scope = user_scope_fixture(current_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{profile_user.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='friends']")
+      assert has_element?(view, "#profile-remove-friend")
+
+      view
+      |> element("#profile-remove-friend")
+      |> render_click()
+
+      assert Friends.relationship_state(scope, profile_user) == :none
+      assert has_element?(view, "#profile-friend-controls[data-state='none']")
+      assert has_element?(view, "#profile-add-friend")
+      refute has_element?(view, "#profile-remove-friend")
+    end
+
+    test "own profile hides friend actions and forged events cannot create them", %{conn: conn} do
+      current_user = user_fixture()
+      scope = user_scope_fixture(current_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{current_user.username}")
+
+      refute has_element?(view, "#profile-friend-controls")
+      refute has_element?(view, "#profile-add-friend")
+
+      render_click(view, "send-friend-request", %{"user-id" => current_user.id})
+
+      assert Friends.relationship_state(scope, current_user) == :self
+      assert has_element?(view, "#flash-error")
+      refute has_element?(view, "#profile-friend-controls")
+    end
+
+    test "forged relationship IDs cannot act outside the mounted profile", %{conn: conn} do
+      current_user = user_fixture()
+      mounted_profile = user_fixture()
+      unrelated_user = user_fixture()
+
+      unrelated =
+        friendship_fixture(requester: unrelated_user, recipient: current_user)
+
+      scope = user_scope_fixture(current_user)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{mounted_profile.username}")
+
+      assert has_element?(view, "#profile-friend-controls[data-state='none']")
+
+      render_click(view, "accept-friend-request", %{
+        "id" => unrelated.id,
+        "user-id" => unrelated_user.id
+      })
+
+      assert Friends.relationship_state(scope, mounted_profile) == :none
+      assert Friends.relationship_state(scope, unrelated_user) == :incoming_pending
+      assert has_element?(view, "#profile-friend-controls[data-state='none']")
+      assert has_element?(view, "#flash-error")
+    end
+  end
+
+  defp friendship_action_error do
+    "Unable to update this friendship. Please try again."
+  end
+
+  defp flash_text(view, selector) do
+    view
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query(selector)
+    |> LazyHTML.text()
+    |> String.trim()
   end
 
   describe "edit" do
