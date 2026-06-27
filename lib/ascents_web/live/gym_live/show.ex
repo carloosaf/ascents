@@ -876,7 +876,7 @@ defmodule AscentsWeb.GymLive.Show do
                 id="gym-session-visibility"
                 type="select"
                 label="Audience"
-                options={visibility_options()}
+                options={post_visibility_options()}
               />
               <p id="gym-session-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
                 Friends-only sessions and their image are limited to accepted friends.
