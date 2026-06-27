@@ -155,7 +155,7 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("comment", %{"post_id" => post_id, "comment" => comment_params}, socket) do
-    case Feed.get_post(socket.assigns.gym, post_id) do
+    case Feed.get_post(socket.assigns.gym, post_id, socket.assigns.current_scope) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -170,7 +170,10 @@ defmodule AscentsWeb.GymLive.Show do
             {:noreply,
              socket
              |> assign(:comment_form, to_form(Feed.change_comment(%Comment{})))
-             |> stream_insert(:posts, Feed.get_post(socket.assigns.gym, post.id))}
+             |> stream_insert(
+               :posts,
+               Feed.get_post(socket.assigns.gym, post.id, socket.assigns.current_scope)
+             )}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply,
@@ -186,7 +189,7 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("delete-post", %{"id" => post_id}, socket) do
-    case Feed.get_post(socket.assigns.gym, post_id) do
+    case Feed.get_post(socket.assigns.gym, post_id, socket.assigns.current_scope) do
       nil ->
         {:noreply, put_flash(socket, :error, "Post not found.")}
 
@@ -202,11 +205,17 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("delete-comment", %{"post_id" => post_id, "id" => comment_id}, socket) do
-    with %Post{} = post <- Feed.get_post(socket.assigns.gym, post_id),
+    with %Post{} = post <-
+           Feed.get_post(socket.assigns.gym, post_id, socket.assigns.current_scope),
          %Comment{} = comment <- Feed.get_post_comment(post, comment_id) do
       case Feed.delete_comment(socket.assigns.current_scope, socket.assigns.gym, post, comment) do
         {:ok, _comment} ->
-          {:noreply, stream_insert(socket, :posts, Feed.get_post(socket.assigns.gym, post.id))}
+          {:noreply,
+           stream_insert(
+             socket,
+             :posts,
+             Feed.get_post(socket.assigns.gym, post.id, socket.assigns.current_scope)
+           )}
 
         {:error, :unauthorized} ->
           {:noreply, put_flash(socket, :error, "You can only delete your own comments.")}
@@ -517,6 +526,16 @@ defmodule AscentsWeb.GymLive.Show do
                 label="Post"
                 placeholder="Share beta, session notes, or gym updates"
               />
+              <.input
+                field={@post_form[:visibility]}
+                id="gym-post-visibility"
+                type="select"
+                label="Audience"
+                options={post_visibility_options()}
+              />
+              <p id="gym-post-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
+                Friends-only posts will be limited to your accepted friends.
+              </p>
               <.image_upload_input
                 upload={@uploads.image}
                 label="Image"
@@ -552,6 +571,16 @@ defmodule AscentsWeb.GymLive.Show do
                 label="Notes"
                 placeholder="Optional beta, attempts, or session notes"
               />
+              <.input
+                field={@ascent_form[:visibility]}
+                id="gym-ascent-post-visibility"
+                type="select"
+                label="Audience"
+                options={ascent_visibility_options()}
+              />
+              <p id="gym-ascent-post-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
+                Private ascents are kept for your own log; friends-only ascents will be limited to your accepted friends.
+              </p>
               <.image_upload_input
                 upload={@uploads.image}
                 label="Image"
@@ -584,7 +613,7 @@ defmodule AscentsWeb.GymLive.Show do
   defp assign_gym_state(socket, gym) do
     gym = Gyms.get_gym!(gym.id)
     current_scope = socket.assigns.current_scope
-    posts = Feed.list_gym_posts(gym)
+    posts = Feed.list_gym_posts(gym, current_scope)
 
     socket
     |> assign(
@@ -669,6 +698,14 @@ defmodule AscentsWeb.GymLive.Show do
     Enum.map(problems, fn problem ->
       {"#{problem.grade} · #{problem.title}", problem.id}
     end)
+  end
+
+  defp post_visibility_options do
+    [{"Public", "public"}, {"Friends only", "friends"}]
+  end
+
+  defp ascent_visibility_options do
+    post_visibility_options() ++ [{"Private", "private"}]
   end
 
   defp default_ascent_attrs do

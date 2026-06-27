@@ -29,15 +29,18 @@ defmodule Ascents.Feed do
   @doc """
   Lists visible posts for a gym with authors, gym, and visible comments preloaded.
   """
-  def list_gym_posts(%Gym{} = gym) do
+  def list_gym_posts(gym, scope \\ nil)
+
+  def list_gym_posts(%Gym{} = gym, scope) do
     Post
     |> where([post], post.gym_id == ^gym.id and is_nil(post.deleted_at))
+    |> visible_to(scope)
     |> preload_for_feed()
     |> order_by([post], desc: post.inserted_at, desc: post.id)
     |> Repo.all()
   end
 
-  def list_gym_posts(_gym), do: []
+  def list_gym_posts(_gym, _scope), do: []
 
   @doc """
   Lists visible posts across gyms joined by the current user.
@@ -49,6 +52,7 @@ defmodule Ascents.Feed do
       on: membership.gym_id == post.gym_id and membership.user_id == ^user.id
     )
     |> where([post, _user, _gym, _membership], is_nil(post.deleted_at))
+    |> visible_to(Scope.for_user(user))
     |> order_by([post], desc: post.inserted_at, desc: post.id)
     |> Repo.all()
   end
@@ -65,6 +69,7 @@ defmodule Ascents.Feed do
       on: membership.gym_id == post.gym_id and membership.user_id == ^user.id
     )
     |> where([post, _user, _gym, _membership], post.id == ^id and is_nil(post.deleted_at))
+    |> visible_to(Scope.for_user(user))
     |> Repo.one()
   end
 
@@ -73,39 +78,48 @@ defmodule Ascents.Feed do
   @doc """
   Lists visible posts authored by a user with authors, gyms, and visible comments preloaded.
   """
-  def list_user_posts(%User{id: user_id}) do
+  def list_user_posts(user, scope \\ nil)
+
+  def list_user_posts(%User{id: user_id}, scope) do
     Post
     |> where([post], post.user_id == ^user_id and is_nil(post.deleted_at))
+    |> visible_to(scope)
     |> preload_for_feed()
     |> order_by([post], desc: post.inserted_at, desc: post.id)
     |> Repo.all()
   end
 
-  def list_user_posts(_user), do: []
+  def list_user_posts(_user, _scope), do: []
 
   @doc """
   Gets a gym-scoped post.
   """
-  def get_post(%Gym{} = gym, id) do
+  def get_post(gym, id, scope \\ nil)
+
+  def get_post(%Gym{} = gym, id, scope) do
     Post
     |> where([post], post.gym_id == ^gym.id and post.id == ^id and is_nil(post.deleted_at))
+    |> visible_to(scope)
     |> preload_for_feed()
     |> Repo.one()
   end
 
-  def get_post(_gym, _id), do: nil
+  def get_post(_gym, _id, _scope), do: nil
 
   @doc """
   Gets a visible post authored by a user.
   """
-  def get_user_post(%User{id: user_id}, id) do
+  def get_user_post(user, id, scope \\ nil)
+
+  def get_user_post(%User{id: user_id}, id, scope) do
     Post
     |> where([post], post.user_id == ^user_id and post.id == ^id and is_nil(post.deleted_at))
+    |> visible_to(scope)
     |> preload_for_feed()
     |> Repo.one()
   end
 
-  def get_user_post(_user, _id), do: nil
+  def get_user_post(_user, _id, _scope), do: nil
 
   @doc """
   Finds a preloaded comment on a visible feed post.
@@ -125,7 +139,7 @@ defmodule Ascents.Feed do
 
     if Gyms.can_post_in_gym?(scope, gym) do
       %Post{gym_id: gym.id, user_id: user.id}
-      |> Post.changeset(take_attrs(attrs, [:body, :image_object_key]))
+      |> Post.changeset(take_attrs(attrs, [:body, :image_object_key, :visibility]))
       |> Repo.insert()
       |> preload_result()
     else
@@ -141,16 +155,20 @@ defmodule Ascents.Feed do
   def create_comment(%Scope{user: %User{} = user} = scope, %Gym{} = gym, %Post{} = post, attrs)
       when is_map(attrs) do
     gym = Gyms.get_gym!(gym.id)
+    visible_post = get_post(gym, post.id, scope)
 
     cond do
+      is_nil(visible_post) ->
+        {:error, :not_found}
+
       not Gyms.can_post_in_gym?(scope, gym) ->
         {:error, :unauthorized}
 
-      post.gym_id != gym.id or post.deleted_at ->
+      visible_post.gym_id != gym.id or visible_post.deleted_at ->
         {:error, :not_found}
 
       true ->
-        %Comment{post_id: post.id, user_id: user.id}
+        %Comment{post_id: visible_post.id, user_id: user.id}
         |> Comment.changeset(take_attrs(attrs, [:body]))
         |> Repo.insert()
         |> preload_result()
@@ -248,6 +266,37 @@ defmodule Ascents.Feed do
           preload: [:user]
         )
     )
+  end
+
+  defp visible_to(query, %Scope{user: %User{id: user_id}}) do
+    where(
+      query,
+      [post],
+      post.visibility == "public" or post.user_id == ^user_id or
+        (post.visibility == "friends" and
+           fragment(
+             """
+             EXISTS (
+               SELECT 1
+               FROM friendships AS friendship
+               WHERE friendship.status = 'accepted'
+                 AND (
+                   (friendship.requester_id = ? AND friendship.recipient_id = ?)
+                   OR
+                   (friendship.recipient_id = ? AND friendship.requester_id = ?)
+                 )
+             )
+             """,
+             post.user_id,
+             ^user_id,
+             post.user_id,
+             ^user_id
+           ))
+    )
+  end
+
+  defp visible_to(query, _scope) do
+    where(query, [post], post.visibility == "public")
   end
 
   defp preload_result({:ok, %Post{} = post}), do: {:ok, Repo.preload(post, [:user, :gym])}

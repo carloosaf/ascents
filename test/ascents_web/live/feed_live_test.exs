@@ -3,6 +3,7 @@ defmodule AscentsWeb.FeedLiveTest do
 
   import Ascents.AccountsFixtures
   import Ascents.FeedFixtures
+  import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
   import Phoenix.LiveViewTest
 
@@ -38,6 +39,31 @@ defmodule AscentsWeb.FeedLiveTest do
 
       assert has_element?(view, "#posts-#{joined_post.id}")
       refute has_element?(view, "#posts-#{other_post.id}")
+    end
+
+    test "renders friends-only posts only for authors and accepted friends", %{conn: conn} do
+      author = user_fixture()
+      author_scope = user_scope_fixture(author)
+      friend = user_fixture()
+      friend_scope = user_scope_fixture(friend)
+      unrelated = user_fixture()
+      unrelated_scope = user_scope_fixture(unrelated)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(author_scope, gym)
+      {:ok, _membership} = Gyms.join_gym(friend_scope, gym)
+      {:ok, _membership} = Gyms.join_gym(unrelated_scope, gym)
+      accepted_friendship_fixture(requester: author, recipient: friend)
+
+      post =
+        post_fixture(scope: author_scope, gym: gym, body: "Friends feed", visibility: "friends")
+
+      {:ok, author_view, _html} = conn |> log_in_user(author) |> live(~p"/feed")
+      {:ok, friend_view, _html} = build_conn() |> log_in_user(friend) |> live(~p"/feed")
+      {:ok, unrelated_view, _html} = build_conn() |> log_in_user(unrelated) |> live(~p"/feed")
+
+      assert has_element?(author_view, "#posts-#{post.id}")
+      assert has_element?(friend_view, "#posts-#{post.id}")
+      refute has_element?(unrelated_view, "#posts-#{post.id}")
     end
 
     test "renders profile pictures for post authors", %{conn: conn} do

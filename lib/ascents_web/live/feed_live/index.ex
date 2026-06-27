@@ -28,7 +28,10 @@ defmodule AscentsWeb.FeedLive.Index do
             {:noreply,
              socket
              |> assign(:comment_form, to_form(Feed.change_comment(%Comment{})))
-             |> stream_insert(:posts, Feed.get_post(post.gym, post.id))}
+             |> stream_insert(
+               :posts,
+               Feed.get_post(post.gym, post.id, socket.assigns.current_scope)
+             )}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply,
@@ -61,7 +64,12 @@ defmodule AscentsWeb.FeedLive.Index do
          %Comment{} = comment <- Feed.get_post_comment(post, comment_id) do
       case Feed.delete_comment(socket.assigns.current_scope, post.gym, post, comment) do
         {:ok, _comment} ->
-          {:noreply, stream_insert(socket, :posts, Feed.get_post(post.gym, post.id))}
+          {:noreply,
+           stream_insert(
+             socket,
+             :posts,
+             Feed.get_post(post.gym, post.id, socket.assigns.current_scope)
+           )}
 
         {:error, :unauthorized} ->
           {:noreply, put_flash(socket, :error, "You can only delete your own comments.")}

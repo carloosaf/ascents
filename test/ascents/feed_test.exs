@@ -3,6 +3,7 @@ defmodule Ascents.FeedTest do
 
   import Ascents.AccountsFixtures
   import Ascents.FeedFixtures
+  import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
 
   alias Ascents.Feed
@@ -46,6 +47,35 @@ defmodule Ascents.FeedTest do
       assert post.user_id == user.id
       assert post.body == "Big move on blue."
       assert post.image_object_key == "posts/1/a.jpg"
+      assert post.visibility == "public"
+    end
+
+    test "accepts public and friends visibility values" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      for visibility <- ~w(public friends) do
+        assert {:ok, post} =
+                 Feed.create_post(scope, gym, %{
+                   body: "#{visibility} post",
+                   visibility: visibility
+                 })
+
+        assert post.visibility == visibility
+        assert post.gym_id == gym.id
+      end
+    end
+
+    test "rejects invalid visibility values" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      assert {:error, changeset} =
+               Feed.create_post(scope, gym, %{body: "Hidden", visibility: "private"})
+
+      assert %{visibility: ["is invalid"]} = errors_on(changeset)
     end
 
     test "validates post body" do
@@ -105,6 +135,45 @@ defmodule Ascents.FeedTest do
              ] = Feed.list_user_posts(user)
 
       assert user_id == user.id
+    end
+
+    test "limits friends-only posts to the author and accepted friends across surfaces" do
+      author = user_fixture()
+      author_scope = user_scope_fixture(author)
+      friend = user_fixture()
+      friend_scope = user_scope_fixture(friend)
+      unrelated_scope = user_scope_fixture()
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(author_scope, gym)
+      {:ok, _membership} = Gyms.join_gym(friend_scope, gym)
+      {:ok, _membership} = Gyms.join_gym(unrelated_scope, gym)
+      accepted_friendship_fixture(requester: author, recipient: friend)
+
+      {:ok, friends_post} =
+        Feed.create_post(author_scope, gym, %{body: "Friends beta", visibility: "friends"})
+
+      assert Feed.list_gym_posts(gym) == []
+      assert Feed.get_post(gym, friends_post.id) == nil
+      assert Feed.list_user_posts(author) == []
+      assert Feed.get_user_post(author, friends_post.id) == nil
+
+      assert Feed.list_gym_posts(gym, unrelated_scope) == []
+      assert Feed.get_post(gym, friends_post.id, unrelated_scope) == nil
+      assert Feed.list_home_posts(unrelated_scope) == []
+      assert Feed.list_user_posts(author, unrelated_scope) == []
+      assert Feed.get_user_post(author, friends_post.id, unrelated_scope) == nil
+
+      assert Enum.map(Feed.list_gym_posts(gym, author_scope), & &1.id) == [friends_post.id]
+      assert Feed.get_post(gym, friends_post.id, author_scope).id == friends_post.id
+      assert Enum.map(Feed.list_home_posts(author_scope), & &1.id) == [friends_post.id]
+      assert Enum.map(Feed.list_user_posts(author, author_scope), & &1.id) == [friends_post.id]
+      assert Feed.get_user_post(author, friends_post.id, author_scope).id == friends_post.id
+
+      assert Enum.map(Feed.list_gym_posts(gym, friend_scope), & &1.id) == [friends_post.id]
+      assert Feed.get_post(gym, friends_post.id, friend_scope).id == friends_post.id
+      assert Enum.map(Feed.list_home_posts(friend_scope), & &1.id) == [friends_post.id]
+      assert Enum.map(Feed.list_user_posts(author, friend_scope), & &1.id) == [friends_post.id]
+      assert Feed.get_user_post(author, friends_post.id, friend_scope).id == friends_post.id
     end
   end
 

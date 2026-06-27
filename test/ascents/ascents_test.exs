@@ -3,6 +3,7 @@ defmodule Ascents.AscentsTest do
 
   import Ascents.AccountsFixtures
   import Ascents.AscentsFixtures
+  import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
   import Ascents.RoutesFixtures
 
@@ -45,6 +46,7 @@ defmodule Ascents.AscentsTest do
       assert post.gym_id == gym.id
       assert post.user_id == user.id
       assert post.boulder_problem_id == problem.id
+      assert post.visibility == "public"
 
       assert %Ascent{} = ascent
       assert ascent.post_id == post.id
@@ -54,6 +56,108 @@ defmodule Ascents.AscentsTest do
       assert ascent.grade_snapshot == "6A"
       assert ascent.grade_scale_snapshot == "french"
       assert ascent.climbed_at == ~U[2026-06-11 10:30:00Z]
+    end
+
+    test "accepts public, friends, and private visibility values" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      for visibility <- ~w(public friends private) do
+        assert {:ok, %{post: post}} =
+                 AscentLogs.create_ascent_post(
+                   scope,
+                   gym,
+                   valid_ascent_post_attributes(
+                     boulder_problem_id: problem.id,
+                     visibility: visibility
+                   )
+                 )
+
+        assert post.visibility == visibility
+        assert post.gym_id == gym.id
+      end
+    end
+
+    test "rejects invalid visibility values" do
+      scope = user_scope_fixture()
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      assert {:error, changeset} =
+               AscentLogs.create_ascent_post(
+                 scope,
+                 gym,
+                 valid_ascent_post_attributes(
+                   boulder_problem_id: problem.id,
+                   visibility: "hidden"
+                 )
+               )
+
+      assert %{visibility: ["is invalid"]} = errors_on(changeset)
+    end
+
+    test "keeps private ascents visible only to their author" do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      viewer_scope = user_scope_fixture()
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      {:ok, _membership} = Gyms.join_gym(viewer_scope, gym)
+
+      assert {:ok, %{post: private_post}} =
+               AscentLogs.create_ascent_post(
+                 scope,
+                 gym,
+                 valid_ascent_post_attributes(
+                   boulder_problem_id: problem.id,
+                   visibility: "private"
+                 )
+               )
+
+      assert Feed.list_gym_posts(gym) == []
+      assert Enum.map(Feed.list_gym_posts(gym, scope), & &1.id) == [private_post.id]
+      assert Feed.list_gym_posts(gym, viewer_scope) == []
+      assert Enum.map(Feed.list_home_posts(scope), & &1.id) == [private_post.id]
+      assert Feed.list_home_posts(viewer_scope) == []
+      assert Enum.map(Feed.list_user_posts(user, scope), & &1.id) == [private_post.id]
+      assert Feed.list_user_posts(user, viewer_scope) == []
+    end
+
+    test "keeps friends-only ascents visible to the author and accepted friends" do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      friend = user_fixture()
+      friend_scope = user_scope_fixture(friend)
+      unrelated_scope = user_scope_fixture()
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      {:ok, _membership} = Gyms.join_gym(friend_scope, gym)
+      {:ok, _membership} = Gyms.join_gym(unrelated_scope, gym)
+      accepted_friendship_fixture(requester: user, recipient: friend)
+
+      assert {:ok, %{post: friends_post}} =
+               AscentLogs.create_ascent_post(
+                 scope,
+                 gym,
+                 valid_ascent_post_attributes(
+                   boulder_problem_id: problem.id,
+                   visibility: "friends"
+                 )
+               )
+
+      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(gym, unrelated_scope) == []
+      assert Enum.map(Feed.list_gym_posts(gym, scope), & &1.id) == [friends_post.id]
+      assert Enum.map(Feed.list_gym_posts(gym, friend_scope), & &1.id) == [friends_post.id]
+      assert Feed.list_home_posts(unrelated_scope) == []
+      assert Enum.map(Feed.list_home_posts(friend_scope), & &1.id) == [friends_post.id]
+      assert Feed.list_user_posts(user, unrelated_scope) == []
+      assert Enum.map(Feed.list_user_posts(user, friend_scope), & &1.id) == [friends_post.id]
     end
 
     test "requires gym membership" do

@@ -3,6 +3,7 @@ defmodule AscentsWeb.GymLiveTest do
 
   import Ascents.AccountsFixtures
   import Ascents.FeedFixtures
+  import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
   import Ascents.RoutesFixtures
   import Phoenix.LiveViewTest
@@ -227,6 +228,35 @@ defmodule AscentsWeb.GymLiveTest do
       refute has_element?(view, "#gym-post-form")
     end
 
+    test "limits friends-only posts on the public gym root", %{conn: conn} do
+      author = user_fixture()
+      author_scope = user_scope_fixture(author)
+      friend = user_fixture()
+      unrelated = user_fixture()
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(author_scope, gym)
+      accepted_friendship_fixture(requester: author, recipient: friend)
+
+      post =
+        post_fixture(scope: author_scope, gym: gym, body: "Friend beta", visibility: "friends")
+
+      {:ok, anonymous_view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      {:ok, unrelated_view, _html} =
+        build_conn() |> log_in_user(unrelated) |> live(~p"/gyms/#{gym.slug}")
+
+      {:ok, friend_view, _html} =
+        build_conn() |> log_in_user(friend) |> live(~p"/gyms/#{gym.slug}")
+
+      {:ok, author_view, _html} =
+        build_conn() |> log_in_user(author) |> live(~p"/gyms/#{gym.slug}")
+
+      refute has_element?(anonymous_view, "#posts-#{post.id}")
+      refute has_element?(unrelated_view, "#posts-#{post.id}")
+      assert has_element?(friend_view, "#posts-#{post.id}")
+      assert has_element?(author_view, "#posts-#{post.id}")
+    end
+
     test "allows members to create posts", %{conn: conn} do
       user = user_fixture()
       scope = user_scope_fixture(user)
@@ -241,13 +271,18 @@ defmodule AscentsWeb.GymLiveTest do
       |> render_click()
 
       assert has_element?(view, "#gym-post-modal")
+      assert has_element?(view, "#gym-post-visibility option[selected][value='public']")
 
       view
-      |> form("#gym-post-form", post: %{body: "New slab is technical."})
+      |> form("#gym-post-form",
+        post: %{body: "New slab is technical.", visibility: "friends"}
+      )
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym)
+      assert [post] = Feed.list_gym_posts(gym, scope)
       assert post.body == "New slab is technical."
+      assert post.visibility == "friends"
+      assert post.gym_id == gym.id
       assert has_element?(view, "#posts-#{post.id}")
     end
 
@@ -299,20 +334,31 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert has_element?(view, "#gym-ascent-post-form")
 
+      assert has_element?(
+               view,
+               "#gym-ascent-post-visibility option[selected][value='public']"
+             )
+
+      assert has_element?(view, "#gym-ascent-post-visibility option[value='private']")
+
       view
       |> form("#gym-ascent-post-form",
         ascent_post: %{
           boulder_problem_id: problem.id,
           climbed_at: "2026-06-11T10:30",
-          body: ""
+          body: "",
+          visibility: "private"
         }
       )
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym)
+      assert [post] = Feed.list_gym_posts(gym, scope)
+      assert Feed.list_gym_posts(gym) == []
       assert post.post_type == "ascent"
       assert post.body == nil
       assert post.boulder_problem_id == problem.id
+      assert post.visibility == "private"
+      assert post.gym_id == gym.id
       assert has_element?(view, "#home-post-ascent-#{post.id}")
 
       ascent = AscentLogs.get_ascent_by_post(post)
