@@ -55,9 +55,19 @@ defmodule AscentsWeb.UserSessionControllerTest do
       assert get_session(conn, :user_token)
       assert redirected_to(conn) == ~p"/"
 
-      # Now do a logged in request and assert on the menu
+      # Now do a logged in request and assert on the personalized public home
       conn = get(conn, ~p"/")
-      assert redirected_to(conn) == ~p"/feed"
+
+      home_document =
+        conn
+        |> html_response(200)
+        |> LazyHTML.from_document()
+
+      assert home_document |> LazyHTML.query("#home-member-actions") |> Enum.any?()
+
+      assert home_document
+             |> LazyHTML.query("#home-member-feed-link[href='/feed']")
+             |> Enum.any?()
 
       conn = get(conn, ~p"/feed")
       response = html_response(conn, 200)

@@ -31,12 +31,20 @@ defmodule AscentsWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :show_navigation, :boolean,
+    default: true,
+    doc: "whether to render the app navigation chrome around the page"
+
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
-    <div id="app-shell" class="min-h-screen bg-ascents-ink md:pl-64">
+    <div
+      id="app-shell"
+      class={["min-h-screen bg-ascents-ink", @show_navigation && "md:pl-64"]}
+    >
       <aside
+        :if={@show_navigation}
         id="app-sidebar"
         class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-ascents-line bg-ascents-ink px-4 py-5 md:flex"
         aria-label="Primary navigation"
@@ -148,7 +156,10 @@ defmodule AscentsWeb.Layouts do
         </div>
       </aside>
 
-      <header class="sticky top-0 z-30 border-b border-ascents-line/80 bg-ascents-ink/95 px-4 py-3 backdrop-blur-xl md:hidden">
+      <header
+        :if={@show_navigation}
+        class="sticky top-0 z-30 border-b border-ascents-line/80 bg-ascents-ink/95 px-4 py-3 backdrop-blur-xl md:hidden"
+      >
         <.link navigate={~p"/"} class="inline-flex items-center gap-3">
           <span class="tape-label flex size-9 items-center justify-center bg-ascents-tape text-ascents-tape-content shadow-lg">
             <.icon name="hero-bolt-solid" class="size-5" />
@@ -157,13 +168,18 @@ defmodule AscentsWeb.Layouts do
         </.link>
       </header>
 
-      <main class="ascents-wall min-h-screen bg-ascents-ink px-4 py-6 pb-28 sm:px-6 md:px-8 md:py-10">
-        <div class="mx-auto max-w-7xl">
+      <main class={[
+        "ascents-wall min-h-screen bg-ascents-ink px-4 py-6 sm:px-6",
+        @show_navigation && "pb-28 md:px-8 md:py-10",
+        !@show_navigation && "pb-12 md:px-10 md:py-12"
+      ]}>
+        <div class={["mx-auto", if(@show_navigation, do: "max-w-7xl", else: "max-w-6xl")]}>
           {render_slot(@inner_block)}
         </div>
       </main>
 
       <nav
+        :if={@show_navigation}
         id="app-mobile-tabbar"
         class="fixed inset-x-0 bottom-0 z-40 border-t border-ascents-line bg-ascents-ink/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden"
         aria-label="Primary navigation"
