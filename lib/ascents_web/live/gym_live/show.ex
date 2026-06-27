@@ -10,6 +10,8 @@ defmodule AscentsWeb.GymLive.Show do
   alias Ascents.Sessions
   alias AscentsWeb.UserAuth
 
+  @composer_auth_error "You are not allowed to post in this gym."
+
   def mount(%{"slug" => slug}, session, socket) do
     current_scope = UserAuth.current_scope_from_session(session)
     gym = Gyms.get_gym_by_slug!(slug)
@@ -79,10 +81,12 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("open-post-modal", _params, socket) do
-    if composer_allowed?(socket) do
-      {:noreply, assign(socket, :post_modal_open?, true)}
-    else
-      {:noreply, put_flash(socket, :error, "Join this gym before posting.")}
+    case ensure_composer_authorized(socket) do
+      {:ok, socket} ->
+        {:noreply, assign(socket, :post_modal_open?, true)}
+
+      {:error, socket} ->
+        {:noreply, deny_composer_action(socket)}
     end
   end
 
@@ -92,19 +96,21 @@ defmodule AscentsWeb.GymLive.Show do
 
   def handle_event("select-post-mode", %{"mode" => mode}, socket)
       when mode in ~w(normal ascent session) do
-    if mode != "session" or composer_allowed?(socket) do
-      socket = assign(socket, :post_mode, mode)
+    case ensure_composer_authorized(socket) do
+      {:ok, socket} ->
+        socket = assign(socket, :post_mode, mode)
 
-      socket =
-        if mode == "session" do
-          stream(socket, :session_rows, ordered_session_rows(socket), reset: true)
-        else
-          socket
-        end
+        socket =
+          if mode == "session" do
+            stream(socket, :session_rows, ordered_session_rows(socket), reset: true)
+          else
+            socket
+          end
 
-      {:noreply, socket}
-    else
-      {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+        {:noreply, socket}
+
+      {:error, socket} ->
+        {:noreply, deny_composer_action(socket)}
     end
   end
 
@@ -128,162 +134,187 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   def handle_event("add-session-ascent", _params, socket) do
-    if composer_allowed?(socket) do
-      row_id = socket.assigns.next_session_row_id
+    case ensure_composer_authorized(socket) do
+      {:ok, socket} ->
+        row_id = socket.assigns.next_session_row_id
 
-      socket =
-        socket
-        |> assign(:session_row_order, socket.assigns.session_row_order ++ [row_id])
-        |> assign(
-          :session_rows_by_id,
-          Map.put(socket.assigns.session_rows_by_id, row_id, session_row(row_id))
-        )
-        |> assign(:next_session_row_id, row_id + 1)
+        socket =
+          socket
+          |> assign(:session_row_order, socket.assigns.session_row_order ++ [row_id])
+          |> assign(
+            :session_rows_by_id,
+            Map.put(socket.assigns.session_rows_by_id, row_id, session_row(row_id))
+          )
+          |> assign(:next_session_row_id, row_id + 1)
 
-      {:noreply, stream(socket, :session_rows, ordered_session_rows(socket), reset: true)}
-    else
-      {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+        {:noreply, stream(socket, :session_rows, ordered_session_rows(socket), reset: true)}
+
+      {:error, socket} ->
+        {:noreply, deny_composer_action(socket)}
     end
   end
 
-  def handle_event("remove-session-ascent", %{"row-id" => row_id}, socket) do
-    cond do
-      not composer_allowed?(socket) ->
-        {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+  def handle_event("remove-session-ascent", %{"row-id" => row_id}, socket)
+      when is_binary(row_id) do
+    case ensure_composer_authorized(socket) do
+      {:ok, socket} ->
+        cond do
+          length(socket.assigns.session_row_order) == 1 ->
+            {:noreply, put_flash(socket, :error, "A session needs at least one ascent.")}
 
-      length(socket.assigns.session_row_order) == 1 ->
-        {:noreply, put_flash(socket, :error, "A session needs at least one ascent.")}
+          true ->
+            case Integer.parse(row_id) do
+              {row_id, ""} ->
+                if row_id in socket.assigns.session_row_order do
+                  socket =
+                    socket
+                    |> assign(
+                      :session_row_order,
+                      List.delete(socket.assigns.session_row_order, row_id)
+                    )
+                    |> assign(
+                      :session_rows_by_id,
+                      Map.delete(socket.assigns.session_rows_by_id, row_id)
+                    )
 
-      true ->
-        case Integer.parse(row_id) do
-          {row_id, ""} ->
-            if row_id in socket.assigns.session_row_order do
-              socket =
-                socket
-                |> assign(
-                  :session_row_order,
-                  List.delete(socket.assigns.session_row_order, row_id)
-                )
-                |> assign(
-                  :session_rows_by_id,
-                  Map.delete(socket.assigns.session_rows_by_id, row_id)
-                )
+                  {:noreply,
+                   stream(socket, :session_rows, ordered_session_rows(socket), reset: true)}
+                else
+                  {:noreply, socket}
+                end
 
-              {:noreply, stream(socket, :session_rows, ordered_session_rows(socket), reset: true)}
-            else
-              {:noreply, socket}
+              _invalid ->
+                {:noreply, socket}
             end
-
-          _invalid ->
-            {:noreply, socket}
         end
+
+      {:error, socket} ->
+        {:noreply, deny_composer_action(socket)}
     end
   end
+
+  def handle_event("remove-session-ascent", _params, socket), do: {:noreply, socket}
 
   def handle_event("validate-session", %{"session" => session_params}, socket) do
-    if composer_allowed?(socket) do
-      {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
+    case ensure_composer_authorized(socket) do
+      {:ok, socket} ->
+        {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
 
-      changeset =
-        session_attrs
-        |> Sessions.change_session()
-        |> Map.put(:action, :validate)
+        changeset =
+          session_attrs
+          |> Sessions.change_session()
+          |> Map.put(:action, :validate)
 
-      {:noreply,
-       socket
-       |> assign_session_form(changeset)
-       |> assign(:session_rows_by_id, Map.new(rows, &{&1.id, &1}))
-       |> stream(:session_rows, rows, reset: true)}
-    else
-      {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+        {:noreply,
+         socket
+         |> assign_session_form(changeset)
+         |> assign(:session_rows_by_id, Map.new(rows, &{&1.id, &1}))
+         |> stream(:session_rows, rows, reset: true)}
+
+      {:error, socket} ->
+        {:noreply, deny_composer_action(socket)}
     end
   end
 
   def handle_event("create-post", %{"post" => post_params}, socket) do
-    case put_uploaded_image(socket, post_params) do
-      {:ok, post_params} ->
-        case Feed.create_post(socket.assigns.current_scope, socket.assigns.gym, post_params) do
-          {:ok, _post} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Post published.")
-             |> reset_post_modal()
-             |> assign_gym_state(socket.assigns.gym)}
+    case ensure_composer_authorized(socket) do
+      {:ok, socket} ->
+        case put_uploaded_image(socket, post_params) do
+          {:ok, post_params} ->
+            case Feed.create_post(socket.assigns.current_scope, socket.assigns.gym, post_params) do
+              {:ok, _post} ->
+                {:noreply,
+                 socket
+                 |> put_flash(:info, "Post published.")
+                 |> reset_post_modal()
+                 |> assign_gym_state(socket.assigns.gym)}
 
-          {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply,
-             assign(socket, :post_form, to_form(Map.put(changeset, :action, :validate)))}
+              {:error, %Ecto.Changeset{} = changeset} ->
+                {:noreply,
+                 assign(socket, :post_form, to_form(Map.put(changeset, :action, :validate)))}
 
-          {:error, :unauthorized} ->
-            {:noreply, put_flash(socket, :error, "Join this gym before posting.")}
+              {:error, :unauthorized} ->
+                {:noreply, deny_composer_action(socket)}
+            end
+
+          {:error, message} ->
+            {:noreply, put_flash(socket, :error, message)}
         end
 
-      {:error, message} ->
-        {:noreply, put_flash(socket, :error, message)}
+      {:error, socket} ->
+        {:noreply, deny_composer_action(socket)}
     end
   end
 
   def handle_event("create-ascent-post", %{"ascent_post" => ascent_params}, socket) do
-    case put_uploaded_image(socket, ascent_params) do
-      {:ok, ascent_params} ->
-        case AscentLogs.create_ascent_post(
-               socket.assigns.current_scope,
-               socket.assigns.gym,
-               ascent_params
-             ) do
-          {:ok, _result} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Ascent posted.")
-             |> reset_post_modal()
-             |> assign_gym_state(socket.assigns.gym)}
+    case ensure_composer_authorized(socket) do
+      {:ok, socket} ->
+        case put_uploaded_image(socket, ascent_params) do
+          {:ok, ascent_params} ->
+            case AscentLogs.create_ascent_post(
+                   socket.assigns.current_scope,
+                   socket.assigns.gym,
+                   ascent_params
+                 ) do
+              {:ok, _result} ->
+                {:noreply,
+                 socket
+                 |> put_flash(:info, "Ascent posted.")
+                 |> reset_post_modal()
+                 |> assign_gym_state(socket.assigns.gym)}
 
-          {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply, assign_ascent_form(socket, Map.put(changeset, :action, :validate))}
+              {:error, %Ecto.Changeset{} = changeset} ->
+                {:noreply, assign_ascent_form(socket, Map.put(changeset, :action, :validate))}
 
-          {:error, :unauthorized} ->
-            {:noreply, put_flash(socket, :error, "Join this gym before posting an ascent.")}
+              {:error, :unauthorized} ->
+                {:noreply, deny_composer_action(socket)}
+            end
+
+          {:error, message} ->
+            {:noreply, put_flash(socket, :error, message)}
         end
 
-      {:error, message} ->
-        {:noreply, put_flash(socket, :error, message)}
+      {:error, socket} ->
+        {:noreply, deny_composer_action(socket)}
     end
   end
 
   def handle_event("create-session", %{"session" => session_params}, socket) do
-    if composer_allowed?(socket) do
-      {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
+    case ensure_composer_authorized(socket) do
+      {:ok, socket} ->
+        {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
 
-      case put_uploaded_image(socket, session_attrs) do
-        {:ok, session_attrs} ->
-          case Sessions.create_session(
-                 socket.assigns.current_scope,
-                 socket.assigns.gym,
-                 session_attrs
-               ) do
-            {:ok, _result} ->
-              {:noreply,
-               socket
-               |> put_flash(:info, "Session posted.")
-               |> reset_post_modal()
-               |> assign_gym_state(socket.assigns.gym)}
+        case put_uploaded_image(socket, session_attrs) do
+          {:ok, session_attrs} ->
+            case Sessions.create_session(
+                   socket.assigns.current_scope,
+                   socket.assigns.gym,
+                   session_attrs
+                 ) do
+              {:ok, _result} ->
+                {:noreply,
+                 socket
+                 |> put_flash(:info, "Session posted.")
+                 |> reset_post_modal()
+                 |> assign_gym_state(socket.assigns.gym)}
 
-            {:error, %Ecto.Changeset{} = changeset} ->
-              {:noreply,
-               socket
-               |> assign_session_form(Map.put(changeset, :action, :validate))
-               |> assign(:session_rows_by_id, Map.new(rows, &{&1.id, &1}))
-               |> stream(:session_rows, rows, reset: true)}
+              {:error, %Ecto.Changeset{} = changeset} ->
+                {:noreply,
+                 socket
+                 |> assign_session_form(Map.put(changeset, :action, :validate))
+                 |> assign(:session_rows_by_id, Map.new(rows, &{&1.id, &1}))
+                 |> stream(:session_rows, rows, reset: true)}
 
-            {:error, :unauthorized} ->
-              {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
-          end
+              {:error, :unauthorized} ->
+                {:noreply, deny_composer_action(socket)}
+            end
 
-        {:error, message} ->
-          {:noreply, put_flash(socket, :error, message)}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "Join this gym before logging a session.")}
+          {:error, message} ->
+            {:noreply, put_flash(socket, :error, message)}
+        end
+
+      {:error, socket} ->
+        {:noreply, deny_composer_action(socket)}
     end
   end
 
@@ -358,6 +389,8 @@ defmodule AscentsWeb.GymLive.Show do
       _missing -> {:noreply, put_flash(socket, :error, "Comment not found.")}
     end
   end
+
+  def handle_event(_event, _params, socket), do: {:noreply, socket}
 
   def render(assigns) do
     ~H"""
@@ -997,11 +1030,16 @@ defmodule AscentsWeb.GymLive.Show do
   end
 
   defp session_attrs_and_rows(socket, session_params) do
-    ascent_params = Map.get(session_params, "ascents", %{})
+    session_params = normalize_params_map(session_params)
+    ascent_params = normalize_params_map(Map.get(session_params, "ascents", %{}))
 
     rows =
       Enum.map(socket.assigns.session_row_order, fn row_id ->
-        row_params = Map.get(ascent_params, Integer.to_string(row_id), %{})
+        row_params =
+          ascent_params
+          |> Map.get(Integer.to_string(row_id), %{})
+          |> normalize_params_map()
+
         route_id = Map.get(row_params, "boulder_problem_id")
         session_row(row_id, route_id, blank?(route_id))
       end)
@@ -1042,9 +1080,27 @@ defmodule AscentsWeb.GymLive.Show do
     end)
   end
 
-  defp composer_allowed?(socket) do
-    not is_nil(socket.assigns.current_scope) and not is_nil(socket.assigns.membership)
+  defp ensure_composer_authorized(socket) do
+    gym = Gyms.get_gym!(socket.assigns.gym.id)
+
+    if Gyms.can_post_in_gym?(socket.assigns.current_scope, gym) do
+      {:ok,
+       socket
+       |> assign(:gym, gym)
+       |> assign(:membership, Gyms.get_membership(socket.assigns.current_scope, gym))}
+    else
+      {:error, assign_gym_state(socket, gym)}
+    end
   end
+
+  defp deny_composer_action(socket) do
+    socket
+    |> reset_post_modal()
+    |> put_flash(:error, @composer_auth_error)
+  end
+
+  defp normalize_params_map(params) when is_map(params), do: params
+  defp normalize_params_map(_params), do: %{}
 
   defp blank?(value), do: is_nil(value) or (is_binary(value) and String.trim(value) == "")
 

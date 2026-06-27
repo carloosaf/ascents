@@ -18,6 +18,10 @@ defmodule Ascents.Media.TestStorage do
     end
   end
 
+  def objects do
+    Agent.get(__MODULE__, & &1)
+  end
+
   def reset! do
     Agent.update(__MODULE__, fn _objects -> %{} end)
   end
