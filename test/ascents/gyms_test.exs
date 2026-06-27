@@ -167,6 +167,181 @@ defmodule Ascents.GymsTest do
     end
   end
 
+  describe "gym ownership verification" do
+    setup do
+      previous_platform_admin_emails =
+        Application.get_env(:ascents, :platform_admin_emails, :not_configured)
+
+      Application.put_env(:ascents, :platform_admin_emails, ["platform-admin@example.com"])
+
+      on_exit(fn ->
+        case previous_platform_admin_emails do
+          :not_configured ->
+            Application.delete_env(:ascents, :platform_admin_emails)
+
+          emails ->
+            Application.put_env(:ascents, :platform_admin_emails, emails)
+        end
+      end)
+    end
+
+    test "new gyms default to community-managed without verification metadata" do
+      gym = gym_fixture()
+
+      assert gym.verification_status == "community"
+      assert gym.verification_requested_at == nil
+      assert gym.verification_requested_by_user_id == nil
+      assert gym.verification_request_note == nil
+      assert gym.verified_at == nil
+      assert gym.verified_by_user_id == nil
+      assert gym.verification_note == nil
+    end
+
+    test "gym owners can request verification and store pending metadata" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+
+      assert {:ok, pending_gym} =
+               Gyms.request_verification(owner_scope, gym, %{
+                 note: "I operate this gym and can confirm through our official website."
+               })
+
+      assert pending_gym.verification_status == "pending"
+      assert %DateTime{} = pending_gym.verification_requested_at
+      assert pending_gym.verification_requested_by_user_id == owner.id
+
+      assert pending_gym.verification_request_note ==
+               "I operate this gym and can confirm through our official website."
+
+      assert pending_gym.verified_at == nil
+      assert pending_gym.verified_by_user_id == nil
+    end
+
+    test "platform administrators can approve pending requests" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+      platform_admin = user_fixture(email: "platform-admin@example.com")
+      platform_admin_scope = user_scope_fixture(platform_admin)
+
+      assert {:ok, pending_gym} =
+               Gyms.request_verification(owner_scope, gym, %{
+                 note: "I operate this gym and can confirm through our official website."
+               })
+
+      assert {:ok, verified_gym} =
+               Gyms.approve_verification(platform_admin_scope, pending_gym, %{
+                 note: "Verified through the gym's published business contact."
+               })
+
+      assert verified_gym.verification_status == "verified"
+      assert %DateTime{} = verified_gym.verified_at
+      assert verified_gym.verified_by_user_id == platform_admin.id
+
+      assert verified_gym.verification_note ==
+               "Verified through the gym's published business contact."
+    end
+
+    test "ordinary users and gym-local admins cannot approve requests" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+
+      assert {:ok, pending_gym} =
+               Gyms.request_verification(owner_scope, gym, %{
+                 note: "I operate this gym and can confirm through our official website."
+               })
+
+      local_admin_scope = user_scope_fixture()
+      role_membership_fixture(gym, "admin", scope: local_admin_scope)
+      ordinary_user_scope = user_scope_fixture()
+
+      assert Gyms.approve_verification(owner_scope, pending_gym, %{note: "Self approved"}) ==
+               {:error, :unauthorized}
+
+      assert Gyms.approve_verification(local_admin_scope, pending_gym, %{
+               note: "Gym admin approved"
+             }) == {:error, :unauthorized}
+
+      assert Gyms.approve_verification(ordinary_user_scope, pending_gym, %{
+               note: "Ordinary user approved"
+             }) == {:error, :unauthorized}
+
+      assert Gyms.get_gym!(gym.id).verification_status == "pending"
+    end
+
+    test "platform administrators can revoke verified gyms to community state" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+      platform_admin = user_fixture(email: "platform-admin@example.com")
+      platform_admin_scope = user_scope_fixture(platform_admin)
+
+      {:ok, pending_gym} =
+        Gyms.request_verification(owner_scope, gym, %{
+          note: "I operate this gym and can confirm through our official website."
+        })
+
+      {:ok, verified_gym} =
+        Gyms.approve_verification(platform_admin_scope, pending_gym, %{
+          note: "Verified through the gym's published business contact."
+        })
+
+      assert {:ok, community_gym} =
+               Gyms.revoke_verification(platform_admin_scope, verified_gym)
+
+      assert community_gym.verification_status == "community"
+      assert community_gym.verification_requested_at == nil
+      assert community_gym.verification_requested_by_user_id == nil
+      assert community_gym.verification_request_note == nil
+      assert community_gym.verified_at == nil
+      assert community_gym.verified_by_user_id == nil
+      assert community_gym.verification_note == nil
+    end
+
+    test "owners, gym-local admins, and ordinary users cannot revoke verified gyms" do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      gym = gym_fixture(scope: owner_scope)
+      platform_admin_scope = user_scope_fixture(user_fixture(email: "platform-admin@example.com"))
+
+      local_admin_scope = user_scope_fixture()
+      role_membership_fixture(gym, "admin", scope: local_admin_scope)
+      ordinary_user_scope = user_scope_fixture()
+
+      {:ok, pending_gym} =
+        Gyms.request_verification(owner_scope, gym, %{
+          note: "I operate this gym and can confirm through our official website."
+        })
+
+      {:ok, verified_gym} =
+        Gyms.approve_verification(platform_admin_scope, pending_gym, %{
+          note: "Verified through the gym's published business contact."
+        })
+
+      assert Gyms.revoke_verification(owner_scope, verified_gym) == {:error, :unauthorized}
+
+      assert Gyms.revoke_verification(local_admin_scope, verified_gym) ==
+               {:error, :unauthorized}
+
+      assert Gyms.revoke_verification(ordinary_user_scope, verified_gym) ==
+               {:error, :unauthorized}
+
+      assert Gyms.get_gym!(gym.id).verification_status == "verified"
+    end
+
+    test "rejects verification requests from non-admin gym members" do
+      gym = gym_fixture()
+      member_scope = user_scope_fixture()
+      role_membership_fixture(gym, "member", scope: member_scope)
+
+      assert Gyms.request_verification(member_scope, gym, %{
+               note: "I should not be able to claim this gym page."
+             }) == {:error, :unauthorized}
+    end
+  end
+
   describe "join_gym/2" do
     test "requires an authenticated scope" do
       gym = gym_fixture()

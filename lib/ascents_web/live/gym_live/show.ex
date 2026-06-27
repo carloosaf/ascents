@@ -237,6 +237,60 @@ defmodule AscentsWeb.GymLive.Show do
           image_url={Media.signed_url(@gym.image_object_key)}
         />
 
+        <section
+          id="gym-verification-status"
+          class={[
+            "rounded-lg border p-4 sm:p-5",
+            @gym.verification_status == "verified" &&
+              "border-emerald-400/30 bg-emerald-400/5",
+            @gym.verification_status == "pending" && "border-amber-400/30 bg-amber-400/5",
+            @gym.verification_status == "community" &&
+              "border-ascents-line bg-ascents-panel"
+          ]}
+        >
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <div class={[
+                "flex size-10 shrink-0 items-center justify-center rounded-lg",
+                @gym.verification_status == "verified" &&
+                  "bg-emerald-500/15 text-emerald-300",
+                @gym.verification_status == "pending" && "bg-amber-500/15 text-amber-300",
+                @gym.verification_status == "community" &&
+                  "bg-ascents-panel-deep text-ascents-muted"
+              ]}>
+                <.icon name={verification_icon(@gym.verification_status)} class="size-5" />
+              </div>
+              <div>
+                <div
+                  id={"gym-verification-#{@gym.verification_status}-badge"}
+                  class="inline-flex items-center gap-2 text-sm font-black text-ascents-chalk"
+                >
+                  {verification_title(@gym.verification_status)}
+                </div>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-ascents-muted">
+                  {verification_description(@gym)}
+                </p>
+                <p
+                  :if={@gym.verification_status == "verified" && @gym.verification_note}
+                  id="gym-verification-note"
+                  class="mt-2 text-sm leading-6 text-ascents-chalk-soft"
+                >
+                  {@gym.verification_note}
+                </p>
+              </div>
+            </div>
+
+            <.button
+              :if={@can_access_verification_workflow?}
+              id="gym-verification-link"
+              navigate={~p"/gyms/#{@gym.slug}/verification"}
+              variant="secondary"
+            >
+              <.icon name="hero-shield-check" class="size-4" /> Verification
+            </.button>
+          </div>
+        </section>
+
         <section class="flex flex-wrap items-center justify-between gap-4">
           <div class="flex flex-wrap gap-2">
             <span class="rounded-md border border-ascents-line bg-ascents-panel px-3 py-1.5 text-sm font-bold text-ascents-chalk">
@@ -571,7 +625,9 @@ defmodule AscentsWeb.GymLive.Show do
       posts_empty?: posts == [],
       can_update_gym?: Gyms.can_update_gym?(current_scope, gym),
       can_manage_members?: Gyms.can_manage_members?(current_scope, gym),
-      can_manage_routes?: Gyms.can_manage_routes?(current_scope, gym)
+      can_manage_routes?: Gyms.can_manage_routes?(current_scope, gym),
+      can_access_verification_workflow?:
+        Gyms.can_access_verification_workflow?(current_scope, gym)
     )
     |> stream(:posts, posts, reset: true)
   end
@@ -584,6 +640,26 @@ defmodule AscentsWeb.GymLive.Show do
 
   defp grade_scale_label("french"), do: "French bouldering"
   defp grade_scale_label(_grade_scale), do: "V scale"
+
+  defp verification_icon("verified"), do: "hero-check-badge"
+  defp verification_icon("pending"), do: "hero-clock"
+  defp verification_icon(_status), do: "hero-user-group"
+
+  defp verification_title("verified"), do: "Official gym"
+  defp verification_title("pending"), do: "Ownership review pending"
+  defp verification_title(_status), do: "Community-managed"
+
+  defp verification_description(%{verification_status: "verified", verified_at: verified_at}) do
+    "Ownership manually verified by Ascents on #{Calendar.strftime(verified_at, "%B %-d, %Y")}."
+  end
+
+  defp verification_description(%{verification_status: "pending"}) do
+    "An ownership claim is under manual review. This page is not official until approved."
+  end
+
+  defp verification_description(_gym) do
+    "Route data and updates come from the climbing community, not a verified gym business."
+  end
 
   defp put_uploaded_image(socket, attrs) do
     case consume_uploaded_entries(socket, :image, fn %{path: path}, entry ->

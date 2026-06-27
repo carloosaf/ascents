@@ -6,6 +6,7 @@ defmodule Ascents.Gyms do
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
+  alias Ascents.Accounts
   alias Ascents.Accounts.{Scope, User}
   alias Ascents.Gyms.{Gym, GymMembership}
   alias Ascents.Repo
@@ -52,6 +53,15 @@ defmodule Ascents.Gyms do
   end
 
   def get_gym_by_slug(_slug), do: nil
+
+  @doc """
+  Gets a gym by slug with verification reviewers preloaded.
+  """
+  def get_verification_gym_by_slug!(slug) do
+    slug
+    |> get_gym_by_slug!()
+    |> Repo.preload([:verification_requested_by_user, :verified_by_user])
+  end
 
   @doc """
   Gets a gym by slug.
@@ -119,6 +129,89 @@ defmodule Ascents.Gyms do
   end
 
   def update_gym(_scope, _gym, _attrs), do: {:error, :unauthorized}
+
+  @doc """
+  Requests manual official ownership review for a community gym.
+
+  Only a gym owner or gym admin may submit the claim. This transition never
+  grants official status; a separately configured platform administrator must
+  approve it.
+  """
+  def request_verification(%Scope{user: %User{} = user} = scope, %Gym{} = gym, attrs)
+      when is_map(attrs) do
+    verification_transaction(gym, fn locked_gym ->
+      cond do
+        not admin?(scope, locked_gym) ->
+          {:error, :unauthorized}
+
+        locked_gym.verification_status != "community" ->
+          {:error, :invalid_transition}
+
+        true ->
+          locked_gym
+          |> Gym.verification_request_changeset(
+            user,
+            fetch_attr(attrs, :verification_request_note, fetch_attr(attrs, :note, "")),
+            DateTime.utc_now(:second)
+          )
+          |> Repo.update()
+      end
+    end)
+  end
+
+  def request_verification(_scope, _gym, _attrs), do: {:error, :unauthorized}
+
+  @doc """
+  Approves a pending gym verification request.
+
+  This is a platform-level privilege and is intentionally independent from
+  gym-local owner/admin memberships.
+  """
+  def approve_verification(%Scope{user: %User{} = user} = scope, %Gym{} = gym, attrs)
+      when is_map(attrs) do
+    verification_transaction(gym, fn locked_gym ->
+      cond do
+        not Accounts.platform_admin?(scope) ->
+          {:error, :unauthorized}
+
+        locked_gym.verification_status != "pending" ->
+          {:error, :invalid_transition}
+
+        true ->
+          locked_gym
+          |> Gym.verification_approval_changeset(
+            user,
+            fetch_attr(attrs, :verification_note, fetch_attr(attrs, :note, "")),
+            DateTime.utc_now(:second)
+          )
+          |> Repo.update()
+      end
+    end)
+  end
+
+  def approve_verification(_scope, _gym, _attrs), do: {:error, :unauthorized}
+
+  @doc """
+  Revokes an official gym badge and returns the page to community-owned state.
+  """
+  def revoke_verification(%Scope{} = scope, %Gym{} = gym) do
+    verification_transaction(gym, fn locked_gym ->
+      cond do
+        not Accounts.platform_admin?(scope) ->
+          {:error, :unauthorized}
+
+        locked_gym.verification_status != "verified" ->
+          {:error, :invalid_transition}
+
+        true ->
+          locked_gym
+          |> Gym.verification_revoke_changeset()
+          |> Repo.update()
+      end
+    end)
+  end
+
+  def revoke_verification(_scope, _gym), do: {:error, :unauthorized}
 
   @doc """
   Joins or follows a gym community for the current user.
@@ -294,6 +387,39 @@ defmodule Ascents.Gyms do
   """
   def can_post_in_gym?(scope, gym), do: member?(scope, gym)
 
+  @doc """
+  Returns true when the current user may submit an ownership claim.
+  """
+  def can_request_verification?(scope, %Gym{verification_status: "community"} = gym) do
+    admin?(scope, gym)
+  end
+
+  def can_request_verification?(_scope, _gym), do: false
+
+  @doc """
+  Returns true when the current user may approve or revoke official badges.
+  """
+  def can_review_verification?(scope), do: Accounts.platform_admin?(scope)
+
+  @doc """
+  Returns true when the current user may view the private claim workflow.
+  """
+  def can_access_verification_workflow?(scope, gym) do
+    admin?(scope, gym) or can_review_verification?(scope)
+  end
+
+  defp verification_transaction(%Gym{id: gym_id}, transition) do
+    Repo.transact(fn ->
+      locked_gym =
+        Gym
+        |> where([gym], gym.id == ^gym_id)
+        |> lock("FOR UPDATE")
+        |> Repo.one!()
+
+      transition.(locked_gym)
+    end)
+  end
+
   defp membership_changeset(%User{} = user, %Gym{} = gym, role, joined_at) do
     %GymMembership{user_id: user.id, gym_id: gym.id}
     |> GymMembership.changeset(%{role: role, joined_at: joined_at})
@@ -343,6 +469,10 @@ defmodule Ascents.Gyms do
           acc
       end
     end)
+  end
+
+  defp fetch_attr(attrs, key, default) do
+    Map.get(attrs, key, Map.get(attrs, Atom.to_string(key), default))
   end
 
   defp unique_slug(name) do

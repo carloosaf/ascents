@@ -83,6 +83,26 @@ defmodule Ascents.Accounts do
   """
   def get_user!(id), do: Repo.get!(User, id)
 
+  @doc """
+  Returns true when the current user is configured as a platform administrator.
+
+  Platform administrators are configured with the runtime
+  `PLATFORM_ADMIN_EMAILS` comma-separated allowlist.
+  """
+  def platform_admin?(%Scope{user: %User{email: email}}) when is_binary(email) do
+    normalized_email = email |> String.trim() |> String.downcase()
+
+    Application.get_env(:ascents, :platform_admin_emails, [])
+    |> Enum.any?(fn configured_email ->
+      configured_email
+      |> String.trim()
+      |> String.downcase()
+      |> Kernel.==(normalized_email)
+    end)
+  end
+
+  def platform_admin?(_scope), do: false
+
   ## User registration
 
   @doc """
