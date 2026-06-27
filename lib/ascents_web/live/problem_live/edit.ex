@@ -18,7 +18,7 @@ defmodule AscentsWeb.ProblemLive.Edit do
          |> assign(:gym, gym)
          |> assign(:problem, problem)
          |> allow_upload(:image,
-           accept: ~w(.jpg .jpeg .png .webp),
+           accept: ~w(.jpg .jpeg .png .webp image/jpeg image/png image/webp),
            max_entries: 1,
            max_file_size: Media.max_file_size()
          )
@@ -97,7 +97,12 @@ defmodule AscentsWeb.ProblemLive.Edit do
               name="boulder_problem[image_object_key]"
               value={@form[:image_object_key].value}
             />
-            <.image_upload_input upload={@uploads.image} label="Route image" />
+            <.image_upload_input
+              id="route-edit-image-upload"
+              upload={@uploads.image}
+              label="Route image"
+              help="Take a photo or choose a JPG, PNG, or WebP up to 5 MB."
+            />
 
             <div class="flex flex-wrap gap-3">
               <.button variant="primary" phx-disable-with="Saving...">

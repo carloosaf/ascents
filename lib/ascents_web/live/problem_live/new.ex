@@ -16,7 +16,7 @@ defmodule AscentsWeb.ProblemLive.New do
          |> assign(:current_scope, current_scope)
          |> assign(:gym, gym)
          |> allow_upload(:image,
-           accept: ~w(.jpg .jpeg .png .webp),
+           accept: ~w(.jpg .jpeg .png .webp image/jpeg image/png image/webp),
            max_entries: 1,
            max_file_size: Media.max_file_size()
          )
@@ -89,7 +89,12 @@ defmodule AscentsWeb.ProblemLive.New do
             />
             <.input field={@form[:color]} type="text" label="Hold color" required />
             <.input field={@form[:description]} type="textarea" label="Description" />
-            <.image_upload_input upload={@uploads.image} label="Route image" />
+            <.image_upload_input
+              id="route-new-image-upload"
+              upload={@uploads.image}
+              label="Route image"
+              help="Take a photo or choose a JPG, PNG, or WebP up to 5 MB."
+            />
 
             <div class="flex flex-wrap gap-3">
               <.button variant="primary" phx-disable-with="Creating...">
