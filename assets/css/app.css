@@ -222,8 +222,11 @@ body {
 
 .ascents-modal-overlay {
   animation: ascents-modal-fade 160ms ease-out both;
+  inset: 0;
   min-height: 100vh;
   min-height: 100dvh;
+  position: fixed;
+  z-index: 60;
 }
 
 .ascents-modal-panel {
