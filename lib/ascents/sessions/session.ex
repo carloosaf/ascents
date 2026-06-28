@@ -8,7 +8,6 @@ defmodule Ascents.Sessions.Session do
   alias Ascents.Gyms.Gym
 
   schema "sessions" do
-    field :title, :string
     field :notes, :string
     field :started_at, :utc_datetime
     field :image_object_key, :string
@@ -29,8 +28,7 @@ defmodule Ascents.Sessions.Session do
   """
   def changeset(session, attrs) do
     session
-    |> cast(attrs, [:title, :notes, :started_at, :image_object_key, :visibility, :deleted_at])
-    |> update_change(:title, &trim_string/1)
+    |> cast(attrs, [:notes, :started_at, :image_object_key, :visibility, :deleted_at])
     |> update_change(:notes, &blank_to_nil/1)
     |> update_change(:image_object_key, &blank_to_nil/1)
     |> validate_required([
@@ -38,12 +36,10 @@ defmodule Ascents.Sessions.Session do
       :gym_id,
       :post_id,
       :post_type,
-      :title,
       :started_at,
       :visibility
     ])
     |> validate_inclusion(:post_type, ["session"])
-    |> validate_length(:title, min: 1, max: 120)
     |> validate_length(:notes, max: 2_000)
     |> validate_length(:image_object_key, max: 1_024)
     |> validate_inclusion(:visibility, Post.visibilities())
@@ -63,7 +59,4 @@ defmodule Ascents.Sessions.Session do
   end
 
   defp blank_to_nil(value), do: value
-
-  defp trim_string(value) when is_binary(value), do: String.trim(value)
-  defp trim_string(value), do: value
 end

@@ -97,12 +97,12 @@ defmodule Ascents.SessionsMigrationTest do
     assert [[2]] =
              Repo.query!("SELECT count(*) FROM ascents WHERE post_id = $1", [session_post.id]).rows
 
-    assert [20_260_624_120_920] =
+    assert [20_260_628_151_331, 20_260_624_120_920] =
              Ecto.Migrator.run(
                Repo,
                migrations_path,
                :down,
-               step: 1,
+               step: 2,
                dynamic_repo: repo,
                log: false
              )

@@ -51,6 +51,7 @@ defmodule AscentsWeb.StatsLive.Show do
 
         <section id="user-stats-summary" class="ascents-stagger grid gap-4 sm:grid-cols-3">
           <.stat_block
+            id="user-stats-total-ascents"
             label="Sends"
             value={format_count(@stats.total_ascents)}
             detail="Logged ascents"

@@ -11,7 +11,6 @@ defmodule Ascents.SessionsFixtures do
 
   def valid_session_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
-      title: "Tuesday training",
       notes: "Worked on tension and quiet feet.",
       started_at: "2026-06-23T18:30",
       image_object_key: "sessions/1/training.jpg",

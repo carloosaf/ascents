@@ -9,9 +9,13 @@ defmodule AscentsWeb.GymLiveTest do
   import Phoenix.LiveViewTest
 
   alias Ascents.Ascents, as: AscentLogs
+  alias Ascents.Ascents.Ascent
   alias Ascents.Feed
   alias Ascents.Gyms
   alias Ascents.Media.TestStorage
+  alias Ascents.Repo
+  alias Ascents.Routes, as: ClimbingRoutes
+  alias Ascents.Sessions.Session
 
   setup do
     TestStorage.reset!()
@@ -362,6 +366,7 @@ defmodule AscentsWeb.GymLiveTest do
       assert post.visibility == "private"
       assert post.gym_id == gym.id
       assert has_element?(view, "#home-post-ascent-#{post.id}")
+      assert has_element?(view, "#home-post-privacy-#{post.id}", "Private")
 
       ascent = AscentLogs.get_ascent_by_post(scope, post)
       assert ascent.grade_snapshot == problem.grade
@@ -417,6 +422,410 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert has_element?(view, "#posts-#{post.id}")
       assert has_element?(view, "#home-post-ascent-#{post.id}")
+    end
+
+    test "switches between post, ascent, and session composer modes", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      assert has_element?(view, "#gym-post-form")
+
+      view |> element("#gym-post-session-mode") |> render_click()
+      assert has_element?(view, "#gym-session-form")
+      refute has_element?(view, "#gym-post-form")
+
+      view |> element("#gym-post-ascent-mode") |> render_click()
+      assert has_element?(view, "#gym-ascent-post-form")
+      refute has_element?(view, "#gym-session-form")
+    end
+
+    test "rejects forged session composer events from non-members", %{conn: conn} do
+      user = user_fixture()
+      gym = gym_fixture()
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      render_hook(view, "select-post-mode", %{"mode" => "session"})
+
+      refute has_element?(view, "#gym-session-form")
+      assert has_element?(view, "#flash-error")
+    end
+
+    test "closes the session composer when membership is revoked before row mutation", %{
+      conn: conn
+    } do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture(scope: owner_scope)
+      boulder_problem_fixture(gym: gym)
+      {:ok, membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      assert has_element?(view, "#gym-session-form")
+
+      assert {:ok, _membership} = Gyms.remove_membership(owner_scope, gym, membership.id)
+
+      view |> element("#gym-session-add-ascent") |> render_click()
+
+      refute has_element?(view, "#gym-post-modal")
+      refute has_element?(view, "#session-ascent-row-2")
+      assert has_element?(view, "#gym-join-button")
+      assert has_element?(view, "#flash-error")
+    end
+
+    test "denies revoked members before consuming a session upload", %{conn: conn} do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture(scope: owner_scope)
+      problem = boulder_problem_fixture(gym: gym)
+      {:ok, membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      upload =
+        file_input(view, "#gym-session-form", :image, [
+          %{name: "revoked.jpg", content: "session image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "revoked.jpg") =~ "100%"
+
+      assert {:ok, _membership} = Gyms.remove_membership(owner_scope, gym, membership.id)
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          started_at: "2026-06-24T18:30",
+          notes: "This should not persist.",
+          visibility: "public",
+          ascents: %{"1" => %{boulder_problem_id: problem.id}}
+        }
+      )
+      |> render_submit()
+
+      assert Feed.list_gym_posts(scope, gym) == []
+      assert Repo.aggregate(Session, :count) == 0
+      assert Repo.aggregate(Ascent, :count) == 0
+      assert TestStorage.objects() == %{}
+      refute has_element?(view, "#gym-post-modal")
+      assert has_element?(view, "#gym-join-button")
+      assert has_element?(view, "#flash-error")
+    end
+
+    test "adds and removes session ascent rows without changing stable row IDs", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      assert has_element?(view, "#session-ascent-row-1[data-row-id='1']")
+      refute has_element?(view, "#session-ascent-row-2")
+
+      view |> element("#gym-session-add-ascent") |> render_click()
+
+      assert has_element?(view, "#session-ascent-row-1[data-row-id='1']")
+      assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
+
+      view |> element("#gym-session-remove-ascent-1") |> render_click()
+
+      refute has_element?(view, "#session-ascent-row-1")
+      assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
+
+      view |> element("#gym-session-add-ascent") |> render_click()
+
+      assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
+      assert has_element?(view, "#session-ascent-row-3[data-row-id='3']")
+    end
+
+    test "ignores malformed session row payloads and keeps row IDs stable", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+      view |> element("#gym-session-add-ascent") |> render_click()
+
+      for params <- [
+            %{},
+            %{"row-id" => 1},
+            %{"row-id" => "not-a-row"},
+            %{"row-id" => "999"}
+          ] do
+        render_hook(view, "remove-session-ascent", params)
+
+        assert has_element?(view, "#session-ascent-row-1[data-row-id='1']")
+        assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
+      end
+
+      for ascents <- [
+            123,
+            %{"1" => 123, "2" => "not-a-map", "999" => %{boulder_problem_id: "999"}}
+          ] do
+        render_hook(view, "validate-session", %{
+          "session" => %{
+            "started_at" => "2026-06-24T18:30",
+            "visibility" => "public",
+            "ascents" => ascents
+          }
+        })
+
+        assert has_element?(view, "#session-ascent-row-1[data-row-id='1']")
+        assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
+      end
+    end
+
+    test "does not render a session title field and keeps route errors scoped", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      refute has_element?(view, "#gym-session-title")
+      refute has_element?(view, "#gym-session-title-field")
+      assert has_element?(view, "#gym-session-ascent-rows.max-h-80.overflow-y-auto")
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          started_at: "2026-06-24T18:30",
+          notes: "Warming up before picking routes.",
+          visibility: "public",
+          ascents: %{"1" => %{boulder_problem_id: ""}}
+        }
+      )
+      |> render_change()
+
+      refute has_element?(view, "#gym-session-route-field-1 p")
+      refute has_element?(view, "#gym-session-ascents-error")
+
+      render_hook(view, "validate-session", %{
+        "_target" => ["session", "ascents", "1", "boulder_problem_id"],
+        "session" => %{
+          "started_at" => "2026-06-24T18:30",
+          "notes" => "Now the route selector has been touched.",
+          "visibility" => "public",
+          "ascents" => %{"1" => %{"boulder_problem_id" => ""}}
+        }
+      })
+
+      assert has_element?(view, "#gym-session-route-field-1 p")
+      assert has_element?(view, "#gym-session-ascents-error")
+    end
+
+    test "validates session metadata and route rows", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      upload =
+        file_input(view, "#gym-session-form", :image, [
+          %{name: "invalid-session.jpg", content: "session image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "invalid-session.jpg") =~ "100%"
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          started_at: "2026-06-24T18:30",
+          notes: "",
+          visibility: "public",
+          ascents: %{"1" => %{boulder_problem_id: ""}}
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#gym-session-route-field-1 p")
+      assert has_element?(view, "#gym-session-ascents-error")
+      assert Feed.list_gym_posts(scope, gym) == []
+      assert Repo.aggregate(Session, :count) == 0
+      assert Repo.aggregate(Ascent, :count) == 0
+      assert TestStorage.objects() == %{}
+    end
+
+    test "ignores forged session image keys when session submit fails", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+
+      referenced_key = "posts/referenced-session-media.jpg"
+      :ok = TestStorage.put_object(referenced_key, "existing image", "image/jpeg", [])
+      referenced_post = post_fixture(scope: scope, gym: gym, image_object_key: referenced_key)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      html =
+        render_submit(view, "create-session", %{
+          "session" => %{
+            "started_at" => "2026-06-24T18:30",
+            "notes" => "",
+            "visibility" => "public",
+            "image_object_key" => referenced_key,
+            "ascents" => %{"1" => %{"boulder_problem_id" => ""}}
+          }
+        })
+
+      assert has_element?(view, "#gym-session-route-field-1 p")
+      assert has_element?(view, "#gym-session-ascents-error")
+      refute html =~ referenced_key
+      assert Repo.aggregate(Session, :count) == 0
+      assert Repo.aggregate(Ascent, :count) == 0
+      assert Map.fetch!(TestStorage.objects(), referenced_key) == {"existing image", "image/jpeg"}
+
+      referenced_post_id = referenced_post.id
+
+      assert [%{id: ^referenced_post_id, image_object_key: ^referenced_key}] =
+               Feed.list_gym_posts(scope, gym)
+    end
+
+    test "removes uploaded session image when a route is archived after composer opens", %{
+      conn: conn
+    } do
+      owner = user_fixture()
+      owner_scope = user_scope_fixture(owner)
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture(scope: owner_scope)
+      problem = boulder_problem_fixture(gym: gym, scope: owner_scope)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      upload =
+        file_input(view, "#gym-session-form", :image, [
+          %{name: "archived-route.jpg", content: "session image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "archived-route.jpg") =~ "100%"
+      assert {:ok, _problem} = ClimbingRoutes.archive_boulder_problem(owner_scope, gym, problem)
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          started_at: "2026-06-24T18:30",
+          notes: "",
+          visibility: "public",
+          ascents: %{"1" => %{boulder_problem_id: problem.id}}
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#gym-session-ascents-error")
+      assert Feed.list_gym_posts(scope, gym) == []
+      assert Repo.aggregate(Session, :count) == 0
+      assert Repo.aggregate(Ascent, :count) == 0
+      assert TestStorage.objects() == %{}
+    end
+
+    test "creates one grouped feed card and two stats ascents with private media", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      first_problem = boulder_problem_fixture(gym: gym, title: "Blue Arete", grade: "V3")
+      second_problem = boulder_problem_fixture(gym: gym, title: "Roof Pinch", grade: "V5")
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+      view |> element("#gym-session-add-ascent") |> render_click()
+
+      upload =
+        file_input(view, "#gym-session-form", :image, [
+          %{name: "training.jpg", content: "session image", type: "image/jpeg"}
+        ])
+
+      assert render_upload(upload, "training.jpg") =~ "100%"
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          started_at: "2026-06-24T18:30",
+          notes: "Linked both projects.",
+          visibility: "friends",
+          ascents: %{
+            "1" => %{boulder_problem_id: first_problem.id},
+            "2" => %{boulder_problem_id: second_problem.id}
+          }
+        }
+      )
+      |> render_submit()
+
+      assert [post] = Feed.list_gym_posts(scope, gym)
+      assert post.post_type == "session"
+      assert post.visibility == "friends"
+      assert post.image_object_key =~ ~r/^posts\/pending\//
+      assert length(post.session.ascents) == 2
+
+      assert has_element?(view, "#posts-#{post.id}")
+      assert has_element?(view, "#home-post-session-#{post.id}")
+      refute has_element?(view, "#home-post-session-title-#{post.id}")
+      assert has_element?(view, "#home-post-privacy-#{post.id}", "Friends")
+      assert has_element?(view, "#home-post-image-#{post.id}[src*='/media/']")
+
+      for ascent <- post.session.ascents do
+        assert has_element?(view, "#home-post-session-route-#{ascent.id}")
+      end
+
+      assert {:ok, stats} = AscentLogs.get_user_stats(scope, user)
+      assert stats.total_ascents == 2
     end
 
     test "allows members to comment and content owners to delete comments", %{conn: conn} do

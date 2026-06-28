@@ -5,6 +5,7 @@ defmodule AscentsWeb.ProductComponentsTest do
   import Ascents.FeedFixtures
   import Ascents.FriendsFixtures
   import Ascents.GymsFixtures
+  import Ascents.SessionsFixtures
   import Phoenix.LiveViewTest
 
   alias Ascents.Feed
@@ -100,6 +101,92 @@ defmodule AscentsWeb.ProductComponentsTest do
         refute html =~ "/media/"
       end
     end
+  end
+
+  test "feed post renders one grouped session card with routes, privacy, and media" do
+    author = user_fixture()
+    scope = user_scope_fixture(author)
+    gym = gym_fixture()
+
+    %{post: created_post} =
+      session_fixture(
+        scope: scope,
+        gym: gym,
+        notes: "Two quality sends.",
+        visibility: "friends",
+        image_object_key: "posts/session.jpg",
+        problems: [
+          Ascents.RoutesFixtures.boulder_problem_fixture(
+            gym: gym,
+            title: "Compression Line",
+            grade: "V4"
+          ),
+          Ascents.RoutesFixtures.boulder_problem_fixture(
+            gym: gym,
+            title: "Quiet Feet",
+            grade: "V2"
+          )
+        ]
+      )
+
+    post = Feed.get_post(scope, gym, created_post.id)
+    document = render_post(post, scope)
+
+    assert document |> LazyHTML.query("#home-post-session-#{post.id}") |> Enum.any?()
+    refute document |> LazyHTML.query("#home-post-session-title-#{post.id}") |> Enum.any?()
+    assert document |> LazyHTML.query("#home-post-privacy-#{post.id}") |> Enum.any?()
+
+    assert document
+           |> LazyHTML.query("#home-post-image-#{post.id}[src*='/media/']")
+           |> Enum.any?()
+
+    routes = LazyHTML.query(document, "#home-post-session-routes-#{post.id} > div")
+    assert Enum.count(routes) == 2
+    assert LazyHTML.text(routes) =~ "Compression Line"
+    assert LazyHTML.text(routes) =~ "Quiet Feet"
+  end
+
+  test "feed post collapses session routes after the first four ascents" do
+    author = user_fixture()
+    scope = user_scope_fixture(author)
+    gym = gym_fixture()
+
+    problems =
+      for index <- 1..5 do
+        Ascents.RoutesFixtures.boulder_problem_fixture(
+          gym: gym,
+          title: "Circuit #{index}",
+          grade: "V#{index}"
+        )
+      end
+
+    %{post: created_post} =
+      session_fixture(
+        scope: scope,
+        gym: gym,
+        notes: "A long circuit.",
+        problems: problems
+      )
+
+    post = Feed.get_post(scope, gym, created_post.id)
+    document = render_post(post, scope)
+
+    visible_routes = LazyHTML.query(document, "#home-post-session-routes-#{post.id} > div")
+
+    hidden_routes =
+      LazyHTML.query(
+        document,
+        "#home-post-session-routes-more-#{post.id} div[id^='home-post-session-route-']"
+      )
+
+    assert Enum.count(visible_routes) == 4
+    assert Enum.count(hidden_routes) == 1
+
+    assert document
+           |> LazyHTML.query("#home-post-session-routes-toggle-#{post.id}")
+           |> Enum.any?()
+
+    assert LazyHTML.text(document) =~ "Show 1 more ascents"
   end
 
   defp render_post(post, scope) do
