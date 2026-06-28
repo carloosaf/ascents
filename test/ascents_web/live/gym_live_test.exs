@@ -269,6 +269,10 @@ defmodule AscentsWeb.GymLiveTest do
       |> render_click()
 
       assert has_element?(view, "#gym-post-modal")
+      assert has_element?(view, "#app-sidebar[class~='z-40']")
+      assert has_element?(view, "#app-mobile-tabbar[class~='z-40']")
+      assert has_element?(view, "#app-shell > #gym-post-modal.ascents-modal-overlay")
+      refute has_element?(view, "main #gym-post-modal")
       assert has_element?(view, "#gym-post-visibility option[selected][value='public']")
 
       view
