@@ -814,99 +814,107 @@ defmodule AscentsWeb.GymLive.Show do
           </div>
         </section>
 
-        <section id="gym-feed" class="space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 class="text-lg font-black text-ascents-chalk">Gym feed</h2>
-              <p class="mt-1 text-sm text-ascents-muted">
-                Community posts from members of {@gym.name}.
-              </p>
+        <div
+          id="gym-content-grid"
+          class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start"
+        >
+          <section id="gym-feed" class="order-2 space-y-4 xl:order-1">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-lg font-black text-ascents-chalk">Gym feed</h2>
+                <p class="mt-1 text-sm text-ascents-muted">
+                  Community posts from members of {@gym.name}.
+                </p>
+              </div>
+              <.button
+                :if={@membership}
+                id="gym-new-post-button"
+                phx-click="open-post-modal"
+                variant="primary"
+              >
+                <.icon name="hero-pencil-square" class="size-4" /> New post
+              </.button>
             </div>
-            <.button
-              :if={@membership}
-              id="gym-new-post-button"
-              phx-click="open-post-modal"
-              variant="primary"
-            >
-              <.icon name="hero-pencil-square" class="size-4" /> New post
-            </.button>
-          </div>
 
-          <.empty_state
-            :if={!@membership && @current_scope}
-            title="Join to post"
-            description="Members can publish posts and comments in this gym feed."
-            icon="hero-user-plus"
-          />
-
-          <div id="gym-feed-posts" phx-update="stream" class="space-y-4">
             <.empty_state
-              :if={@posts_empty?}
-              id="gym-feed-empty"
-              title="No posts yet"
-              description="Member posts will appear here."
-              icon="hero-chat-bubble-left-right"
+              :if={!@membership && @current_scope}
+              title="Join to post"
+              description="Members can publish posts and comments in this gym feed."
+              icon="hero-user-plus"
             />
 
-            <.feed_post
-              :for={{id, post} <- @streams.posts}
-              id={id}
-              post={post}
-              current_scope={@current_scope}
-              comment_form={@comment_form}
-              show_gym?={false}
+            <div id="gym-feed-posts" phx-update="stream" class="space-y-4">
+              <.empty_state
+                :if={@posts_empty?}
+                id="gym-feed-empty"
+                title="No posts yet"
+                description="Member posts will appear here."
+                icon="hero-chat-bubble-left-right"
+              />
+
+              <.feed_post
+                :for={{id, post} <- @streams.posts}
+                id={id}
+                post={post}
+                current_scope={@current_scope}
+                comment_form={@comment_form}
+                show_gym?={false}
+              />
+            </div>
+          </section>
+
+          <section
+            id="gym-active-routes"
+            class="order-1 space-y-4 xl:sticky xl:top-24 xl:order-2"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-lg font-black text-ascents-chalk">Active routes</h2>
+                <p class="mt-1 text-sm text-ascents-muted">
+                  Current boulder problems for this gym.
+                </p>
+              </div>
+              <.button
+                :if={@can_manage_routes?}
+                id="gym-new-route-link"
+                navigate={~p"/gyms/#{@gym.slug}/problems/new"}
+                variant="primary"
+              >
+                <.icon name="hero-plus" class="size-4" /> Add route
+              </.button>
+            </div>
+
+            <.empty_state
+              :if={@active_problems == []}
+              title="No routes yet"
+              description="Gym admins can add active boulder problems from route management."
+              icon="hero-map"
             />
-          </div>
-        </section>
+
+            <div
+              :if={@active_problems != []}
+              id="gym-active-route-list"
+              class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1"
+            >
+              <.route_card
+                :for={problem <- @active_problems}
+                id={"gym-route-card-#{problem.id}"}
+                title={problem.title}
+                gym={@gym.name}
+                grade={problem.grade}
+                compact
+                meta={problem.description || problem.color}
+                image_url={Media.signed_url(problem.image_object_key)}
+              />
+            </div>
+          </section>
+        </div>
 
         <section class="chalk-panel relative rounded-lg border border-ascents-line p-6">
           <h2 class="text-lg font-black text-ascents-chalk">About</h2>
           <p id="gym-description" class="mt-3 max-w-3xl text-sm leading-6 text-ascents-chalk-soft">
             {@gym.description || "No description yet."}
           </p>
-        </section>
-
-        <section id="gym-active-routes" class="space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 class="text-lg font-black text-ascents-chalk">Active routes</h2>
-              <p class="mt-1 text-sm text-ascents-muted">
-                Current boulder problems for this gym.
-              </p>
-            </div>
-            <.button
-              :if={@can_manage_routes?}
-              id="gym-new-route-link"
-              navigate={~p"/gyms/#{@gym.slug}/problems/new"}
-              variant="primary"
-            >
-              <.icon name="hero-plus" class="size-4" /> Add route
-            </.button>
-          </div>
-
-          <.empty_state
-            :if={@active_problems == []}
-            title="No routes yet"
-            description="Gym admins can add active boulder problems from route management."
-            icon="hero-map"
-          />
-
-          <div
-            :if={@active_problems != []}
-            id="gym-active-route-list"
-            class="ascents-stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-          >
-            <.route_card
-              :for={problem <- @active_problems}
-              id={"gym-route-card-#{problem.id}"}
-              title={problem.title}
-              gym={@gym.name}
-              grade={problem.grade}
-              status="Active"
-              meta={problem.description || problem.color}
-              image_url={Media.signed_url(problem.image_object_key)}
-            />
-          </div>
         </section>
 
         <section>

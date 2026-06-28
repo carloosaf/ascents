@@ -522,18 +522,28 @@ defmodule AscentsWeb.ProductComponents do
   attr :title, :string, required: true
   attr :gym, :string, required: true
   attr :grade, :string, required: true
-  attr :status, :string, default: "Active"
+  attr :status, :string, default: nil
   attr :meta, :string, default: nil
   attr :image_url, :string, default: nil
+  attr :compact, :boolean, default: false
 
   def route_card(assigns) do
     ~H"""
     <article
       id={@id}
       data-component="route-card"
-      class="ascents-reveal chalk-panel relative grid overflow-hidden rounded-lg border border-ascents-line transition hover:-translate-y-1 hover:border-ascents-tape/70 sm:grid-cols-[minmax(8rem,38%)_minmax(0,1fr)]"
+      class={[
+        "ascents-reveal chalk-panel relative grid overflow-hidden rounded-lg border border-ascents-line transition hover:-translate-y-1 hover:border-ascents-tape/70",
+        @compact && "grid-cols-[6rem_minmax(0,1fr)]",
+        !@compact && "sm:grid-cols-[minmax(8rem,38%)_minmax(0,1fr)]"
+      ]}
     >
-      <div class="route-hold-field relative aspect-[3/4] overflow-hidden border-b border-ascents-line bg-ascents-ink sm:aspect-auto sm:h-full sm:min-h-64 sm:border-b-0 sm:border-r">
+      <div class={[
+        "route-hold-field relative overflow-hidden border-ascents-line bg-ascents-ink",
+        @compact && "aspect-square border-r",
+        !@compact &&
+          "aspect-[3/4] border-b sm:aspect-auto sm:h-full sm:min-h-64 sm:border-b-0 sm:border-r"
+      ]}>
         <img :if={@image_url} src={@image_url} alt="" class="h-full w-full object-cover" />
         <div
           :if={!@image_url}
@@ -551,18 +561,32 @@ defmodule AscentsWeb.ProductComponents do
           <.grade_badge grade={@grade} />
         </div>
         <span
+          :if={@status}
           class="route-status-badge absolute bottom-3 right-3 rounded-md px-2.5 py-1 text-xs font-black uppercase backdrop-blur"
           data-status={status_key(@status)}
         >
           {@status}
         </span>
       </div>
-      <div class="flex min-w-0 flex-col space-y-3 p-4">
+      <div class={[
+        "flex min-w-0 flex-col p-4",
+        @compact && "justify-center gap-2",
+        !@compact && "space-y-3"
+      ]}>
         <div>
           <h3 class="text-base font-bold leading-6 text-ascents-chalk">{@title}</h3>
-          <p class="mt-1 text-sm text-ascents-muted">{@gym}</p>
+          <p :if={!@compact} class="mt-1 text-sm text-ascents-muted">{@gym}</p>
         </div>
-        <p :if={@meta} class="text-sm text-ascents-chalk-soft">{@meta}</p>
+        <p
+          :if={@meta}
+          class={[
+            "text-ascents-chalk-soft",
+            @compact && "line-clamp-2 text-xs leading-5",
+            !@compact && "text-sm"
+          ]}
+        >
+          {@meta}
+        </p>
       </div>
     </article>
     """

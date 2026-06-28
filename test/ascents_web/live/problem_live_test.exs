@@ -27,8 +27,12 @@ defmodule AscentsWeb.ProblemLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
 
-      assert has_element?(view, "#gym-active-route-list")
+      assert has_element?(view, "#gym-content-grid > #gym-active-routes")
+      assert has_element?(view, "#gym-content-grid > #gym-feed")
+      assert has_element?(view, "#gym-active-routes.order-1")
+      assert has_element?(view, "#gym-active-route-list.grid")
       assert has_element?(view, "#gym-route-card-#{problem.id}")
+      refute has_element?(view, "#gym-route-card-#{problem.id} .route-status-badge")
       refute has_element?(view, "#gym-route-card-#{archived_problem.id}")
       refute has_element?(view, "#gym-routes-link")
     end

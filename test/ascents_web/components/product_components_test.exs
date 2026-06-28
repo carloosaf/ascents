@@ -44,6 +44,37 @@ defmodule AscentsWeb.ProductComponentsTest do
     assert LazyHTML.text(document) =~ "Bloc District"
   end
 
+  test "route card only renders a status badge when status is provided" do
+    route_without_status =
+      (&AscentsWeb.ProductComponents.route_card/1)
+      |> render_component(%{
+        id: "component-test-route",
+        title: "Blue Groove",
+        gym: "Route Room",
+        grade: "V2"
+      })
+      |> LazyHTML.from_fragment()
+
+    route_with_status =
+      (&AscentsWeb.ProductComponents.route_card/1)
+      |> render_component(%{
+        id: "component-test-project-route",
+        title: "Pink Project",
+        gym: "Route Room",
+        grade: "V6",
+        status: "Project"
+      })
+      |> LazyHTML.from_fragment()
+
+    refute route_without_status
+           |> LazyHTML.query("#component-test-route .route-status-badge")
+           |> Enum.any?()
+
+    assert route_with_status
+           |> LazyHTML.query("#component-test-project-route .route-status-badge")
+           |> Enum.any?()
+  end
+
   test "feed post renders media URLs only for scopes that can see the post" do
     author = user_fixture()
     friend = user_fixture()
