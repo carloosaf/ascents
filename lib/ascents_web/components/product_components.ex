@@ -751,6 +751,7 @@ defmodule AscentsWeb.ProductComponents do
   defp session_post?(%{post_type: "session", session: %{}}), do: true
   defp session_post?(_post), do: false
 
+  defp visibility_label("private"), do: "Private"
   defp visibility_label("friends"), do: "Friends"
   defp visibility_label(_visibility), do: "Public"
 

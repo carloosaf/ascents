@@ -362,6 +362,7 @@ defmodule AscentsWeb.GymLiveTest do
       assert post.visibility == "private"
       assert post.gym_id == gym.id
       assert has_element?(view, "#home-post-ascent-#{post.id}")
+      assert has_element?(view, "#home-post-privacy-#{post.id}", "Private")
 
       ascent = AscentLogs.get_ascent_by_post(scope, post)
       assert ascent.grade_snapshot == problem.grade
