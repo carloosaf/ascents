@@ -242,6 +242,13 @@ defmodule AscentsWeb.ProductComponents do
   attr :show_owner_actions, :boolean, default: true
 
   def feed_post(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :post_image_url,
+        Media.signed_url(assigns.current_scope, {:post, assigns.post})
+      )
+
     ~H"""
     <article
       id={@id}
@@ -319,11 +326,12 @@ defmodule AscentsWeb.ProductComponents do
       </p>
 
       <div
-        :if={@post.image_object_key}
+        :if={@post_image_url}
         class="mt-3 overflow-hidden rounded-lg border border-ascents-line"
       >
         <img
-          src={Media.signed_url(@post.image_object_key)}
+          id={"home-post-image-#{@post.id}"}
+          src={@post_image_url}
           alt=""
           class="aspect-video w-full object-cover"
         />
