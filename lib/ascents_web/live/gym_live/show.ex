@@ -902,14 +902,6 @@ defmodule AscentsWeb.GymLive.Show do
             />
           </div>
         </section>
-
-        <section>
-          <.empty_state
-            title="No ascents yet"
-            description="Structured ascent history will use this gym's route data later."
-            icon="hero-sparkles"
-          />
-        </section>
       </div>
     </Layouts.app>
     """
