@@ -841,8 +841,8 @@ defmodule AscentsWeb.GymLive.Show do
 
           <div id="gym-feed-posts" phx-update="stream" class="space-y-4">
             <.empty_state
-              :if={@posts_empty?}
               id="gym-feed-empty"
+              class="hidden only:block"
               title="No posts yet"
               description="Member posts will appear here."
               icon="hero-chat-bubble-left-right"
@@ -933,7 +933,6 @@ defmodule AscentsWeb.GymLive.Show do
       member_count: Gyms.count_gym_memberships(gym),
       active_route_count: ClimbingRoutes.count_active_boulder_problems(gym),
       active_problems: ClimbingRoutes.list_boulder_problems(gym),
-      posts_empty?: posts == [],
       can_update_gym?: Gyms.can_update_gym?(current_scope, gym),
       can_manage_members?: Gyms.can_manage_members?(current_scope, gym),
       can_manage_routes?: Gyms.can_manage_routes?(current_scope, gym),
