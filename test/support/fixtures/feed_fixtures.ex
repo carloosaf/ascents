@@ -28,7 +28,7 @@ defmodule Ascents.FeedFixtures do
     ensure_membership(scope, gym)
 
     {:ok, post} = Feed.create_post(scope, gym, valid_post_attributes(attrs))
-    Feed.get_post(gym, post.id, scope)
+    Feed.get_post(scope, gym, post.id)
   end
 
   def comment_fixture(attrs \\ %{}) do

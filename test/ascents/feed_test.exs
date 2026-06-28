@@ -96,8 +96,11 @@ defmodule Ascents.FeedTest do
       second = post_fixture(gym: gym, body: "Second")
       _other = post_fixture(gym: other_gym, body: "Other")
 
-      assert Enum.map(Feed.list_gym_posts(gym), & &1.id) == [second.id, first.id]
-      assert [%Post{user: %Ascents.Accounts.User{}, gym: ^gym}] = [hd(Feed.list_gym_posts(gym))]
+      assert Enum.map(Feed.list_gym_posts(nil, gym), & &1.id) == [second.id, first.id]
+
+      assert [%Post{user: %Ascents.Accounts.User{}, gym: ^gym}] = [
+               hd(Feed.list_gym_posts(nil, gym))
+             ]
     end
 
     test "lists home posts only for joined gyms" do
@@ -122,7 +125,7 @@ defmodule Ascents.FeedTest do
       second = post_fixture(scope: scope, gym: gym, body: "Second profile post")
       _other = post_fixture(scope: other_scope, gym: gym, body: "Other user's post")
 
-      assert Enum.map(Feed.list_user_posts(user), & &1.id) == [second.id, first.id]
+      assert Enum.map(Feed.list_user_posts(scope, user), & &1.id) == [second.id, first.id]
 
       assert [
                %Post{
@@ -132,7 +135,7 @@ defmodule Ascents.FeedTest do
                  ascent: _
                }
                | _
-             ] = Feed.list_user_posts(user)
+             ] = Feed.list_user_posts(scope, user)
 
       assert user_id == user.id
     end
@@ -221,8 +224,8 @@ defmodule Ascents.FeedTest do
       assert {:ok, deleted_post} = Feed.delete_post(scope, gym, post)
       assert deleted_post.deleted_at
       assert Repo.get!(Post, post.id).deleted_at
-      assert Feed.list_gym_posts(gym) == []
-      assert Feed.list_user_posts(user) == []
+      assert Feed.list_gym_posts(scope, gym) == []
+      assert Feed.list_user_posts(scope, user) == []
     end
 
     test "rejects deleting someone else's post" do
@@ -243,7 +246,7 @@ defmodule Ascents.FeedTest do
       assert deleted_comment.deleted_at
       assert Repo.get!(Comment, comment.id).deleted_at
 
-      reloaded_post = Feed.get_post(post.gym, post.id)
+      reloaded_post = Feed.get_post(scope, post.gym, post.id)
       assert reloaded_post.comments == []
     end
 
@@ -266,11 +269,11 @@ defmodule Ascents.FeedTest do
 
       assert {:ok, deleted_comment} = Feed.delete_comment(admin_scope, gym, post, comment)
       assert deleted_comment.deleted_at
-      assert Feed.get_post(gym, post.id).comments == []
+      assert Feed.get_post(admin_scope, gym, post.id).comments == []
 
       assert {:ok, deleted_post} = Feed.delete_post(admin_scope, gym, post)
       assert deleted_post.deleted_at
-      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(admin_scope, gym) == []
     end
 
     test "allows gym owners to clean up posts and comments" do
@@ -285,7 +288,7 @@ defmodule Ascents.FeedTest do
 
       assert {:ok, deleted_post} = Feed.delete_post(owner_scope, gym, post)
       assert deleted_post.deleted_at
-      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(owner_scope, gym) == []
     end
   end
 end
