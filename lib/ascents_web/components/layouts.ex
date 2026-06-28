@@ -38,7 +38,8 @@ defmodule AscentsWeb.Layouts do
   slot :inner_block, required: true
 
   slot :modal,
-    doc: "optional application-level modal content rendered above navigation chrome"
+    doc:
+      "zero or more application-level modal entries rendered outside the page wall so they can layer above navigation chrome"
 
   def app(assigns) do
     ~H"""
