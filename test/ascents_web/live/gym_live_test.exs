@@ -228,33 +228,31 @@ defmodule AscentsWeb.GymLiveTest do
       refute has_element?(view, "#gym-post-form")
     end
 
-    test "limits friends-only posts on the public gym root", %{conn: conn} do
+    test "filters friends-only gym posts for every viewer role", %{conn: conn} do
       author = user_fixture()
-      author_scope = user_scope_fixture(author)
       friend = user_fixture()
-      unrelated = user_fixture()
+      non_friend = user_fixture()
+      moderator = user_fixture()
+      author_scope = user_scope_fixture(author)
       gym = gym_fixture()
-      {:ok, _membership} = Gyms.join_gym(author_scope, gym)
+      role_membership_fixture(gym, "mod", scope: user_scope_fixture(moderator))
       accepted_friendship_fixture(requester: author, recipient: friend)
 
       post =
-        post_fixture(scope: author_scope, gym: gym, body: "Friend beta", visibility: "friends")
+        post_fixture(scope: author_scope, gym: gym, body: "Private beta", visibility: "friends")
 
       {:ok, anonymous_view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
-
-      {:ok, unrelated_view, _html} =
-        build_conn() |> log_in_user(unrelated) |> live(~p"/gyms/#{gym.slug}")
-
-      {:ok, friend_view, _html} =
-        build_conn() |> log_in_user(friend) |> live(~p"/gyms/#{gym.slug}")
-
-      {:ok, author_view, _html} =
-        build_conn() |> log_in_user(author) |> live(~p"/gyms/#{gym.slug}")
-
       refute has_element?(anonymous_view, "#posts-#{post.id}")
-      refute has_element?(unrelated_view, "#posts-#{post.id}")
-      assert has_element?(friend_view, "#posts-#{post.id}")
-      assert has_element?(author_view, "#posts-#{post.id}")
+
+      for viewer <- [author, friend] do
+        {:ok, view, _html} = live(log_in_user(build_conn(), viewer), ~p"/gyms/#{gym.slug}")
+        assert has_element?(view, "#posts-#{post.id}")
+      end
+
+      for viewer <- [non_friend, moderator] do
+        {:ok, view, _html} = live(log_in_user(build_conn(), viewer), ~p"/gyms/#{gym.slug}")
+        refute has_element?(view, "#posts-#{post.id}")
+      end
     end
 
     test "allows members to create posts", %{conn: conn} do
@@ -279,7 +277,7 @@ defmodule AscentsWeb.GymLiveTest do
       )
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym, scope)
+      assert [post] = Feed.list_gym_posts(scope, gym)
       assert post.body == "New slab is technical."
       assert post.visibility == "friends"
       assert post.gym_id == gym.id
@@ -310,7 +308,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> form("#gym-post-form", post: %{body: "Photo beta."})
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym)
+      assert [post] = Feed.list_gym_posts(scope, gym)
       assert post.image_object_key =~ ~r/^posts\/pending\//
     end
 
@@ -352,7 +350,7 @@ defmodule AscentsWeb.GymLiveTest do
       )
       |> render_submit()
 
-      assert [post] = Feed.list_gym_posts(gym, scope)
+      assert [post] = Feed.list_gym_posts(scope, gym)
       assert Feed.list_gym_posts(gym) == []
       assert post.post_type == "ascent"
       assert post.body == nil
@@ -361,7 +359,7 @@ defmodule AscentsWeb.GymLiveTest do
       assert post.gym_id == gym.id
       assert has_element?(view, "#home-post-ascent-#{post.id}")
 
-      ascent = AscentLogs.get_ascent_by_post(post)
+      ascent = AscentLogs.get_ascent_by_post(scope, post)
       assert ascent.grade_snapshot == problem.grade
       assert ascent.climbed_at == ~U[2026-06-11 10:30:00Z]
     end
@@ -391,7 +389,7 @@ defmodule AscentsWeb.GymLiveTest do
         |> render_submit()
 
       assert html =~ "can&#39;t be blank"
-      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(scope, gym) == []
       assert has_element?(view, "#gym-ascent-post-form")
     end
 
@@ -431,7 +429,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> form("#home-comment-form-#{post.id}", post_id: post.id, comment: %{body: "Looks good."})
       |> render_submit()
 
-      reloaded_post = Feed.get_post(gym, post.id)
+      reloaded_post = Feed.get_post(scope, gym, post.id)
       assert [comment] = reloaded_post.comments
       assert has_element?(view, "#home-comment-#{comment.id}")
 
@@ -440,7 +438,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> render_click()
 
       assert Ascents.Repo.get!(Ascents.Feed.Comment, comment.id).deleted_at
-      assert Feed.get_post(gym, post.id).comments == []
+      assert Feed.get_post(scope, gym, post.id).comments == []
       refute has_element?(view, "#home-comment-#{comment.id}")
     end
 
@@ -458,7 +456,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> element("#home-post-delete-#{post.id}")
       |> render_click()
 
-      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(scope, gym) == []
       refute has_element?(view, "#posts-#{post.id}")
     end
 
@@ -486,7 +484,7 @@ defmodule AscentsWeb.GymLiveTest do
       |> element("#home-post-delete-#{post.id}")
       |> render_click()
 
-      assert Feed.list_gym_posts(gym) == []
+      assert Feed.list_gym_posts(admin_scope, gym) == []
       refute has_element?(view, "#posts-#{post.id}")
     end
 

@@ -240,6 +240,64 @@ defmodule Ascents.AscentsTest do
     end
   end
 
+  describe "get_ascent_by_post/2" do
+    setup do
+      owner = user_fixture()
+      friend = user_fixture()
+      non_friend = user_fixture()
+      moderator = user_fixture()
+
+      owner_scope = user_scope_fixture(owner)
+      friend_scope = user_scope_fixture(friend)
+      non_friend_scope = user_scope_fixture(non_friend)
+      moderator_scope = user_scope_fixture(moderator)
+
+      gym = gym_fixture()
+      problem = boulder_problem_fixture(gym: gym)
+      role_membership_fixture(gym, "mod", scope: moderator_scope)
+      accepted_friendship_fixture(requester: owner, recipient: friend)
+
+      %{post: post, ascent: ascent} =
+        ascent_post_fixture(
+          scope: owner_scope,
+          gym: gym,
+          problem: problem,
+          visibility: "friends"
+        )
+
+      %{
+        owner_scope: owner_scope,
+        friend_scope: friend_scope,
+        non_friend_scope: non_friend_scope,
+        moderator_scope: moderator_scope,
+        post: post,
+        ascent: ascent
+      }
+    end
+
+    test "returns friends-only ascent metadata to the owner", context do
+      assert AscentLogs.get_ascent_by_post(context.owner_scope, context.post).id ==
+               context.ascent.id
+    end
+
+    test "returns friends-only ascent metadata to an accepted friend", context do
+      assert AscentLogs.get_ascent_by_post(context.friend_scope, context.post).id ==
+               context.ascent.id
+    end
+
+    test "does not reveal friends-only ascent metadata to a non-friend", context do
+      refute AscentLogs.get_ascent_by_post(context.non_friend_scope, context.post)
+    end
+
+    test "does not reveal friends-only ascent metadata anonymously", context do
+      refute AscentLogs.get_ascent_by_post(nil, context.post)
+    end
+
+    test "does not grant a moderator read access to friends-only ascent metadata", context do
+      refute AscentLogs.get_ascent_by_post(context.moderator_scope, context.post)
+    end
+  end
+
   describe "get_user_stats/3" do
     test "returns owner-only ascent aggregates" do
       user = user_fixture()
