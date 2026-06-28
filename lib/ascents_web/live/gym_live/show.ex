@@ -695,6 +695,7 @@ defmodule AscentsWeb.GymLive.Show do
         <.gym_header
           name={@gym.name}
           location={@gym.location || "Location TBD"}
+          description={@gym.description}
           members={Integer.to_string(@member_count)}
           active_routes={Integer.to_string(@active_route_count)}
           image_url={Media.signed_url(@gym.image_object_key)}
@@ -857,13 +858,6 @@ defmodule AscentsWeb.GymLive.Show do
               show_gym?={false}
             />
           </div>
-        </section>
-
-        <section class="chalk-panel relative rounded-lg border border-ascents-line p-6">
-          <h2 class="text-lg font-black text-ascents-chalk">About</h2>
-          <p id="gym-description" class="mt-3 max-w-3xl text-sm leading-6 text-ascents-chalk-soft">
-            {@gym.description || "No description yet."}
-          </p>
         </section>
 
         <section id="gym-active-routes" class="space-y-4">
