@@ -122,7 +122,9 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert has_element?(view, "#gym-show")
       assert has_element?(view, "#gym-description")
+      assert has_element?(view, "[data-component='gym-header'] #gym-description")
       assert has_element?(view, "#gym-verification-community-badge")
+      refute has_element?(view, "[data-component='empty-state']", "No ascents yet")
       refute has_element?(view, "#gym-join-button")
       refute has_element?(view, "#gym-leave-button")
       refute has_element?(view, "#gym-settings-link")
@@ -268,6 +270,9 @@ defmodule AscentsWeb.GymLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
 
+      assert has_element?(view, "#gym-feed-posts > #gym-feed-empty[class~='hidden']")
+      assert has_element?(view, "#gym-feed-posts > #gym-feed-empty[class~='only:block']")
+
       view
       |> element("#gym-new-post-button")
       |> render_click()
@@ -290,6 +295,8 @@ defmodule AscentsWeb.GymLiveTest do
       assert post.visibility == "friends"
       assert post.gym_id == gym.id
       assert has_element?(view, "#posts-#{post.id}")
+      assert has_element?(view, "#gym-feed-posts > #gym-feed-empty[class~='hidden']")
+      assert has_element?(view, "#gym-feed-posts > #gym-feed-empty[class~='only:block']")
     end
 
     test "allows post images", %{conn: conn} do

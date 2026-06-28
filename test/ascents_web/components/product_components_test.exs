@@ -217,6 +217,18 @@ defmodule AscentsWeb.ProductComponentsTest do
            |> LazyHTML.query("#home-post-session-routes-toggle-#{post.id}")
            |> Enum.any?()
 
+    assert document
+           |> LazyHTML.query(
+             "#home-post-session-routes-toggle-#{post.id}.order-1.group-open\\:order-2"
+           )
+           |> Enum.any?()
+
+    assert document
+           |> LazyHTML.query(
+             "#home-post-session-routes-hidden-#{post.id}.order-2.group-open\\:order-1"
+           )
+           |> Enum.any?()
+
     assert LazyHTML.text(document) =~ "Show 1 more ascents"
   end
 

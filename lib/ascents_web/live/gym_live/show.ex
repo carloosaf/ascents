@@ -695,6 +695,7 @@ defmodule AscentsWeb.GymLive.Show do
         <.gym_header
           name={@gym.name}
           location={@gym.location || "Location TBD"}
+          description={@gym.description}
           members={Integer.to_string(@member_count)}
           active_routes={Integer.to_string(@active_route_count)}
           image_url={Media.signed_url(@gym.image_object_key)}
@@ -845,8 +846,8 @@ defmodule AscentsWeb.GymLive.Show do
 
             <div id="gym-feed-posts" phx-update="stream" class="space-y-4">
               <.empty_state
-                :if={@posts_empty?}
                 id="gym-feed-empty"
+                class="hidden only:block"
                 title="No posts yet"
                 description="Member posts will appear here."
                 icon="hero-chat-bubble-left-right"
@@ -909,21 +910,6 @@ defmodule AscentsWeb.GymLive.Show do
             </div>
           </section>
         </div>
-
-        <section class="chalk-panel relative rounded-lg border border-ascents-line p-6">
-          <h2 class="text-lg font-black text-ascents-chalk">About</h2>
-          <p id="gym-description" class="mt-3 max-w-3xl text-sm leading-6 text-ascents-chalk-soft">
-            {@gym.description || "No description yet."}
-          </p>
-        </section>
-
-        <section>
-          <.empty_state
-            title="No ascents yet"
-            description="Structured ascent history will use this gym's route data later."
-            icon="hero-sparkles"
-          />
-        </section>
       </div>
     </Layouts.app>
     """
@@ -941,7 +927,6 @@ defmodule AscentsWeb.GymLive.Show do
       member_count: Gyms.count_gym_memberships(gym),
       active_route_count: ClimbingRoutes.count_active_boulder_problems(gym),
       active_problems: ClimbingRoutes.list_boulder_problems(gym),
-      posts_empty?: posts == [],
       can_update_gym?: Gyms.can_update_gym?(current_scope, gym),
       can_manage_members?: Gyms.can_manage_members?(current_scope, gym),
       can_manage_routes?: Gyms.can_manage_routes?(current_scope, gym),

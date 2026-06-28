@@ -381,16 +381,19 @@ defmodule AscentsWeb.ProductComponents do
           <details
             :if={@session_hidden_ascents != []}
             id={"home-post-session-routes-more-#{@post.id}"}
-            class="group"
+            class="group flex flex-col"
           >
             <summary
               id={"home-post-session-routes-toggle-#{@post.id}"}
-              class="flex cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-black text-ascents-tape transition hover:bg-ascents-panel-hover hover:text-ascents-tape-hover [&::-webkit-details-marker]:hidden"
+              class="order-1 flex cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-black text-ascents-tape transition hover:bg-ascents-panel-hover hover:text-ascents-tape-hover group-open:order-2 group-open:border-t group-open:border-ascents-line [&::-webkit-details-marker]:hidden"
             >
               <.icon name="hero-chevron-down" class="size-4 transition group-open:rotate-180" />
               Show {length(@session_hidden_ascents)} more ascents
             </summary>
-            <div class="divide-y divide-ascents-line border-t border-ascents-line">
+            <div
+              id={"home-post-session-routes-hidden-#{@post.id}"}
+              class="order-2 divide-y divide-ascents-line group-open:order-1"
+            >
               <div
                 :for={ascent <- @session_hidden_ascents}
                 id={"home-post-session-route-#{ascent.id}"}
@@ -680,13 +683,17 @@ defmodule AscentsWeb.ProductComponents do
   attr :title, :string, required: true
   attr :description, :string, required: true
   attr :icon, :string, default: "hero-face-smile"
+  attr :class, :any, default: nil
   attr :rest, :global
 
   def empty_state(assigns) do
     ~H"""
     <section
       data-component="empty-state"
-      class="ascents-reveal rounded-lg border border-dashed border-ascents-line bg-ascents-panel-deep/80 p-8 text-center"
+      class={[
+        "ascents-reveal rounded-lg border border-dashed border-ascents-line bg-ascents-panel-deep/80 p-8 text-center",
+        @class
+      ]}
       {@rest}
     >
       <div class="mx-auto flex size-12 items-center justify-center rounded-lg bg-ascents-panel-hover text-ascents-tape">
@@ -700,6 +707,7 @@ defmodule AscentsWeb.ProductComponents do
 
   attr :name, :string, required: true
   attr :location, :string, required: true
+  attr :description, :string, default: nil
   attr :members, :string, required: true
   attr :active_routes, :string, required: true
   attr :image_url, :string, default: nil
@@ -733,6 +741,12 @@ defmodule AscentsWeb.ProductComponents do
           <h1 class="ascents-display mt-3 text-4xl leading-none text-ascents-route-title sm:text-5xl">
             {@name}
           </h1>
+          <p
+            id="gym-description"
+            class="mt-4 max-w-xl border-t border-ascents-line/60 pt-4 text-sm leading-6 text-ascents-route-title/85"
+          >
+            {@description || "No description yet."}
+          </p>
         </div>
       </div>
       <div class="grid gap-px bg-ascents-line sm:grid-cols-2">
