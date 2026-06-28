@@ -676,6 +676,7 @@ defmodule AscentsWeb.ProductComponents do
 
   attr :name, :string, required: true
   attr :location, :string, required: true
+  attr :description, :string, default: nil
   attr :members, :string, required: true
   attr :active_routes, :string, required: true
   attr :image_url, :string, default: nil
@@ -709,6 +710,12 @@ defmodule AscentsWeb.ProductComponents do
           <h1 class="ascents-display mt-3 text-4xl leading-none text-ascents-route-title sm:text-5xl">
             {@name}
           </h1>
+          <p
+            id="gym-description"
+            class="mt-4 max-w-xl border-t border-ascents-line/60 pt-4 text-sm leading-6 text-ascents-route-title/85"
+          >
+            {@description || "No description yet."}
+          </p>
         </div>
       </div>
       <div class="grid gap-px bg-ascents-line sm:grid-cols-2">
