@@ -381,16 +381,19 @@ defmodule AscentsWeb.ProductComponents do
           <details
             :if={@session_hidden_ascents != []}
             id={"home-post-session-routes-more-#{@post.id}"}
-            class="group"
+            class="group flex flex-col"
           >
             <summary
               id={"home-post-session-routes-toggle-#{@post.id}"}
-              class="flex cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-black text-ascents-tape transition hover:bg-ascents-panel-hover hover:text-ascents-tape-hover [&::-webkit-details-marker]:hidden"
+              class="order-1 flex cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-black text-ascents-tape transition hover:bg-ascents-panel-hover hover:text-ascents-tape-hover group-open:order-2 group-open:border-t group-open:border-ascents-line [&::-webkit-details-marker]:hidden"
             >
               <.icon name="hero-chevron-down" class="size-4 transition group-open:rotate-180" />
               Show {length(@session_hidden_ascents)} more ascents
             </summary>
-            <div class="divide-y divide-ascents-line border-t border-ascents-line">
+            <div
+              id={"home-post-session-routes-hidden-#{@post.id}"}
+              class="order-2 divide-y divide-ascents-line group-open:order-1"
+            >
               <div
                 :for={ascent <- @session_hidden_ascents}
                 id={"home-post-session-route-#{ascent.id}"}
