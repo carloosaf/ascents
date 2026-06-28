@@ -3,7 +3,6 @@ defmodule Ascents.Repo.Migrations.CreateSessions do
 
   def change do
     create table(:sessions) do
-      add :title, :string, null: false
       add :notes, :text
       add :started_at, :utc_datetime, null: false
       add :image_object_key, :string

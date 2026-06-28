@@ -22,7 +22,6 @@ defmodule Ascents.SessionsTest do
     test "defaults visibility and validates at least one ascent row" do
       changeset =
         Sessions.change_session(%{
-          title: "Evening session",
           started_at: "2026-06-23",
           ascents: [%{boulder_problem_id: 123}]
         })
@@ -33,7 +32,6 @@ defmodule Ascents.SessionsTest do
 
       empty_changeset =
         Sessions.change_session(%{
-          title: "No sends",
           started_at: "2026-06-23",
           ascents: []
         })
@@ -56,7 +54,6 @@ defmodule Ascents.SessionsTest do
                  scope,
                  gym,
                  valid_session_attributes(%{
-                   title: "  Power night  ",
                    notes: "  Two good sends.  ",
                    started_at: "2026-06-23T18:30",
                    visibility: "friends",
@@ -68,7 +65,6 @@ defmodule Ascents.SessionsTest do
                )
 
       assert %Session{} = session
-      assert session.title == "Power night"
       assert session.notes == "Two good sends."
       assert session.started_at == ~U[2026-06-23 18:30:00Z]
       assert session.image_object_key == "sessions/1/training.jpg"
@@ -140,7 +136,6 @@ defmodule Ascents.SessionsTest do
 
       assert {:ok, %{session: session, post: post, ascents: [ascent]}} =
                Sessions.create_session(scope, gym, %{
-                 title: "Lunch break",
                  notes: "   ",
                  image_object_key: "",
                  started_at: ~D[2026-06-22],

@@ -31,10 +31,10 @@ defmodule Ascents.SessionsIntegrityTest do
       Repo.query!(
         """
         INSERT INTO sessions (
-          title, started_at, visibility, post_type, user_id, gym_id, post_id,
+          started_at, visibility, post_type, user_id, gym_id, post_id,
           inserted_at, updated_at
         )
-        VALUES ('Malformed', now(), 'public', 'session', $1, $2, $3, now(), now())
+        VALUES (now(), 'public', 'session', $1, $2, $3, now(), now())
         """,
         [scope.user.id, gym.id, post_id]
       )
@@ -104,11 +104,11 @@ defmodule Ascents.SessionsIntegrityTest do
           Repo.query!(
             """
             INSERT INTO sessions (
-              title, notes, started_at, visibility, post_type, user_id, gym_id, post_id,
+              notes, started_at, visibility, post_type, user_id, gym_id, post_id,
               inserted_at, updated_at
             )
             VALUES (
-              'Malformed mirrors', 'different notes', now(), 'public', 'session',
+              'different notes', now(), 'public', 'session',
               $1, $2, $3, now(), now()
             )
             RETURNING id

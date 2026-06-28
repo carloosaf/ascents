@@ -249,6 +249,13 @@ defmodule AscentsWeb.ProductComponents do
         Media.signed_url(assigns.current_scope, {:post, assigns.post})
       )
 
+    session_ascents = session_ascents(assigns.post)
+
+    assigns =
+      assigns
+      |> assign(:session_visible_ascents, Enum.take(session_ascents, 4))
+      |> assign(:session_hidden_ascents, Enum.drop(session_ascents, 4))
+
     ~H"""
     <article
       id={@id}
@@ -344,12 +351,6 @@ defmodule AscentsWeb.ProductComponents do
               <p class="text-xs font-black uppercase tracking-wider text-grade-blue">
                 Climbing session
               </p>
-              <h3
-                id={"home-post-session-title-#{@post.id}"}
-                class="mt-1 text-lg font-black text-ascents-chalk"
-              >
-                {session_title(@post)}
-              </h3>
             </div>
             <span
               id={"home-post-session-date-#{@post.id}"}
@@ -363,7 +364,7 @@ defmodule AscentsWeb.ProductComponents do
 
         <div id={"home-post-session-routes-#{@post.id}"} class="divide-y divide-ascents-line">
           <div
-            :for={ascent <- session_ascents(@post)}
+            :for={ascent <- @session_visible_ascents}
             id={"home-post-session-route-#{ascent.id}"}
             class="flex items-center justify-between gap-3 px-4 py-3"
           >
@@ -377,6 +378,36 @@ defmodule AscentsWeb.ProductComponents do
             </div>
             <.grade_badge grade={session_ascent_grade(ascent)} />
           </div>
+          <details
+            :if={@session_hidden_ascents != []}
+            id={"home-post-session-routes-more-#{@post.id}"}
+            class="group"
+          >
+            <summary
+              id={"home-post-session-routes-toggle-#{@post.id}"}
+              class="flex cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-black text-ascents-tape transition hover:bg-ascents-panel-hover hover:text-ascents-tape-hover [&::-webkit-details-marker]:hidden"
+            >
+              <.icon name="hero-chevron-down" class="size-4 transition group-open:rotate-180" />
+              Show {length(@session_hidden_ascents)} more ascents
+            </summary>
+            <div class="divide-y divide-ascents-line border-t border-ascents-line">
+              <div
+                :for={ascent <- @session_hidden_ascents}
+                id={"home-post-session-route-#{ascent.id}"}
+                class="flex items-center justify-between gap-3 px-4 py-3"
+              >
+                <div class="flex min-w-0 items-center gap-3">
+                  <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-ascents-tape/15 text-ascents-tape">
+                    <.icon name="hero-check" class="size-4" />
+                  </span>
+                  <p class="truncate text-sm font-bold text-ascents-chalk">
+                    {session_route_title(ascent)}
+                  </p>
+                </div>
+                <.grade_badge grade={session_ascent_grade(ascent)} />
+              </div>
+            </div>
+          </details>
         </div>
       </section>
 
@@ -757,9 +788,6 @@ defmodule AscentsWeb.ProductComponents do
 
   defp visibility_icon("friends"), do: "hero-user-group"
   defp visibility_icon(_visibility), do: "hero-globe-alt"
-
-  defp session_title(%{session: %{title: title}}) when is_binary(title), do: title
-  defp session_title(_post), do: "Climbing session"
 
   defp format_session_time(%{session: %{started_at: %DateTime{} = datetime}}) do
     Calendar.strftime(datetime, "%b %-d, %Y at %H:%M")

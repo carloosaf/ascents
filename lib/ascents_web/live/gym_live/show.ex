@@ -25,6 +25,7 @@ defmodule AscentsWeb.GymLive.Show do
      |> assign(:session_row_order, [1])
      |> assign(:session_rows_by_id, %{1 => session_row(1)})
      |> assign(:next_session_row_id, 2)
+     |> assign(:session_route_feedback?, false)
      |> assign(:comment_form, to_form(Feed.change_comment(%Comment{})))
      |> assign(:post_mode, "normal")
      |> assign(:post_modal_open?, false)
@@ -146,6 +147,7 @@ defmodule AscentsWeb.GymLive.Show do
             Map.put(socket.assigns.session_rows_by_id, row_id, session_row(row_id))
           )
           |> assign(:next_session_row_id, row_id + 1)
+          |> assign(:session_route_feedback?, true)
 
         {:noreply, stream(socket, :session_rows, ordered_session_rows(socket), reset: true)}
 
@@ -195,10 +197,14 @@ defmodule AscentsWeb.GymLive.Show do
 
   def handle_event("remove-session-ascent", _params, socket), do: {:noreply, socket}
 
-  def handle_event("validate-session", %{"session" => session_params}, socket) do
+  def handle_event("validate-session", %{"session" => session_params} = params, socket) do
     case ensure_composer_authorized(socket) do
       {:ok, socket} ->
-        {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
+        show_route_feedback? =
+          socket.assigns.session_route_feedback? || session_route_target?(params)
+
+        {session_attrs, rows} =
+          session_attrs_and_rows(socket, session_params, show_route_feedback?)
 
         changeset =
           session_attrs
@@ -208,6 +214,7 @@ defmodule AscentsWeb.GymLive.Show do
         {:noreply,
          socket
          |> assign_session_form(changeset)
+         |> assign(:session_route_feedback?, show_route_feedback?)
          |> assign(:session_rows_by_id, Map.new(rows, &{&1.id, &1}))
          |> stream(:session_rows, rows, reset: true)}
 
@@ -282,7 +289,7 @@ defmodule AscentsWeb.GymLive.Show do
   def handle_event("create-session", %{"session" => session_params}, socket) do
     case ensure_composer_authorized(socket) do
       {:ok, socket} ->
-        {session_attrs, rows} = session_attrs_and_rows(socket, session_params)
+        {session_attrs, rows} = session_attrs_and_rows(socket, session_params, true)
 
         case put_uploaded_image(socket, session_attrs) do
           {:ok, session_attrs, uploaded_object_key} ->
@@ -304,6 +311,7 @@ defmodule AscentsWeb.GymLive.Show do
                 {:noreply,
                  socket
                  |> assign_session_form(Map.put(changeset, :action, :validate))
+                 |> assign(:session_route_feedback?, true)
                  |> assign(:session_rows_by_id, Map.new(rows, &{&1.id, &1}))
                  |> stream(:session_rows, rows, reset: true)}
 
@@ -402,6 +410,287 @@ defmodule AscentsWeb.GymLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
+      <:modal>
+        <div
+          :if={@post_modal_open?}
+          id="gym-post-modal"
+          class="ascents-modal-overlay flex items-start justify-center overflow-y-auto bg-ascents-ink/85 px-4 py-6 backdrop-blur-sm sm:items-center sm:py-8"
+        >
+          <button
+            type="button"
+            class="absolute inset-0 cursor-default"
+            phx-click="close-post-modal"
+            aria-label="Close post modal"
+          >
+          </button>
+          <section class="ascents-modal-panel chalk-panel relative z-10 my-auto w-full max-w-2xl rounded-lg border border-ascents-line p-5 shadow-2xl shadow-black/40 sm:p-6">
+            <div class="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 class="text-lg font-black text-ascents-chalk">New post</h2>
+                <p class="mt-1 text-sm text-ascents-muted">
+                  Share an update, ascent, or full session at {@gym.name}.
+                </p>
+              </div>
+              <button
+                id="gym-post-modal-close"
+                type="button"
+                phx-click="close-post-modal"
+                class="rounded-md p-2 text-ascents-muted transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+                aria-label="Close"
+              >
+                <.icon name="hero-x-mark" class="size-5" />
+              </button>
+            </div>
+
+            <div
+              id="gym-post-mode-toggle"
+              class="mb-5 grid grid-cols-3 gap-2 rounded-lg border border-ascents-line bg-ascents-panel-deep p-1"
+            >
+              <button
+                id="gym-post-normal-mode"
+                type="button"
+                phx-click="select-post-mode"
+                phx-value-mode="normal"
+                class={[
+                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
+                  @post_mode == "normal" &&
+                    "bg-ascents-action text-ascents-action-content shadow-lg",
+                  @post_mode != "normal" &&
+                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+                ]}
+              >
+                <.icon name="hero-chat-bubble-left-right" class="size-4" /> Post
+              </button>
+              <button
+                id="gym-post-ascent-mode"
+                type="button"
+                phx-click="select-post-mode"
+                phx-value-mode="ascent"
+                class={[
+                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
+                  @post_mode == "ascent" &&
+                    "bg-ascents-tape text-ascents-tape-content shadow-lg",
+                  @post_mode != "ascent" &&
+                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+                ]}
+              >
+                <.icon name="hero-sparkles" class="size-4" /> Ascent
+              </button>
+              <button
+                id="gym-post-session-mode"
+                type="button"
+                phx-click="select-post-mode"
+                phx-value-mode="session"
+                class={[
+                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
+                  @post_mode == "session" &&
+                    "bg-grade-blue text-grade-blue-content shadow-lg",
+                  @post_mode != "session" &&
+                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
+                ]}
+              >
+                <.icon name="hero-rectangle-stack" class="size-4" /> Session
+              </button>
+            </div>
+
+            <.form
+              :if={@post_mode == "normal"}
+              for={@post_form}
+              id="gym-post-form"
+              phx-change="validate-post"
+              phx-submit="create-post"
+            >
+              <.input
+                field={@post_form[:body]}
+                type="textarea"
+                label="Post"
+                placeholder="Share beta, session notes, or gym updates"
+              />
+              <.input
+                field={@post_form[:visibility]}
+                id="gym-post-visibility"
+                type="select"
+                label="Audience"
+                options={post_visibility_options()}
+              />
+              <p id="gym-post-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
+                Friends-only posts will be limited to your accepted friends.
+              </p>
+              <.image_upload_input
+                upload={@uploads.image}
+                label="Image"
+                help="Optional JPG, PNG, or WebP up to 5 MB."
+              />
+              <.button id="gym-post-submit" variant="primary" phx-disable-with="Posting...">
+                <.icon name="hero-paper-airplane" class="size-4" /> Post
+              </.button>
+            </.form>
+
+            <.form
+              :if={@post_mode == "ascent"}
+              for={@ascent_form}
+              id="gym-ascent-post-form"
+              phx-change="validate-ascent-post"
+              phx-submit="create-ascent-post"
+            >
+              <.input
+                field={@ascent_form[:boulder_problem_id]}
+                type="select"
+                label="Route"
+                prompt="Choose an active route"
+                options={active_problem_options(@active_problems)}
+              />
+              <.input
+                field={@ascent_form[:climbed_at]}
+                type="datetime-local"
+                label="Climbed at"
+              />
+              <.input
+                field={@ascent_form[:body]}
+                type="textarea"
+                label="Notes"
+                placeholder="Optional beta, attempts, or session notes"
+              />
+              <.input
+                field={@ascent_form[:visibility]}
+                id="gym-ascent-post-visibility"
+                type="select"
+                label="Audience"
+                options={ascent_visibility_options()}
+              />
+              <p id="gym-ascent-post-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
+                Private ascents are kept for your own log; friends-only ascents will be limited to your accepted friends.
+              </p>
+              <.image_upload_input
+                upload={@uploads.image}
+                label="Image"
+                help="Optional JPG, PNG, or WebP up to 5 MB."
+              />
+              <div class="flex flex-wrap items-center gap-3">
+                <.button id="gym-ascent-post-submit" variant="primary" phx-disable-with="Posting...">
+                  <.icon name="hero-sparkles" class="size-4" /> Post ascent
+                </.button>
+                <p :if={@active_problems == []} class="text-sm text-ascents-muted">
+                  This gym has no active routes to log yet.
+                </p>
+              </div>
+            </.form>
+
+            <.form
+              :if={@post_mode == "session"}
+              for={@session_form}
+              id="gym-session-form"
+              phx-change="validate-session"
+              phx-submit="create-session"
+            >
+              <.input
+                field={@session_form[:started_at]}
+                id="gym-session-started-at"
+                type="datetime-local"
+                label="Climbed at"
+              />
+
+              <.input
+                field={@session_form[:notes]}
+                id="gym-session-notes"
+                type="textarea"
+                label="Notes"
+                placeholder="Optional highlights, attempts, or beta"
+              />
+
+              <section class="mb-4 rounded-lg border border-ascents-line bg-ascents-panel-deep/70 p-3 sm:p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 class="text-sm font-black text-ascents-chalk">Ascents</h3>
+                    <p class="mt-1 text-xs text-ascents-muted">
+                      Add every route sent in this session.
+                    </p>
+                  </div>
+                  <button
+                    id="gym-session-add-ascent"
+                    type="button"
+                    phx-click="add-session-ascent"
+                    class="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-ascents-line px-3 text-xs font-black text-ascents-chalk transition hover:border-ascents-tape hover:text-ascents-tape"
+                  >
+                    <.icon name="hero-plus" class="size-4" /> Add ascent
+                  </button>
+                </div>
+
+                <div
+                  id="gym-session-ascent-rows"
+                  phx-update="stream"
+                  class="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1"
+                >
+                  <div
+                    :for={{row_dom_id, row} <- @streams.session_rows}
+                    id={row_dom_id}
+                    data-row-id={row.id}
+                    class="grid gap-2 rounded-md border border-ascents-line bg-ascents-panel p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+                  >
+                    <div id={"gym-session-route-field-#{row.id}"}>
+                      <.input
+                        id={"gym-session-route-#{row.id}"}
+                        name={"session[ascents][#{row.id}][boulder_problem_id]"}
+                        type="select"
+                        label={"Route #{session_row_number(@session_row_order, row.id)}"}
+                        prompt="Choose an active route"
+                        options={active_problem_options(@active_problems)}
+                        value={row.boulder_problem_id}
+                        errors={row.errors}
+                      />
+                    </div>
+                    <button
+                      id={"gym-session-remove-ascent-#{row.id}"}
+                      type="button"
+                      phx-click="remove-session-ascent"
+                      phx-value-row-id={row.id}
+                      disabled={length(@session_row_order) == 1}
+                      class="mb-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-ascents-line px-3 text-sm font-bold text-ascents-muted transition hover:border-ascents-danger/50 hover:bg-ascents-danger/10 hover:text-ascents-danger-hover disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label={"Remove route #{session_row_number(@session_row_order, row.id)}"}
+                    >
+                      <.icon name="hero-trash" class="size-4" />
+                      <span class="sm:hidden">Remove</span>
+                    </button>
+                  </div>
+                </div>
+                <p
+                  :for={error <- session_ascent_errors(@session_form)}
+                  :if={@session_route_feedback?}
+                  id="gym-session-ascents-error"
+                  class="mt-2 text-sm text-ascents-danger-hover"
+                >
+                  {error}
+                </p>
+              </section>
+
+              <.input
+                field={@session_form[:visibility]}
+                id="gym-session-visibility"
+                type="select"
+                label="Audience"
+                options={post_visibility_options()}
+              />
+              <p id="gym-session-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
+                Friends-only sessions and their image are limited to accepted friends.
+              </p>
+              <.image_upload_input
+                upload={@uploads.image}
+                label="Session image"
+                help="Optional JPG, PNG, or WebP up to 5 MB."
+              />
+              <div class="flex flex-wrap items-center gap-3">
+                <.button id="gym-session-submit" variant="primary" phx-disable-with="Posting...">
+                  <.icon name="hero-rectangle-stack" class="size-4" /> Post session
+                </.button>
+                <p :if={@active_problems == []} class="text-sm text-ascents-muted">
+                  This gym has no active routes to log yet.
+                </p>
+              </div>
+            </.form>
+          </section>
+        </div>
+      </:modal>
+
       <div id="gym-show" class="space-y-8">
         <.gym_header
           name={@gym.name}
@@ -620,291 +909,6 @@ defmodule AscentsWeb.GymLive.Show do
           </div>
         </section>
 
-        <div
-          :if={@post_modal_open?}
-          id="gym-post-modal"
-          class="ascents-modal-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ascents-ink/85 px-4 py-6 backdrop-blur-sm sm:items-center sm:py-8"
-        >
-          <button
-            type="button"
-            class="absolute inset-0 cursor-default"
-            phx-click="close-post-modal"
-            aria-label="Close post modal"
-          >
-          </button>
-          <section class="ascents-modal-panel chalk-panel relative z-10 my-auto w-full max-w-2xl rounded-lg border border-ascents-line p-5 shadow-2xl shadow-black/40 sm:p-6">
-            <div class="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <h2 class="text-lg font-black text-ascents-chalk">New post</h2>
-                <p class="mt-1 text-sm text-ascents-muted">
-                  Share an update, ascent, or full session at {@gym.name}.
-                </p>
-              </div>
-              <button
-                id="gym-post-modal-close"
-                type="button"
-                phx-click="close-post-modal"
-                class="rounded-md p-2 text-ascents-muted transition hover:bg-ascents-panel-hover hover:text-ascents-chalk"
-                aria-label="Close"
-              >
-                <.icon name="hero-x-mark" class="size-5" />
-              </button>
-            </div>
-
-            <div
-              id="gym-post-mode-toggle"
-              class="mb-5 grid grid-cols-3 gap-2 rounded-lg border border-ascents-line bg-ascents-panel-deep p-1"
-            >
-              <button
-                id="gym-post-normal-mode"
-                type="button"
-                phx-click="select-post-mode"
-                phx-value-mode="normal"
-                class={[
-                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
-                  @post_mode == "normal" &&
-                    "bg-ascents-action text-ascents-action-content shadow-lg",
-                  @post_mode != "normal" &&
-                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
-                ]}
-              >
-                <.icon name="hero-chat-bubble-left-right" class="size-4" /> Post
-              </button>
-              <button
-                id="gym-post-ascent-mode"
-                type="button"
-                phx-click="select-post-mode"
-                phx-value-mode="ascent"
-                class={[
-                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
-                  @post_mode == "ascent" &&
-                    "bg-ascents-tape text-ascents-tape-content shadow-lg",
-                  @post_mode != "ascent" &&
-                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
-                ]}
-              >
-                <.icon name="hero-sparkles" class="size-4" /> Ascent
-              </button>
-              <button
-                id="gym-post-session-mode"
-                type="button"
-                phx-click="select-post-mode"
-                phx-value-mode="session"
-                class={[
-                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition",
-                  @post_mode == "session" &&
-                    "bg-grade-blue text-grade-blue-content shadow-lg",
-                  @post_mode != "session" &&
-                    "text-ascents-muted hover:bg-ascents-panel-hover hover:text-ascents-chalk"
-                ]}
-              >
-                <.icon name="hero-rectangle-stack" class="size-4" /> Session
-              </button>
-            </div>
-
-            <.form
-              :if={@post_mode == "normal"}
-              for={@post_form}
-              id="gym-post-form"
-              phx-change="validate-post"
-              phx-submit="create-post"
-            >
-              <.input
-                field={@post_form[:body]}
-                type="textarea"
-                label="Post"
-                placeholder="Share beta, session notes, or gym updates"
-              />
-              <.input
-                field={@post_form[:visibility]}
-                id="gym-post-visibility"
-                type="select"
-                label="Audience"
-                options={post_visibility_options()}
-              />
-              <p id="gym-post-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
-                Friends-only posts will be limited to your accepted friends.
-              </p>
-              <.image_upload_input
-                upload={@uploads.image}
-                label="Image"
-                help="Optional JPG, PNG, or WebP up to 5 MB."
-              />
-              <.button id="gym-post-submit" variant="primary" phx-disable-with="Posting...">
-                <.icon name="hero-paper-airplane" class="size-4" /> Post
-              </.button>
-            </.form>
-
-            <.form
-              :if={@post_mode == "ascent"}
-              for={@ascent_form}
-              id="gym-ascent-post-form"
-              phx-change="validate-ascent-post"
-              phx-submit="create-ascent-post"
-            >
-              <.input
-                field={@ascent_form[:boulder_problem_id]}
-                type="select"
-                label="Route"
-                prompt="Choose an active route"
-                options={active_problem_options(@active_problems)}
-              />
-              <.input
-                field={@ascent_form[:climbed_at]}
-                type="datetime-local"
-                label="Climbed at"
-              />
-              <.input
-                field={@ascent_form[:body]}
-                type="textarea"
-                label="Notes"
-                placeholder="Optional beta, attempts, or session notes"
-              />
-              <.input
-                field={@ascent_form[:visibility]}
-                id="gym-ascent-post-visibility"
-                type="select"
-                label="Audience"
-                options={ascent_visibility_options()}
-              />
-              <p id="gym-ascent-post-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
-                Private ascents are kept for your own log; friends-only ascents will be limited to your accepted friends.
-              </p>
-              <.image_upload_input
-                upload={@uploads.image}
-                label="Image"
-                help="Optional JPG, PNG, or WebP up to 5 MB."
-              />
-              <div class="flex flex-wrap items-center gap-3">
-                <.button id="gym-ascent-post-submit" variant="primary" phx-disable-with="Posting...">
-                  <.icon name="hero-sparkles" class="size-4" /> Post ascent
-                </.button>
-                <p :if={@active_problems == []} class="text-sm text-ascents-muted">
-                  This gym has no active routes to log yet.
-                </p>
-              </div>
-            </.form>
-
-            <.form
-              :if={@post_mode == "session"}
-              for={@session_form}
-              id="gym-session-form"
-              phx-change="validate-session"
-              phx-submit="create-session"
-            >
-              <div class="grid gap-4 sm:grid-cols-2">
-                <div id="gym-session-title-field">
-                  <.input
-                    field={@session_form[:title]}
-                    id="gym-session-title"
-                    type="text"
-                    label="Session title"
-                    placeholder="Tuesday power session"
-                  />
-                </div>
-                <.input
-                  field={@session_form[:started_at]}
-                  id="gym-session-started-at"
-                  type="datetime-local"
-                  label="Climbed at"
-                />
-              </div>
-
-              <.input
-                field={@session_form[:notes]}
-                id="gym-session-notes"
-                type="textarea"
-                label="Notes"
-                placeholder="Optional highlights, attempts, or beta"
-              />
-
-              <section class="mb-4 rounded-lg border border-ascents-line bg-ascents-panel-deep/70 p-3 sm:p-4">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 class="text-sm font-black text-ascents-chalk">Ascents</h3>
-                    <p class="mt-1 text-xs text-ascents-muted">
-                      Add every route sent in this session.
-                    </p>
-                  </div>
-                  <button
-                    id="gym-session-add-ascent"
-                    type="button"
-                    phx-click="add-session-ascent"
-                    class="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-ascents-line px-3 text-xs font-black text-ascents-chalk transition hover:border-ascents-tape hover:text-ascents-tape"
-                  >
-                    <.icon name="hero-plus" class="size-4" /> Add ascent
-                  </button>
-                </div>
-
-                <div id="gym-session-ascent-rows" phx-update="stream" class="mt-4 space-y-3">
-                  <div
-                    :for={{row_dom_id, row} <- @streams.session_rows}
-                    id={row_dom_id}
-                    data-row-id={row.id}
-                    class="grid gap-2 rounded-md border border-ascents-line bg-ascents-panel p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
-                  >
-                    <div id={"gym-session-route-field-#{row.id}"}>
-                      <.input
-                        id={"gym-session-route-#{row.id}"}
-                        name={"session[ascents][#{row.id}][boulder_problem_id]"}
-                        type="select"
-                        label={"Route #{session_row_number(@session_row_order, row.id)}"}
-                        prompt="Choose an active route"
-                        options={active_problem_options(@active_problems)}
-                        value={row.boulder_problem_id}
-                        errors={row.errors}
-                      />
-                    </div>
-                    <button
-                      id={"gym-session-remove-ascent-#{row.id}"}
-                      type="button"
-                      phx-click="remove-session-ascent"
-                      phx-value-row-id={row.id}
-                      disabled={length(@session_row_order) == 1}
-                      class="mb-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-ascents-line px-3 text-sm font-bold text-ascents-muted transition hover:border-ascents-danger/50 hover:bg-ascents-danger/10 hover:text-ascents-danger-hover disabled:cursor-not-allowed disabled:opacity-40"
-                      aria-label={"Remove route #{session_row_number(@session_row_order, row.id)}"}
-                    >
-                      <.icon name="hero-trash" class="size-4" />
-                      <span class="sm:hidden">Remove</span>
-                    </button>
-                  </div>
-                </div>
-                <p
-                  :for={error <- session_ascent_errors(@session_form)}
-                  id="gym-session-ascents-error"
-                  class="mt-2 text-sm text-ascents-danger-hover"
-                >
-                  {error}
-                </p>
-              </section>
-
-              <.input
-                field={@session_form[:visibility]}
-                id="gym-session-visibility"
-                type="select"
-                label="Audience"
-                options={post_visibility_options()}
-              />
-              <p id="gym-session-visibility-help" class="-mt-2 mb-4 text-xs text-ascents-muted">
-                Friends-only sessions and their image are limited to accepted friends.
-              </p>
-              <.image_upload_input
-                upload={@uploads.image}
-                label="Session image"
-                help="Optional JPG, PNG, or WebP up to 5 MB."
-              />
-              <div class="flex flex-wrap items-center gap-3">
-                <.button id="gym-session-submit" variant="primary" phx-disable-with="Posting...">
-                  <.icon name="hero-rectangle-stack" class="size-4" /> Post session
-                </.button>
-                <p :if={@active_problems == []} class="text-sm text-ascents-muted">
-                  This gym has no active routes to log yet.
-                </p>
-              </div>
-            </.form>
-          </section>
-        </div>
-
         <section>
           <.empty_state
             title="No ascents yet"
@@ -1002,6 +1006,7 @@ defmodule AscentsWeb.GymLive.Show do
     |> assign(:session_row_order, [1])
     |> assign(:session_rows_by_id, %{1 => session_row(1)})
     |> assign(:next_session_row_id, 2)
+    |> assign(:session_route_feedback?, false)
     |> stream(:session_rows, [session_row(1)], reset: true)
   end
 
@@ -1039,7 +1044,7 @@ defmodule AscentsWeb.GymLive.Show do
     }
   end
 
-  defp session_attrs_and_rows(socket, session_params) do
+  defp session_attrs_and_rows(socket, session_params, show_route_errors?) do
     session_params = normalize_params_map(session_params)
     ascent_params = normalize_params_map(Map.get(session_params, "ascents", %{}))
 
@@ -1051,7 +1056,7 @@ defmodule AscentsWeb.GymLive.Show do
           |> normalize_params_map()
 
         route_id = Map.get(row_params, "boulder_problem_id")
-        session_row(row_id, route_id, blank?(route_id))
+        session_row(row_id, route_id, show_route_errors? && blank?(route_id))
       end)
 
     attrs =
@@ -1112,6 +1117,12 @@ defmodule AscentsWeb.GymLive.Show do
 
   defp normalize_params_map(params) when is_map(params), do: params
   defp normalize_params_map(_params), do: %{}
+
+  defp session_route_target?(%{"_target" => target}) when is_list(target) do
+    Enum.take(target, 2) == ["session", "ascents"]
+  end
+
+  defp session_route_target?(_params), do: false
 
   defp blank?(value), do: is_nil(value) or (is_binary(value) and String.trim(value) == "")
 

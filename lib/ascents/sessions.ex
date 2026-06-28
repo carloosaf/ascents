@@ -16,7 +16,6 @@ defmodule Ascents.Sessions do
   alias Ascents.Sessions.Session
 
   @session_input_types %{
-    title: :string,
     notes: :string,
     started_at: :utc_datetime,
     image_object_key: :string,
@@ -37,11 +36,9 @@ defmodule Ascents.Sessions do
 
     {%{visibility: "public"}, @session_input_types}
     |> cast(attrs, Map.keys(@session_input_types))
-    |> update_change(:title, &trim_string/1)
     |> update_change(:notes, &trim_string/1)
     |> update_change(:image_object_key, &trim_string/1)
-    |> validate_required([:title, :started_at, :visibility, :ascents])
-    |> validate_length(:title, min: 1, max: 120)
+    |> validate_required([:started_at, :visibility, :ascents])
     |> validate_length(:notes, max: 2_000)
     |> validate_length(:image_object_key, max: 1_024)
     |> validate_inclusion(:visibility, Post.visibilities())
@@ -158,7 +155,6 @@ defmodule Ascents.Sessions do
         }
         |> Session.changeset(
           Map.take(session_attrs, [
-            :title,
             :notes,
             :started_at,
             :image_object_key,

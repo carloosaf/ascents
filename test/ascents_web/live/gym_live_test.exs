@@ -273,6 +273,10 @@ defmodule AscentsWeb.GymLiveTest do
       |> render_click()
 
       assert has_element?(view, "#gym-post-modal")
+      assert has_element?(view, "#app-sidebar[class~='z-40']")
+      assert has_element?(view, "#app-mobile-tabbar[class~='z-40']")
+      assert has_element?(view, "#app-shell > #gym-post-modal.ascents-modal-overlay")
+      refute has_element?(view, "main #gym-post-modal")
       assert has_element?(view, "#gym-post-visibility option[selected][value='public']")
 
       view
@@ -510,7 +514,6 @@ defmodule AscentsWeb.GymLiveTest do
       view
       |> form("#gym-session-form",
         session: %{
-          title: "No longer allowed",
           started_at: "2026-06-24T18:30",
           notes: "This should not persist.",
           visibility: "public",
@@ -592,7 +595,6 @@ defmodule AscentsWeb.GymLiveTest do
           ] do
         render_hook(view, "validate-session", %{
           "session" => %{
-            "title" => "Malformed rows",
             "started_at" => "2026-06-24T18:30",
             "visibility" => "public",
             "ascents" => ascents
@@ -602,6 +604,51 @@ defmodule AscentsWeb.GymLiveTest do
         assert has_element?(view, "#session-ascent-row-1[data-row-id='1']")
         assert has_element?(view, "#session-ascent-row-2[data-row-id='2']")
       end
+    end
+
+    test "does not render a session title field and keeps route errors scoped", %{conn: conn} do
+      user = user_fixture()
+      scope = user_scope_fixture(user)
+      gym = gym_fixture()
+      boulder_problem_fixture(gym: gym)
+      {:ok, _membership} = Gyms.join_gym(scope, gym)
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/gyms/#{gym.slug}")
+
+      view |> element("#gym-new-post-button") |> render_click()
+      view |> element("#gym-post-session-mode") |> render_click()
+
+      refute has_element?(view, "#gym-session-title")
+      refute has_element?(view, "#gym-session-title-field")
+      assert has_element?(view, "#gym-session-ascent-rows.max-h-80.overflow-y-auto")
+
+      view
+      |> form("#gym-session-form",
+        session: %{
+          started_at: "2026-06-24T18:30",
+          notes: "Warming up before picking routes.",
+          visibility: "public",
+          ascents: %{"1" => %{boulder_problem_id: ""}}
+        }
+      )
+      |> render_change()
+
+      refute has_element?(view, "#gym-session-route-field-1 p")
+      refute has_element?(view, "#gym-session-ascents-error")
+
+      render_hook(view, "validate-session", %{
+        "_target" => ["session", "ascents", "1", "boulder_problem_id"],
+        "session" => %{
+          "started_at" => "2026-06-24T18:30",
+          "notes" => "Now the route selector has been touched.",
+          "visibility" => "public",
+          "ascents" => %{"1" => %{"boulder_problem_id" => ""}}
+        }
+      })
+
+      assert has_element?(view, "#gym-session-route-field-1 p")
+      assert has_element?(view, "#gym-session-ascents-error")
     end
 
     test "validates session metadata and route rows", %{conn: conn} do
@@ -626,7 +673,6 @@ defmodule AscentsWeb.GymLiveTest do
       view
       |> form("#gym-session-form",
         session: %{
-          title: "",
           started_at: "2026-06-24T18:30",
           notes: "",
           visibility: "public",
@@ -635,7 +681,6 @@ defmodule AscentsWeb.GymLiveTest do
       )
       |> render_submit()
 
-      assert has_element?(view, "#gym-session-title-field p")
       assert has_element?(view, "#gym-session-route-field-1 p")
       assert has_element?(view, "#gym-session-ascents-error")
       assert Feed.list_gym_posts(scope, gym) == []
@@ -663,7 +708,6 @@ defmodule AscentsWeb.GymLiveTest do
       html =
         render_submit(view, "create-session", %{
           "session" => %{
-            "title" => "",
             "started_at" => "2026-06-24T18:30",
             "notes" => "",
             "visibility" => "public",
@@ -672,7 +716,6 @@ defmodule AscentsWeb.GymLiveTest do
           }
         })
 
-      assert has_element?(view, "#gym-session-title-field p")
       assert has_element?(view, "#gym-session-route-field-1 p")
       assert has_element?(view, "#gym-session-ascents-error")
       refute html =~ referenced_key
@@ -714,7 +757,6 @@ defmodule AscentsWeb.GymLiveTest do
       view
       |> form("#gym-session-form",
         session: %{
-          title: "Stale route session",
           started_at: "2026-06-24T18:30",
           notes: "",
           visibility: "public",
@@ -755,7 +797,6 @@ defmodule AscentsWeb.GymLiveTest do
       view
       |> form("#gym-session-form",
         session: %{
-          title: "Power circuit",
           started_at: "2026-06-24T18:30",
           notes: "Linked both projects.",
           visibility: "friends",
@@ -775,7 +816,7 @@ defmodule AscentsWeb.GymLiveTest do
 
       assert has_element?(view, "#posts-#{post.id}")
       assert has_element?(view, "#home-post-session-#{post.id}")
-      assert has_element?(view, "#home-post-session-title-#{post.id}", "Power circuit")
+      refute has_element?(view, "#home-post-session-title-#{post.id}")
       assert has_element?(view, "#home-post-privacy-#{post.id}", "Friends")
       assert has_element?(view, "#home-post-image-#{post.id}[src*='/media/']")
 
