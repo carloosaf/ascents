@@ -659,13 +659,17 @@ defmodule AscentsWeb.ProductComponents do
   attr :title, :string, required: true
   attr :description, :string, required: true
   attr :icon, :string, default: "hero-face-smile"
+  attr :class, :any, default: nil
   attr :rest, :global
 
   def empty_state(assigns) do
     ~H"""
     <section
       data-component="empty-state"
-      class="ascents-reveal rounded-lg border border-dashed border-ascents-line bg-ascents-panel-deep/80 p-8 text-center"
+      class={[
+        "ascents-reveal rounded-lg border border-dashed border-ascents-line bg-ascents-panel-deep/80 p-8 text-center",
+        @class
+      ]}
       {@rest}
     >
       <div class="mx-auto flex size-12 items-center justify-center rounded-lg bg-ascents-panel-hover text-ascents-tape">
