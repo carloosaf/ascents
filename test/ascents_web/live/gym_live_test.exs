@@ -123,6 +123,7 @@ defmodule AscentsWeb.GymLiveTest do
       assert has_element?(view, "#gym-show")
       assert has_element?(view, "#gym-description")
       assert has_element?(view, "#gym-verification-community-badge")
+      refute has_element?(view, "[data-component='empty-state']", "No ascents yet")
       refute has_element?(view, "#gym-join-button")
       refute has_element?(view, "#gym-leave-button")
       refute has_element?(view, "#gym-settings-link")
